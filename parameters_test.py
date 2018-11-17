@@ -2,13 +2,9 @@ import unittest
 from parameters import Parameter
 from parameters import NotValidError
 
-from parameters import Parameter
-from parameters import NotValidError
-
 class StringP(Parameter):
     '''A Test String Parameter
     '''
-    _name = 'Test String'
     _type = str
 
     def __init__(self, **kwds):
@@ -24,7 +20,7 @@ class StringP(Parameter):
 class TestSingleParameter(unittest.TestCase):
     def setUp(self):
         print('done setup')
-        self.test_param = StringP()
+        self.test_param = StringP(name='Test String')
 
     def test_initialization(self):
         print('start test')
@@ -35,22 +31,22 @@ class TestSingleParameter(unittest.TestCase):
 
     def test_default(self):
         self.test_param.set_default('default')
-        self.assertEqual(self.test_param.value,'default')
+        self.assertEqual(self.test_param.value, 'default')
 
     def test_blank_default(self):
         self.test_param.set_default('')
-        self.assertEqual(self.test_param.value,'')
+        self.assertEqual(self.test_param.value, '')
 
     def test_invalid_default(self):
         with self.assertRaises(NotValidError):
             self.test_param.set_default(1)
 
-    def test_NotValid_message(self):
+    def test_default_NotValid_message(self):
         error_message = '1 is an invalid value for Test String.'
         try:
-            test_param.set_default(1)
+            self.test_param.set_default(1)
         except NotValidError as err:
-            self.assertEqual(err.args[0],error_message)
+            self.assertEqual(err.args[0], error_message)
         else:
             self.fail('NotValidError not raised')
 
@@ -60,13 +56,13 @@ class TestSingleParameter(unittest.TestCase):
 
     def test_set_value(self):
         self.test_param.value = 'value'
-        self.assertEqual(self.test_param.value,'value')
+        self.assertEqual(self.test_param.value, 'value')
 
     def test_reset_value(self):
         self.test_param.value = 'value'
         self.test_param.set_default('default')
         self.test_param.reset_value()
-        self.assertEqual(self.test_param.value,'default')
+        self.assertEqual(self.test_param.value, 'default')
 
     def test_equality(self):
         test_value = 'value'
@@ -78,7 +74,7 @@ class TestSingleParameter(unittest.TestCase):
             self.test_param.value = 1
 
     def test_update_settings(self):
-        test_type=str(self.test_param._type)
+        test_type = str(type(self))
         setting = dict(type=test_type)
         self.test_param.set_attributes(setting)
         self.assertEqual(self.test_param.type, test_type)
@@ -86,7 +82,7 @@ class TestSingleParameter(unittest.TestCase):
     def test_NotValid_message(self):
         default_value = 'default'
         test_value = 'value'
-        test_type=str(self.test_param._type)
+        test_type = str(type(self))
         self.test_param.type = test_type
         self.test_param.set_default(default_value)
         self.test_param.value = test_value
@@ -96,7 +92,7 @@ class TestSingleParameter(unittest.TestCase):
         try:
             self.test_param.set_default(1)
         except NotValidError as err:
-            self.assertEqual(err.args[0],error_message)
+            self.assertEqual(err.args[0], error_message)
         else:
             self.fail('NotValidError not raised')
 
@@ -105,31 +101,12 @@ class TestSingleParameter(unittest.TestCase):
         self.test_param.value = test_value
         self.assertEqual(str(self.test_param), test_value)
 
-    @unittest.skip("Not Implemented")
+    @unittest.skip('Not Implemented')
     def test_repr(self):
-        test_value = 'value'
-        default_value = 'default'
-        setting = dict(type=self.test_param._type)
-        test_msg = dict(not_valid='{new_value} is invalid for {type}')
-        self.test_param.set_attributes(setting)
-        self.test_param.type = test_type
-        self.test_param.value = test_value
-        self.test_param.set_default(default_value)
-        self.test_param.update_messages(test_msg)
-        self.assertEqual(self.test_param.type, test_type)
+        self.fail('Not implemented')
 
-    @unittest.skip("Not Implemented")
+    @unittest.skip('Not Implemented')
     def test_copy(self):
-        test_value = 'value'
-        default_value = 'default'
-        setting = dict(type=self.test_param._type)
-        test_msg = dict(not_valid='{new_value} is invalid for {type}')
-        self.test_param.set_attributes(setting)
-        self.test_param.type = test_type
-        self.test_param.value = test_value
-        self.test_param.set_default(default_value)
-        self.test_param.update_messages(test_msg)
-        self.assertEqual(self.test_param.type, test_type)
-
+        self.fail('Not implemented')
 if __name__ == '__main__':
     unittest.main()
