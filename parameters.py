@@ -7,8 +7,11 @@ from  typing import TypeVar, List, Dict
 import logging
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
+# pylint: disable=invalid-name
 ParameterSelection = TypeVar('ParameterSelection',
-                             str, List[str], Dict[str, object])
+                             str, List[str], Dict[str, object]
+                            )
+
 class ParameterError(Exception):
     '''Base Exception for Parameters
     '''
@@ -24,6 +27,11 @@ class NotParameterError(ParameterError):
     '''
     pass
 
+class NoParameterError(ParameterError):
+    '''The value request from the parameter set did not contain a valid
+    parameter name.
+    '''
+    pass
 
 def get_class_name(class_type: type)->str:
     '''parse the full class type string to get the abbreviated class name.
@@ -33,7 +41,7 @@ def get_class_name(class_type: type)->str:
     class_name = name_portion.rstrip('\'">')
     return class_name
 
-    
+
 class Parameter(ABC):
     '''This is an abstract base class for all of the parameter sub-classes.
     '''
@@ -242,20 +250,58 @@ class ParameterSet(OrderedDict):
         pass
 
     def get_values(self, selection: ParameterSelection)->dict:
-        '''[Summary]
+        '''Return the values of the requested parameters
         Arguments:
-            selection {Sequence} -- [description]
+            selection {ParameterSelection} -- can be one of:
+                String: The name of a parameter in the parameter set.
+                List: A list of parameter names
+                Dictionary: Containing at least one key matching a
+                    parameter name
         Returns:
             Value of the requested parameter
-            Tuple of values for a list of parameter names
-            dictionary passed to get_values where for each key matching a
-            parameter name the value is replaced with the parameter value;
-            all non matching items remain unchanged
-
-                    rasises NoParameterError if no dictionary key matches,
-                    any of the list of parameter names don't match
+            Tuple of values for the list of parameter names
+            The dictionary passed to get_values where for each key matching a
+                parameter name the value is replaced with the parameter value;
+                All non matching items remain unchanged
+        Raises:
+            NoParameterError:
+                If the String does not correspond to a parameter,
+                If any of the names in the list don't match a parameter name,
+                If no dictionary key matches a parameter name.
         '''
-        pass
+        if isinstance(selection, str):
+            if selection in self:
+                return self[selection].value
+            else:
+                raise NoParameterError(
+                    '{} is not a valid Parameter name'.format(selection))
+        elif isinstance(selection, dict):
+            values_dict = selection.copy()
+            found_parameter = False
+            for key in selection.keys():
+                try:
+                    item_value = self[key].value
+                except KeyError:
+                    continue
+                except AttributeError:
+                    item_value = self[key]
+                else:
+                    values_dict[key] = item_value
+                    found_parameter = True
+            if not found_parameter:
+                raise NoParameterError(
+                    'No Parameter was found in {}'.format(str(selection)))
+            else:
+                return values_dict
+        else:
+            values_list = list()
+            for name in selection:
+                if name in self:
+                    values_list.append(self[name].value)
+                else:
+                    raise NoParameterError(
+                        '{} is not a valid Parameter name'.format(selection))
+            return values_list
 
     def set_values(self, parameter_values):
         '''[Summary]
