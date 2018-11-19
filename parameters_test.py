@@ -17,7 +17,7 @@ class StringP(Parameter):
         return super().isvalid(value)
 
 
-class TestSingleParameter(unittest.TestCase):
+class TestBaseParameterNoValue(unittest.TestCase):
     def setUp(self):
         print('done setup')
         self.test_param = StringP(name='Test String')
@@ -105,8 +105,45 @@ class TestSingleParameter(unittest.TestCase):
     def test_repr(self):
         self.fail('Not implemented')
 
-    @unittest.skip('Not Implemented')
+    def test_display(self):
+        display = 'Test String parameter of class StringP\n,'
+        display += '\tCurrent Value is:\tvalue'
+        display += '\tDefault value is \tdefault'
+        self.test_param.value = 'value'
+        self.test_param.set_default('default')
+        self.assertEqual(self.test_param.disp() ,display)
+
+class TestBaseParameterValue(unittest.TestCase):
+    def setUp(self):
+        self.str_value = 'test_param_value'
+        self.test_param = StringP(
+            name='Test_String_Value',
+            value=self.str_value,
+            default='default_value')
+
+    def test_initialization(self):
+        self.assertTrue(self.test_param.is_initialized())
+
+    def test_set_value(self):
+        self.assertEqual(self.test_param.value, self.str_value)
+
+    def test_reset_value(self):
+        self.test_param.reset_value()
+        self.assertEqual(self.test_param.value, 'default_value')
+
+    def test_update_settings(self):
+        setting = dict(default='new default value')
+        self.test_param.set_attributes(setting)
+        self.assertEqual(self.test_param.default, 'new default value')
+
     def test_copy(self):
-        self.fail('Not implemented')
+        attr_dict = dict(
+            name='Test_String_Value',
+            _value=self.str_value,
+            default='default_value',
+            _messages=self.test_param._messages)
+        copied_param = self.test_param.copy()
+        self.assertDictEqual(copied_param.__dict__, attr_dict)
+
 if __name__ == '__main__':
     unittest.main()
