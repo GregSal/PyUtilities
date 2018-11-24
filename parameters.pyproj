@@ -20,11 +20,14 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="initial_testing.py" />
+    <Compile Include="one_string_parameter_set_test.py" />
     <Compile Include="parameters.py" />
     <Compile Include="parameters_test.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="parameter_interaction_test.py" />
     <Compile Include="parameter_set_test.py" />
+    <Compile Include="two_string_parameter_set_test.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

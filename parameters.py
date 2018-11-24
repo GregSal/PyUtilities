@@ -3,35 +3,40 @@
 
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from  typing import TypeVar, List, Dict
+from typing import TypeVar, List, Dict
 import logging
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 # pylint: disable=invalid-name
 ParameterSelection = TypeVar('ParameterSelection',
                              str, List[str], Dict[str, object]
-                            )
+                             )
+
 
 class ParameterError(Exception):
     '''Base Exception for Parameters
     '''
     pass
 
+
 class NotValidError(ParameterError):
     '''Base Exception for invalid parameter value
     '''
     pass
+
 
 class NotParameterError(ParameterError):
     '''The class does not inherit from the Parameter class
     '''
     pass
 
+
 class NoParameterError(ParameterError):
     '''The value request from the parameter set did not contain a valid
     parameter name.
     '''
     pass
+
 
 def get_class_name(class_type: type)->str:
     '''parse the full class type string to get the abbreviated class name.
@@ -65,16 +70,22 @@ class Parameter(ABC):
         self._value = None
         self.default = None
         self._messages = dict(not_valid='')
-        self.set_attributes(kwds)
+        self.initialize_attributes(kwds)
         self.update_messages(messages)
         if value is not None:
             self.set_value(value)
 
-    def set_attributes(self, kwds):
+    def initialize_attributes(self, kwds):
         '''Add values for all attributes.
         '''
         settings = self.initial_settings.copy()
         settings.update(kwds)
+        for attr, value in settings.items():
+            self.__setattr__(attr, value)
+
+    def set_attributes(self, **settings):
+        '''Update values for the supplied attributes.
+        '''
         for attr, value in settings.items():
             self.__setattr__(attr, value)
 
@@ -162,7 +173,8 @@ class Parameter(ABC):
 
     def set_default(self, value=None):
         '''set the default value of Parameter to the supplied "value".
-        if no value is supplied set the default to the current value of the parameter.
+        if no value is supplied set the default to the current value of the
+        parameter.
         '''
         if value is None:
             self.default = self._value
@@ -177,6 +189,7 @@ class Parameter(ABC):
         '''
         return self._value is not None
 
+
 class ParameterSet(OrderedDict):
     '''This defines a collection of parameters.
         For each parameter the following instance attributes are added:
@@ -189,9 +202,10 @@ class ParameterSet(OrderedDict):
         The  ParameterSet subclasses being combined must not contain
         parameters with the same name.
 
-        A new ParameterSet class can be defined dynamically by passing an existing class
-        a list of Parameters.  For a ParameterSet subclass, the new class will be
-        an extension of the exiting class with the new parameter definitions.
+        A new ParameterSet class can be defined dynamically by passing an
+        existing class a list of Parameters.  For a ParameterSet subclass,
+        the new class will be an extension of the exiting class with the new
+        parameter definitions.
 
         Can access individual parameters as items of the parameter set
     '''
@@ -212,7 +226,6 @@ class ParameterSet(OrderedDict):
         '''
         for parameter_def in self.parameter_definitions:
             local_parameter_def = parameter_def.copy()
-            print(local_parameter_def)
             self.add_defaults(local_parameter_def)
             if 'parameter' in local_parameter_def:
                 new_parameter = local_parameter_def.pop('parameter')
@@ -226,7 +239,8 @@ class ParameterSet(OrderedDict):
         Arguments:
             parameter_def {dict} -- [The attributes defining a parameter.]
         Returns:
-            dict -- [The updated attributes including any missing default values.]
+            dict -- [The updated attributes including any missing default
+                     values.]
         '''
         for attr_name, default_value in self.defaults.items():
             if attr_name not in parameter_def:
@@ -236,8 +250,10 @@ class ParameterSet(OrderedDict):
     def initialize_parameters(self, parameter_values: dict)->dict:
         '''set initial values for parameters.
         Arguments:
-            parameter_values {Sequence} -- Parameter values and other items to
-                add
+            parameter_values {dict} -- The keys are parameter names,
+                The values are dictionaries containing one or more of the
+                parameter's attribute values to set.
+                Any keys not matching a parameter name are returned.
         Returns:
             dict -- The remaining items in parameter_values that do not
                 correspond to a defined parameter
@@ -245,12 +261,26 @@ class ParameterSet(OrderedDict):
         local_values_def = parameter_values.copy()
         for parameter_name in self.keys():
             if parameter_name in local_values_def:
-                initial_value = local_values_def.pop(parameter_name)
-                self[parameter_name].value = initial_value
+                attribute_def = local_values_def.pop(parameter_name)
+                self[parameter_name].set_attributes(attribute_def)
             elif self[parameter_name].required:
                 initial_value = self[parameter_name].default
                 self[parameter_name].value = initial_value
         return local_values_def
+
+    def update_parameters(self, parameter_attr: dict):
+        '''Update parameter attributes.
+        Arguments:
+            parameter_attr {dict} -- The keys are parameter names,
+                The values are dictionaries containing one or more of the
+                parameter's attribute values to set.
+        '''
+        for parameter_name, attribute_def in parameter_attr.keys():
+            if parameter_name in self:
+                self[parameter_name].set_attributes(attribute_def)
+            else:
+                msg = '{} is not a valid Parameter name'.format(parameter_name)
+                raise NoParameterError(msg)
 
     def to_dict(self)->dict:
         '''Return a dictionary with items corresponding to all initialized
@@ -347,6 +377,7 @@ class ParameterSet(OrderedDict):
         Arguments:
             parameter_name {str} -- The name of the parameter
         '''
+        # TODO allow drop to accept a tuple of parameter names.
         if parameter_name in self:
             self[parameter_name].reset_value()
         else:
@@ -357,7 +388,8 @@ class ParameterSet(OrderedDict):
     def extract_set(self, set_type: type):
         '''extract a sub-parameter set.
         Arguments:
-            set_type {type} -- One or more ParameterSet class(es) or instance(s)
+            set_type {type} -- One or more ParameterSet class(es) or
+                                instance(s)
         Returns
             Extracted parameter set instance(s)
             Remainder ParameterSet
