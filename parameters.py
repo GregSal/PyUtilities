@@ -73,6 +73,7 @@ class Parameter(ABC):
             self._name = name
         else:
             self._name = get_class_name(type(self))
+        self.initialized = False
         self._value = None
         self.default = None
         self._messages = dict(not_valid='')
@@ -160,6 +161,7 @@ class Parameter(ABC):
         error_message = self.check_validity(value)
         if error_message is None:
             self._value = value
+            self.initialized = True
         else:
             msg = self.build_message(error_message, new_value=value)
             raise NotValidError(msg)
@@ -201,6 +203,11 @@ class Parameter(ABC):
         '''Set parameter to it's default value.'''
         self._value = self.default
 
+    def drop_value(self):
+        '''Set parameter to it's default value.'''
+        self._value = None
+        self.initialized = False
+
     def set_default(self, value=None):
         '''set the default value of Parameter to the supplied "value".
         if no value is supplied set the default to the current value of the
@@ -219,7 +226,7 @@ class Parameter(ABC):
     def is_initialized(self):
         '''Test whether a value has been explicitly assigned to the parameter
         '''
-        return self._value is not None
+        return self.initialized
 
 
 class StringP(Parameter):
