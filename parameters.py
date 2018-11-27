@@ -341,10 +341,6 @@ class IntegerP(Parameter):
         return super().disp()      
             
 
-
-
-
-            
 class ParameterSet(OrderedDict):
     '''This defines a collection of parameters.
         For each parameter the following instance attributes are added:
