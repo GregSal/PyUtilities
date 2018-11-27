@@ -226,7 +226,7 @@ class TestWithAdditionalValues(unittest.TestCase):
             for the non-parameter arguments.
     '''
 
-    def setup(self):
+    def setUp(self):
         '''Initialize parameter set with non parameter values
         '''
         self.initial_value = 'base test string;'

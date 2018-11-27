@@ -115,6 +115,9 @@ class Parameter(ABC):
         otherwise treat message as a template.
         '''
         values = self.__dict__
+        values.update({'name': self.name,
+                       'value': self.value,
+                       'value_type': self.value_type})
         values.update(value_set)
         msg = self._messages[message]
         msg_str = msg.format(**values)
@@ -270,8 +273,8 @@ class StringP(Parameter):
         '''A template formatted string
         '''
         # TODO include max length and possible values in the display
-        return super().disp()      
-            
+        return super().disp()
+
 class IntegerP(Parameter):
     '''An Integer Parameter with optional range limit (value_range)
     '''
@@ -297,18 +300,18 @@ class IntegerP(Parameter):
 
     def set_value_range(self,
                         value_set: List[int]=None,
-                        min_value: int=0, 
+                        min_value: int=0,
                         max_value: int=None,
                         value_step: int=1):
-        '''Set the range limits for the value        
+        '''Set the range limits for the value
         Defines a range based on a set of integers or max and min limits.
             value_set (List[int], optional): Defaults to None.
                 An itterable of integers defining the range of
                     acceptable values.
-            min_value (int, optional): Defaults to 0. 
+            min_value (int, optional): Defaults to 0.
                 The minimum valid value.
             max_value (int, optional): Defaults to none.
-                The maximum valid value. 
+                The maximum valid value.
             value_step (int, optional): Defaults to 1.
                 The the step size for a range of valid values.
         If neither value_set nor max_value are given the range is set to None.
@@ -345,8 +348,8 @@ class IntegerP(Parameter):
         '''A template formatted string
         '''
         # TODO include value range in the display
-        return super().disp()      
-            
+        return super().disp()
+
 
 class ParameterSet(OrderedDict):
     '''This defines a collection of parameters.
@@ -420,7 +423,7 @@ class ParameterSet(OrderedDict):
         for parameter_name in self.keys():
             if parameter_name in local_values_def:
                 attribute_def = local_values_def.pop(parameter_name)
-                self[parameter_name].set_attributes(attribute_def)
+                self[parameter_name].set_attributes(**attribute_def)
             elif self[parameter_name].required:
                 initial_value = self[parameter_name].default
                 self[parameter_name].value = initial_value
@@ -451,7 +454,7 @@ class ParameterSet(OrderedDict):
         for name, parameter in self.items():
             if not issubclass(type(parameter), Parameter):
                 values_dict[name] = parameter
-            elif parameter.is_initialized:
+            elif parameter.is_initialized():
                 values_dict[name] = parameter.value
             elif parameter.required:
                 values_dict[name] = parameter.value
@@ -546,7 +549,7 @@ class ParameterSet(OrderedDict):
         '''
         for parameter_name in parameter_names:
             if parameter_name in self:
-                self[parameter_name].reset_value()
+                self[parameter_name].drop_value()
             else:
                 msg = '{} is not contained in the Parameter Set'
                 msg_str = msg.format(parameter_name)
