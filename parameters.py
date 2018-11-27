@@ -3,14 +3,14 @@
 
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import TypeVar, List, Dict
+from typing import TypeVar, List, Dict, Tuple
 import logging
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 # pylint: disable=invalid-name
 ParameterSelection = TypeVar('ParameterSelection',
                              str, List[str], Dict[str, object]
-                             )
+                            )
 
 
 class ParameterError(Exception):
@@ -38,6 +38,12 @@ class NoParameterError(ParameterError):
     pass
 
 
+class UnMatchedValuesError(ParameterError):
+    '''The list of values does not match with the expected number of values.
+    '''
+    pass
+
+
 def get_class_name(class_type: type)->str:
     '''parse the full class type string to get the abbreviated class name.
     '''
@@ -55,7 +61,7 @@ class Parameter(ABC):
     initial_templates = dict(
         not_valid='{new_value} is an invalid value for {name}.',
         display='{name} parameter of class {cls_str}\n,'
-                '\tCurrent Value is:\t{value_str}'
+                '\tCurrent Value is:\t{value_str}\n'
                 '\tDefault value is \t{default}'
         )
 
@@ -64,14 +70,14 @@ class Parameter(ABC):
         '''Create a new instance of the Parameter object.'''
         super().__init__()
         if name:
-            self.name = name
+            self._name = name
         else:
-            self.name = get_class_name(type(self))
+            self._name = get_class_name(type(self))
         self._value = None
         self.default = None
         self._messages = dict(not_valid='')
         self.initialize_attributes(kwds)
-        self.update_messages(messages)
+        self.initialize_messages(messages)
         if value is not None:
             self.set_value(value)
 
@@ -83,6 +89,14 @@ class Parameter(ABC):
         for attr, value in settings.items():
             self.__setattr__(attr, value)
 
+    def initialize_messages(self, messages: dict):
+        '''Update message templates.
+        '''
+        message_templates = self.initial_templates.copy()
+        if messages:
+            message_templates.update(messages)
+        self._messages.update(message_templates)
+
     def set_attributes(self, **settings):
         '''Update values for the supplied attributes.
         '''
@@ -92,10 +106,7 @@ class Parameter(ABC):
     def update_messages(self, messages: dict):
         '''Update message templates.
         '''
-        message_templates = self.initial_templates.copy()
-        if messages:
-            message_templates.update(messages)
-        self._messages.update(message_templates)
+        self._messages.update(messages)
 
     def build_message(self, message: str, **value_set)->str:
         '''Return a message string using format and a message template.
@@ -108,15 +119,33 @@ class Parameter(ABC):
         msg_str = msg.format(**values)
         return msg_str
 
-    @abstractmethod
-    def isvalid(self, value):
-        '''Test to see if value is a valid parameter value.
-        In this template class all values are valid.
+    def get_name(self):
+        '''Return the name of the parameter.
         '''
-        return isinstance(value, self._type)
+        return self._name
+
+    name = property(get_name)
+
+    def get_type(self):
+        '''Return the name of the parameter.
+        '''
+        return self._type
+
+    value_type = property(get_type)
+
+    @abstractmethod
+    def check_validity(self, value):
+        '''Test to see if value is a valid parameter value.
+        If valid return None.
+        If not valid, retrun the name if the error message template to use.
+        '''
+        if isinstance(value, self._type):
+            return None
+        else:
+            return 'not_valid'
 
     def get_value(self):
-        '''Return the sat value of the parameter.
+        '''Return the set value of the parameter.
         If no value is defined return the default value.
         '''
         if self._value is None:
@@ -128,10 +157,11 @@ class Parameter(ABC):
     def set_value(self, value):
         '''Set a new value for parameter.
         '''
-        if self.isvalid(value):
+        error_message = self.check_validity(value)
+        if error_message is None:
             self._value = value
         else:
-            msg = self.build_message('not_valid', new_value=value)
+            msg = self.build_message(error_message, new_value=value)
             raise NotValidError(msg)
 
     value = property(get_value, set_value)
@@ -163,7 +193,7 @@ class Parameter(ABC):
         '''Test to see if self is set to "value".
         Equality is only based on value not on other attributes.
         '''
-        if self.isvalid(value):
+        if self.check_validity(value) is None:
             return self.get_value() == value
         return False
 
@@ -178,11 +208,13 @@ class Parameter(ABC):
         '''
         if value is None:
             self.default = self._value
-        elif self.isvalid(value):
-            self.default = value
         else:
-            msg = self.build_message('not_valid', new_value=value)
-            raise NotValidError(msg)
+            error_message = self.check_validity(value)
+            if error_message is None:
+                self.default = value
+            else:
+                msg = self.build_message(error_message, new_value=value)
+                raise NotValidError(msg)
 
     def is_initialized(self):
         '''Test whether a value has been explicitly assigned to the parameter
@@ -190,6 +222,129 @@ class Parameter(ABC):
         return self._value is not None
 
 
+class StringP(Parameter):
+    '''A String Parameter with:
+        Optional limited values (value_set), or
+        Optional size limit (max_length)
+        If value_set is defined, the size limit will not be checked.
+    '''
+    _name = 'string_parameter'
+    _type = str
+    max_length = None
+    value_set = set()
+
+    def __init__(self, **kwds):
+        '''Create a new instance of the string parameter.
+        '''
+        string_messages = dict(
+            too_long='{new_value} is longer than the maximum allowable '
+                     'length of {max_length}.',
+            disp_max_len='\tWith maximum length of: {max_length}.',
+            disp_value_set='\tPossible values are:\n\t{value_set_str}'
+            )
+        if 'messages' in kwds:
+            kwds['messages'].update(string_messages)
+        else:
+            kwds['messages'] = string_messages
+        super().__init__(**kwds)
+
+    def check_validity(self, value)->bool:
+        '''Check that value is a string.
+        '''
+        error_message = super().check_validity(value)
+        if error_message is not None:
+            return error_message
+        elif self.value_set and value not in self.value_set:
+            return 'not_valid'
+        elif (self.max_length is not None) and (len(value) <= self.max_length):
+            return 'too_long'
+
+    def disp(self)->str:
+        '''A template formatted string
+        '''
+        # TODO include max length and possible values in the display
+        return super().disp()      
+            
+class IntegerP(Parameter):
+    '''An Integer Parameter with optional range limit (value_range)
+    '''
+    _name = 'integer_parameter'
+    _type = int
+    _range = None
+
+    def __init__(self, **kwds):
+        '''Create a new instance of the integer parameter.
+        '''
+        msg = '{new_value} is longer than the maximum allowable length '
+        msg += 'of {max_length}.'
+        if 'messages' in kwds:
+            kwds['messages'].update({'too_long': msg})
+        else:
+            kwds['messages'] = dict(too_long=msg)
+        super().__init__(**kwds)
+
+    def get_value_range(self):
+        '''Determine the range limit for the value.
+        '''
+        return self._range
+
+    def set_value_range(self,
+                        value_set: List[int]=None,
+                        min_value: int=0, 
+                        max_value: int=None,
+                        value_step: int=1):
+        '''Set the range limits for the value        
+        Defines a range based on a set of integers or max and min limits.
+            value_set (List[int], optional): Defaults to None.
+                An itterable of integers defining the range of
+                    acceptable values.
+            min_value (int, optional): Defaults to 0. 
+                The minimum valid value.
+            max_value (int, optional): Defaults to none.
+                The maximum valid value. 
+            value_step (int, optional): Defaults to 1.
+                The the step size for a range of valid values.
+        If neither value_set nor max_value are given the range is set to None.
+        '''
+        if value_set is not None:
+            if all(float(n).is_integer() for n in value_set):
+                self._range = value_set
+            else:
+                msg_template = '{new_value} contains a non integer value.'
+                msg = self.build_message(msg_template, new_value=value_set)
+                raise NotValidError(msg)
+        elif max_value is None:
+            self._range =  None
+        else:
+            self._range = range(self.min_value,
+                                self.max_value+1,
+                                self.value_step)
+
+    range = property(get_value_range, set_value_range)
+
+    def check_validity(self, value)->bool:
+        '''Check that value is a an integer in the defined range.
+        '''
+        error_message = super().check_validity(value)
+        if error_message is not None:
+            return error_message
+        elif self.range is not None:
+            if value not in self.range:
+                return 'not_valid'
+        elif (self.max_length is not None) and (len(value) <= self.max_length):
+            return 'too_long'
+
+    def disp(self)->str:
+        '''A template formatted string
+        '''
+        # TODO include value range in the display
+        return super().disp()      
+            
+
+
+
+
+            
 class ParameterSet(OrderedDict):
     '''This defines a collection of parameters.
         For each parameter the following instance attributes are added:
@@ -353,7 +508,7 @@ class ParameterSet(OrderedDict):
                         '{} is not a valid Parameter name'.format(selection))
             return values_list
 
-    def set_values(self, parameter_values: dict):
+    def set_values(self, *value_set, **parameter_values):
         '''Set the values of parameters.
         Args:
             parameter_values (dict): Defines the parameters and the values
@@ -364,26 +519,35 @@ class ParameterSet(OrderedDict):
             NotParameterError: If any key in parameter_values does not
                 correspond to a paremeter in the set.
         '''
-        for name, value in parameter_values.items():
-            if name in self:
-                self[name].value = value
+        if value_set:
+            if len(value_set) == len(self):
+                for parameter_name, new_value in zip(self.keys(), value_set):
+                    self[parameter_name].value = new_value
             else:
-                msg = '{} is not contained in the Parameter Set'
-                msg_str = msg.format(name)
-                raise NotParameterError(msg_str)
+                msg_template = 'Expected {} values, got {} values.'
+                msg = msg_template.format(len(self), len(value_set))
+                raise UnMatchedValuesError(msg)
+        elif parameter_values:
+            for name, value in parameter_values.items():
+                if name in self:
+                    self[name].value = value
+                else:
+                    msg = '{} is not contained in the Parameter Set'
+                    msg_str = msg.format(name)
+                    raise NotParameterError(msg_str)
 
-    def drop(self, parameter_name: str):
+    def drop(self, *parameter_names: Tuple[str]):
         '''Set a parameter to its uninitialized state.
         Arguments:
             parameter_name {str} -- The name of the parameter
         '''
-        # TODO allow drop to accept a tuple of parameter names.
-        if parameter_name in self:
-            self[parameter_name].reset_value()
-        else:
-            msg = '{} is not contained in the Parameter Set'
-            msg_str = msg.format(parameter_name)
-            raise NotParameterError(msg_str)
+        for parameter_name in parameter_names:
+            if parameter_name in self:
+                self[parameter_name].reset_value()
+            else:
+                msg = '{} is not contained in the Parameter Set'
+                msg_str = msg.format(parameter_name)
+                raise NotParameterError(msg_str)
 
     def extract_set(self, set_type: type):
         '''extract a sub-parameter set.

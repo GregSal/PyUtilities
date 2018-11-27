@@ -39,10 +39,14 @@ class StringP(Parameter):
         '''Create a new instance of the string parameter.'''
         super().__init__(**kwds)
 
-    def isvalid(self, value):
+    def check_validity(self, value):
         '''Check that value is a string.
         '''
-        return super().isvalid(value)
+        error_message = super().check_validity(value)
+        if error_message is None:
+            if len(value) <= 0:
+                error_message = 'not_valid'
+        return error_message
 
 
 class OneStringP(ParameterSet):
@@ -56,10 +60,6 @@ class OneStringP(ParameterSet):
          'required': False,
          'on_update': None}
         ]
-
-    def __init__(self, **kwds):
-        '''Create a new instance of the Parameter Set.'''
-        super().__init__(**kwds)
 
 
 class TestNoInitialValues(unittest.TestCase):
@@ -123,18 +123,17 @@ class TestNoInitialValues(unittest.TestCase):
         '''Verify that trying to set an invalid value raises a
         NotValidError error.
         '''
-        self.fail('Not yet functional')
         with self.assertRaises(NotValidError):
             self.test_param_set.set_values(list())
 
-    def test_default_NotValid_message(self):
+    def test_invalid_default_message(self):
         '''Verify that trying to set an invalid default value returns an
         error message that includes Parameter name and parameter set name.
         '''
         self.fail('Not yet functional')
         error_message = '1 is an invalid value for StringP.'
         try:
-            self.test_param.set_default(1)
+            self.test_param_set['test_string1'].set_default(1)
         except NotValidError as err:
             self.assertEqual(err.args[0], error_message)
         else:
@@ -169,10 +168,9 @@ class TestWithInitialValues(unittest.TestCase):
     def setUp(self):
         '''Initialize parameter set with no passed values
         '''
-        self.test_param_set = OneStringP(
-                {'test_string1': dict(value='initial_test_string',
-                                      default='initial default')
-                })
+        self.test_param_set = OneStringP(**{
+            'test_string1': dict(value='initial_test_string',
+                                 default='initial default')})
 
     def test_for_value(self):
         '''verify that value is returned
@@ -206,19 +204,11 @@ class TestWithInitialValues(unittest.TestCase):
             self.test_param_set.get_values('test_string1'),
             test_value)
 
-    def test_initialized(self):
-        '''Verify that set_values can be used to change the parameter value.
-        '''
-        test_value = {'test_string1': 'new_value'}
-        self.assertFalse(self.test_param_set['test_string1'].is_initialized())
-        self.test_param_set.set_values(test_value)
-        self.assertTrue(self.test_param_set['test_string1'].is_initialized())
-
     def test_drop_initialized(self):
         '''verify that initialized is False after drop()
         '''
         self.test_param_set.drop('test_string1')
-        self.assertTrue(self.test_param_set['test_string1'].is_initialized())
+        self.assertFalse(self.test_param_set['test_string1'].is_initialized())
 
     def test_drop_give_default(self):
         '''verify that after drop() value returns default
@@ -230,35 +220,37 @@ class TestWithInitialValues(unittest.TestCase):
 
 class TestWithAdditionalValues(unittest.TestCase):
     '''Initialize parameter set with value for parameter and non-parameter
-    arguments
+        arguments
         - verify that value is returned
         - verify that the ParameterSet instance includes dictionary entries
             for the non-parameter arguments.
     '''
 
-    def setUp(self):
-        '''Initialize parameter set with no passed values
+    def setup(self):
+        '''Initialize parameter set with non parameter values
         '''
-        self.test_param_set = OneStringP(value='base test string;',
-                                         default='string2 default',
-                                         extra_item1='item1',
-                                         extra_item2=2)
+        self.initial_value = 'base test string;'
+        test_string1_initial = dict(value=self.initial_value,
+                                    default='string2 default')
+        extra_items = dict(extra_item1='item1',
+                           extra_item2=2)
+        self.param_set_initial = {'test_string1': test_string1_initial}
+        self.param_set_initial.update(extra_items)
+        self.test_param_set = OneStringP(**self.param_set_initial)
 
     def test_for_value(self):
         '''verify that value is returned
         '''
         self.assertEqual(self.test_param_set['test_string1'].value,
-                         'base test string;')
+                         self.initial_value)
 
     def test_dict_value(self):
         '''Verify that to_dict returns an the parameter value and extra items
         in a dictionary.
         '''
+        self.param_set_initial['test_string1'] = self.initial_value
         dict_set = self.test_param_set.to_dict()
-        self.assertDictEqual(dict_set, {
-                'test_string1': 'initial_test_string',
-                'extra_item1': 'item1',
-                'extra_item2': 2})
+        self.assertDictEqual(dict_set, self.param_set_initial)
 
 
 class TestWithinvalidValues(unittest.TestCase):
@@ -268,17 +260,12 @@ class TestWithinvalidValues(unittest.TestCase):
         - verify that the ParameterSet instance includes dictionary entries
             for the non-parameter arguments.
     '''
-
-    def setUp(self):
-        '''Initialize parameter set with no passed values
+    def test_for_value_error(self):
+        '''verify that an error is returned
         '''
-        self.test_param_set = OneStringP(value=1)
-
-    def test_for_value(self):
-        '''verify that value is returned
-        '''
-        self.assertEqual(self.test_param_set['test_string1'].value,
-                         'base test string;')
+        test_string1_initial = {'test_string1': dict(value=1)}
+        with self.assertRaises(NotValidError):
+            self.test_param_set = OneStringP(**test_string1_initial)
 
 
 if __name__ == '__main__':

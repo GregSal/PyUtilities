@@ -5,18 +5,23 @@ from parameters import Parameter
 from parameters import NotValidError
 
 class StringP(Parameter):
-    '''A subclass of parameters that accepts a string
+    '''A subclass of parameters that accepts a string opf less than 64
+    characters
     '''
+    # FIXME Use parameters.StringP instead
     _type = str
 
     def __init__(self, **kwds):
-        '''Create a new instance of the string parameter.'''
+        '''Create a new instance of the string parameter.
+        '''
+        self.cls = None
         super().__init__(**kwds)
 
-    def isvalid(self, value):
+    def check_validity(self, value):
         '''Check that value is a string.
         '''
-        return super().isvalid(value)
+        error_message = super().check_validity(value)
+        return error_message
 
 
 class TestBaseParameterNoValue(unittest.TestCase):
@@ -61,7 +66,7 @@ class TestBaseParameterNoValue(unittest.TestCase):
         with self.assertRaises(NotValidError):
             self.test_param.set_default(1)
 
-    def test_default_NotValid_message(self):
+    def test_invalid_default_message(self):
         '''Verify that trying to set an invalid default value returns the
         appriopriate error message.
         '''
@@ -109,20 +114,20 @@ class TestBaseParameterNoValue(unittest.TestCase):
         '''Verify that attributes can be set.
         '''
         test_type = str(type(self))
-        setting = dict(type=test_type)
-        self.test_param.set_attributes(setting)
-        self.assertEqual(self.test_param.type, test_type)
+        setting = dict(cls=test_type)
+        self.test_param.set_attributes(**setting)
+        self.assertEqual(self.test_param.cls, test_type)
 
-    def test_NotValid_message(self):
+    def test_message_mod(self):
         '''Verify that messages can be modified.
         '''
         default_value = 'default'
         test_value = 'value'
         test_type = str(type(self))
-        self.test_param.type = test_type
-        self.test_param.set_default(default_value)
+        setting = dict(cls=test_type, default=default_value)
+        self.test_param.set_attributes(**setting)
         self.test_param.value = test_value
-        test_msg = dict(not_valid='{new_value} is invalid for {type}')
+        test_msg = dict(not_valid='{new_value} is invalid for {cls}')
         self.test_param.update_messages(test_msg)
         error_message = '1 is invalid for ' + test_type
         try:
@@ -182,7 +187,7 @@ class TestBaseParameterValue(unittest.TestCase):
         '''Verify that the default can be changes a an attribute.
         '''
         setting = dict(default='new default value')
-        self.test_param.set_attributes(setting)
+        self.test_param.set_attributes(**setting)
         self.assertEqual(self.test_param.default, 'new default value')
 
     def test_copy(self):
@@ -192,7 +197,7 @@ class TestBaseParameterValue(unittest.TestCase):
             name='Test_String_Value',
             _value=self.str_value,
             default='default_value',
-            _messages=self.test_param._messages)
+            _messages=StringP.initial_templates)
         copied_param = self.test_param.copy()
         self.assertDictEqual(copied_param.__dict__, attr_dict)
 
