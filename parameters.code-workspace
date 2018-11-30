@@ -4,5 +4,7 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"python.pythonPath": "C:\\Users\\gsalomon\\AppData\\Local\\Continuum\\Anaconda3\\python.exe"
+	}
 }
