@@ -1,5 +1,15 @@
 {
     "python.pythonPath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\Anaconda3_64\\python.exe",
     "python.linting.pylintEnabled": true,
-    "editor.foldingStrategy": "indentation"
+    "editor.foldingStrategy": "indentation",
+    "python.unitTest.unittestArgs": [
+        "-v",
+        "-s",
+        "./Testing",
+        "-p",
+        "*test*.py"
+    ],
+    "python.unitTest.pyTestEnabled": false,
+    "python.unitTest.nosetestsEnabled": false,
+    "python.unitTest.unittestEnabled": true
 }

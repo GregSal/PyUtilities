@@ -46,10 +46,12 @@ class UnMatchedValuesError(ParameterError):
 
 def get_class_name(class_type: type)->str:
     '''parse the full class type string to get the abbreviated class name.
+    It expects the class string to be in the form:
+    "<class '__module__.ClassName'>"
     '''
     full_class_name = str(class_type)
-    name_portion = full_class_name.rsplit('.', 1)[1]
-    class_name = name_portion.rstrip('\'">')
+    name_portion = full_class_name.replace("<class '","").replace("'>","")
+    class_name = name_portion.rsplit('.',1)[-1]
     return class_name
 
 
@@ -60,13 +62,13 @@ class Parameter(ABC):
     initial_settings = dict(default=None)
     initial_templates = dict(
         not_valid='{new_value} is an invalid value for {name}.',
-        display='{name} parameter of class {cls_str}\n,'
-                '\tCurrent Value is:\t{value_str}\n'
+        display='{name} parameter of class {cls}\n,'
+                '\tCurrent Value is:\t{value}\n'
                 '\tDefault value is \t{default}'
         )
 
     @abstractmethod
-    def __init__(self, value=None, name='', messages=None, **kwds):
+    def __init__(self, value=None, name=None, messages=None, **kwds):
         '''Create a new instance of the Parameter object.'''
         super().__init__()
         if name:
@@ -81,6 +83,20 @@ class Parameter(ABC):
         self.initialize_messages(messages)
         if value is not None:
             self.set_value(value)
+
+    def get_name(self):
+        '''Return the name of the parameter.
+        '''
+        return self._name
+
+    name = property(get_name)
+
+    def get_type(self):
+        '''Return the name of the parameter.
+        '''
+        return self._type
+
+    value_type = property(get_type)
 
     def initialize_attributes(self, kwds):
         '''Add values for all attributes.
@@ -116,26 +132,13 @@ class Parameter(ABC):
         '''
         values = self.__dict__
         values.update({'name': self.name,
-                       'value': self.value,
-                       'value_type': self.value_type})
+                       'value': str(self),
+                       'value_type': get_class_name(self.value_type),
+                       'cls': get_class_name(type(self))})
         values.update(value_set)
         msg = self._messages[message]
         msg_str = msg.format(**values)
         return msg_str
-
-    def get_name(self):
-        '''Return the name of the parameter.
-        '''
-        return self._name
-
-    name = property(get_name)
-
-    def get_type(self):
-        '''Return the name of the parameter.
-        '''
-        return self._type
-
-    value_type = property(get_type)
 
     @abstractmethod
     def check_validity(self, value):
@@ -143,7 +146,7 @@ class Parameter(ABC):
         If valid return None.
         If not valid, retrun the name if the error message template to use.
         '''
-        if isinstance(value, self._type):
+        if isinstance(value, self.value_type):
             return None
         else:
             return 'not_valid'
@@ -155,8 +158,8 @@ class Parameter(ABC):
         if self._value is None:
             if self.default is None:
                 return None
-            return self._type(self.default)
-        return self._type(self._value)
+            return self.value_type(self.default)
+        return self.value_type(self._value)
 
     def set_value(self, value):
         '''Set a new value for parameter.
@@ -187,12 +190,7 @@ class Parameter(ABC):
     def disp(self)->str:
         '''A template formatted string
         '''
-        disp_tmpl = self._messages['display']
-        attrs = self.__dict__.copy()
-        attrs['value_str'] = self.__str__()
-        attrs['cls_str'] = get_class_name(type(self))
-        disp_str = disp_tmpl.format(**attrs)
-        return disp_str
+        return self.build_message('display')
 
     def __eq__(self, value):
         '''Test to see if self is set to "value".
@@ -243,20 +241,21 @@ class StringP(Parameter):
     max_length = None
     value_set = set()
 
-    def __init__(self, **kwds):
+    def __init__(self, value=None, name=None, messages=None, **kwds):
         '''Create a new instance of the string parameter.
         '''
         string_messages = dict(
             too_long='{new_value} is longer than the maximum allowable '
                      'length of {max_length}.',
-            disp_max_len='\tWith maximum length of: {max_length}.',
-            disp_value_set='\tPossible values are:\n\t{value_set_str}'
+            disp_value_set=(
+                '{value} is an invalid value for {name}.' +
+                '\tPossible values are:\n\t{value_set_str}')
             )
-        if 'messages' in kwds:
-            kwds['messages'].update(string_messages)
+        if messages:
+            messages.update(string_messages)
         else:
-            kwds['messages'] = string_messages
-        super().__init__(**kwds)
+            messages = string_messages
+        super().__init__(value=value, name=name, messages=messages, **kwds)
 
     def check_validity(self, value)->bool:
         '''Check that value is a string.
@@ -266,8 +265,22 @@ class StringP(Parameter):
             return error_message
         elif self.value_set and value not in self.value_set:
             return 'not_valid'
-        elif (self.max_length is not None) and (len(value) <= self.max_length):
+        elif (self.max_length is not None) and (len(value) > self.max_length):
             return 'too_long'
+
+    def add_item(self, item: str):
+        '''Add additional items to the set of possible values.
+        Arguments:
+            item {str} -- The item to add to the list of valid string values
+        '''
+        pass
+
+    def drop_item(self, item: str):
+        '''Drop an item from the set of possible values.
+        Arguments:
+            item {str} -- The item to drop from the list of valid string values.
+        '''
+        pass
 
     def disp(self)->str:
         '''A template formatted string

@@ -29,7 +29,7 @@ import unittest
 from parameters import Parameter, ParameterSet, NotValidError
 
 
-class StringP(Parameter):
+class TestParameter(Parameter):
     '''A Test String Parameter
     '''
     _name = 'test_string'
@@ -55,7 +55,7 @@ class OneStringP(ParameterSet):
     '''
     parameter_definitions = [
         {'name': 'test_string1',
-         'parameter_type': StringP,
+         'parameter_type': TestParameter,
          'default': 'string1 default',
          'required': False,
          'on_update': None}
@@ -115,9 +115,9 @@ class TestNoInitialValues(unittest.TestCase):
         '''Verify that after using set_values initialized is True.
         '''
         test_value = {'test_string1': 'new_value'}
-        self.assertFalse(self.test_param_set['test_string1'].is_initialized())
-        self.test_param_set.set_values(test_value)
-        self.assertTrue(self.test_param_set['test_string1'].is_initialized())
+        self.assertFalse(self.test_param_set['test_string1'].initialized)
+        self.test_param_set.set_values(**test_value)
+        self.assertTrue(self.test_param_set['test_string1'].initialized)
 
     def test_invalid_value(self):
         '''Verify that trying to set an invalid value raises a
@@ -126,6 +126,7 @@ class TestNoInitialValues(unittest.TestCase):
         with self.assertRaises(NotValidError):
             self.test_param_set.set_values(list())
 
+    @unittest.skip('Not Implemented')
     def test_invalid_default_message(self):
         '''Verify that trying to set an invalid default value returns an
         error message that includes Parameter name and parameter set name.
@@ -146,6 +147,7 @@ class TestNoInitialValues(unittest.TestCase):
         attribute_def = {'test_string1': dict(default=new_default)}
         self.test_param_set.initialize_parameters(attribute_def)
 
+    @unittest.skip('Not Implemented')
     def test_invalid_default(self):
         '''Verify that trying to set an invalid value raises a
         NotValidError error.

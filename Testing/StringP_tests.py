@@ -1,217 +1,214 @@
 '''Basic Parameter class object tests.
 '''
 import unittest
-from parameters import Parameter
+from parameters import StringP
 from parameters import NotValidError
 
-class StringP(Parameter):
-    '''A subclass of parameters that accepts a string opf less than 64
-    characters
-    '''
-    # FIXME Use parameters.StringP instead
-    _type = str
 
-    def __init__(self, **kwds):
-        '''Create a new instance of the string parameter.
-        '''
-        self.cls = None
-        super().__init__(**kwds)
-
-    def check_validity(self, value):
-        '''Check that value is a string.
-        '''
-        error_message = super().check_validity(value)
-        return error_message
-
-
-class TestBaseParameterNoValue(unittest.TestCase):
+class TestStringP(unittest.TestCase):
     '''Test instance creation passing nothing.
     '''
-    def setUp(self):
-        '''Create an instance of StringP with no initialization.
-        name='Test String'
+    def test_init(self):
+        '''Verify that StringP initializes with string value.
         '''
-        self.test_param = StringP()
+        string_param = StringP('Test String')
+        self.assertEqual(string_param, 'Test String')
+
+    def test_blank(self):
+        '''Verify that StringP initializes with string value.
+        '''
+        string_param = StringP('')
+        self.assertEqual(string_param, '')
 
     def test_name(self):
         '''Verify the name is the Parameter class name.
         '''
-        self.assertEqual(self.test_param.name, 'StringP')
+        string_param = StringP('Test String')
+        self.assertEqual(string_param.name, 'StringP')
 
-    def test_initialization(self):
-        '''Verify that the parameter is not initialized'''
-        self.assertFalse(self.test_param.is_initialized())
-
-    def test_none_default(self):
-        '''Verify that value returns the default of None
+    def test_length_check(self):
+        '''Verify that the string length check is functional
         '''
-        self.assertIsNone(self.test_param.value)
-
-    def test_default(self):
-        '''Verify that the default value can be changed.
-        '''
-        self.test_param.set_default('default')
-        self.assertEqual(self.test_param.value, 'default')
-
-    def test_blank_default(self):
-        '''Verify that the default value can be an empty string.
-        '''
-        self.test_param.set_default('')
-        self.assertEqual(self.test_param.value, '')
-
-    def test_invalid_default(self):
-        '''Verify that trying to set an invalid default value raises a
-        NotValidError error.
-        '''
+        length8string = '12345678'
+        length9string = '123456789'
+        string_param = StringP(**{'max_length': 8})
+        string_param.value = length8string
         with self.assertRaises(NotValidError):
-            self.test_param.set_default(1)
+            string_param.value = length9string
 
-    def test_invalid_default_message(self):
-        '''Verify that trying to set an invalid default value returns the
-        appriopriate error message.
+    def test_too_long_message(self):
+        '''Verify that trying to set a value that exceeds the maximum length
+        returns the appriopriate error message.
         '''
-        error_message = '1 is an invalid value for StringP.'
+        length9string = '123456789'
+        string_param = StringP(**{'max_length': 8})
+        error_message = (length9string + ' is longer than the maximum ' +
+                        'allowable length of 8.')
         try:
-            self.test_param.set_default(1)
+            string_param.value = 'three'
         except NotValidError as err:
             self.assertEqual(err.args[0], error_message)
         else:
             self.fail('NotValidError not raised')
 
-    def test_initialize_value(self):
-        '''Verify that when the value is set, is_initialized becomes True.
+    def test_group_member(self):
+        '''Verify that a member of the value set is a valid value.
         '''
-        self.test_param.value = 'value'
-        self.assertTrue(self.test_param.is_initialized())
+        string_param = StringP(**{'value_set': ['one', 'two']})
+        string_param.value = 'one'
+        self.assertEqual(string_param, 'one')
 
-    def test_set_value(self):
-        '''Verify that the value can be set and returned.
+    def test_not_group_member(self):
+        '''Verify that trying to set a value that is not a member of the
+        value set raises NotValidError.
         '''
-        self.test_param.value = 'value'
-        self.assertEqual(self.test_param.value, 'value')
-
-    def test_reset_value(self):
-        '''Verify that after applying the reset method, value returns default
-        value.'''
-        self.test_param.value = 'value'
-        self.test_param.set_default('default')
-        self.test_param.reset_value()
-        self.assertEqual(self.test_param.value, 'default')
-
-    def test_equality(self):
-        '''Verify that equality compares the parameter value.
-        '''
-        test_value = 'value'
-        self.test_param.value = test_value
-        self.assertTrue(self.test_param == test_value)
-
-    def test_invalid_value(self):
-        '''Verify that seeting an invalid value raises an error.'''
+        string_param = StringP(**{'value_set': ['one', 'two']})
         with self.assertRaises(NotValidError):
-            self.test_param.value = 1
+            string_param.value = 'three'
 
-    def test_update_settings(self):
-        '''Verify that attributes can be set.
+    def test_not_member_message(self):
+        '''Verify that trying to set a value that is not a member of the
+        value set returns the appriopriate error message.
         '''
-        test_type = str(type(self))
-        setting = dict(cls=test_type)
-        self.test_param.set_attributes(**setting)
-        self.assertEqual(self.test_param.cls, test_type)
-
-    def test_message_mod(self):
-        '''Verify that messages can be modified.
-        '''
-        default_value = 'default'
-        test_value = 'value'
-        test_type = str(type(self))
-        setting = dict(cls=test_type, default=default_value)
-        self.test_param.set_attributes(**setting)
-        self.test_param.value = test_value
-        test_msg = dict(not_valid='{new_value} is invalid for {cls}')
-        self.test_param.update_messages(test_msg)
-        error_message = '1 is invalid for ' + test_type
+        string_param = StringP(**{'value_set': ['one', 'two']})
+        error_message = 'StringP must be one of;\n'
+        error_message += '["one", "two"]\n\tGot:\tthree'
         try:
-            self.test_param.set_default(1)
+            string_param.value = 'three'
         except NotValidError as err:
             self.assertEqual(err.args[0], error_message)
         else:
             self.fail('NotValidError not raised')
 
-    def test_str(self):
-        '''Verify that str returns a string version of the value.'''
-        test_value = 'value'
-        self.test_param.value = test_value
-        self.assertEqual(str(self.test_param), test_value)
-
-    @unittest.skip('Not Implemented')
-    def test_repr(self):
-        '''Verify that __repr__ returns a string representative of the current
-        state.
+    def test_add_group_member(self):
+        '''Verify that it is possible to add an item to the set of possible
+        values.
         '''
-        self.fail('Not implemented')
+        string_param = StringP(**{'value': 'one',
+                                'value_set': ['one', 'two']})
+        string_param.add_item('three')
+        self.assertEqual(string_param.value, 'three')
 
-
-class TestBaseParameterValue(unittest.TestCase):
-    '''Test instance creation passing name, default and value.
-    '''
-    def setUp(self):
-        '''Create an instance of StringP with initialized values.
+    def test_drop_group_member(self):
+        '''Verify that it is possible to remove an item from the set of
+        possible values.
         '''
-        self.str_value = 'test_param_value'
-        self.test_param = StringP(
-            name='Test_String_Value',
-            value=self.str_value,
-            default='default_value')
+        string_param = StringP(**{'value': 'one',
+                                'value_set': ['one', 'two', 'three']})
+        string_param.drop_item('three')
 
-    def test_name(self):
-        '''Verify the name.
+    def test_cant_drop_existing_group_member(self):
+        '''Verify that trying to remove the current value from the set of
+        possible values raises NotValidError.
         '''
-        self.assertEqual(self.test_param.name, 'Test_String_Value')
+        string_param = StringP(**{'value': 'three',
+                                'value_set': ['one', 'two', 'three']})
+        with self.assertRaises(NotValidError):
+            string_param.drop_item('three')
 
-    def test_initialization(self):
-        '''Verify that the parameter is initialized'''
-        self.assertTrue(self.test_param.is_initialized())
-
-    def test_set_value(self):
-        '''Verify that the initialized value is returned.
+    def test_add_invalid_group_member(self):
+        '''Verify that trying to add an invalid item to the set of possible
+        values raises NotValidError.
         '''
-        self.assertEqual(self.test_param.value, self.str_value)
+        string_param = StringP(**{'value_set': ['one', 'two']})
+        with self.assertRaises(NotValidError):
+            string_param.add_item(1)
 
-    def test_reset_value(self):
-        '''Verify that after applying the reset method, value returns default
-        value.'''
-        self.test_param.reset_value()
-        self.assertEqual(self.test_param.value, 'default_value')
-
-    def test_update_settings(self):
-        '''Verify that the default can be changes a an attribute.
+    def test_invalid_group_member(self):
+        '''Verify that trying to initialize with an invalid item int the set
+        of possible values raises NotValidError.
         '''
-        setting = dict(default='new default value')
-        self.test_param.set_attributes(**setting)
-        self.assertEqual(self.test_param.default, 'new default value')
+        with self.assertRaises(NotValidError):
+            string_param = StringP(**{'value_set': ['one', 2]})
+
+    def test_invalid_value_at_init(self):
+        '''Verify that trying to initialize with a value that is not in the
+        set of possible values raises NotValidError.
+        '''
+        with self.assertRaises(NotValidError):
+            string_param = StringP(**{'value': 'three',
+                                    'value_set': ['one', 'two']})
+
+    def test_invalid_length_at_init(self):
+        '''Verify that trying to initialize with a value that is longer that the
+        max string length raises NotValidError.
+        '''
+        length9string = '123456789'
+        with self.assertRaises(NotValidError):
+            string_param = StringP(**{'value': length9string,
+                                    'max_length': 8})
+
+    def test_change_max_length(self):
+        '''Verify that the max string length can be changed.
+        '''
+        length8string = '12345678'
+        length9string = '123456789'
+        string_param = StringP(**{'max_length': 8})
+        string_param.value = length8string
+        self.assertEqual(string_param, length8string)
+        string_param.max_length = 9
+        string_param = StringP(**{'max_length': 8})
+        string_param.value = length9string
+        self.assertEqual(string_param, length9string)
+
+    def test_cant_change_max_length(self):
+        '''Verify that trying to change the max string length to be less than
+        The length of the current value raises NotValidError.
+        '''
+        length9string = '123456789'
+        string_param = StringP(**{'value': length9string,
+                                    'max_length': 9})
+        self.assertEqual(string_param, length9string)
+        with self.assertRaises(NotValidError):
+            string_param = StringP(**{'max_length': 8})
+
+    def test_group_overides_length(self):
+        '''Verify that trying to change the max string length to be less than
+        The length of the current value raises NotValidError.
+        '''
+        length8string = '12345678'
+        length9string = '123456789'
+        string_param = StringP(**{'value': length9string,
+                                'value_set': [length8string, length9string],
+                                'max_length': 8})
+        self.assertEqual(string_param, length9string)
 
     def test_copy(self):
         '''Verify that copy() returns an exact copy of the instance.
         '''
-        attr_dict = dict(
-            name='Test_String_Value',
-            _value=self.str_value,
-            default='default_value',
-            _messages=StringP.initial_templates)
-        copied_param = self.test_param.copy()
+        length8string = '12345678'
+        length9string = '123456789'
+        attr_dict = {'name': 'Test_String_Value',
+                     'value': length9string,
+                     'value_set': [length8string, length9string],
+                     'max_length': 8,
+                     '_messages': StringP.initial_templates,
+                     'default': 'default_value'}
+        string_param = StringP(**attr_dict)
+        copied_param = string_param.copy()
         self.assertDictEqual(copied_param.__dict__, attr_dict)
 
     def test_display(self):
         '''Verify that disp() returns a formatted string summary of the
         current state.
-        name='Test_String_Value',
-            value=self.str_value,
-            default='default_value'
-            '''
-        display = 'Test_String_Value parameter of class StringP\n,'
-        display += '\tCurrent Value is:\ttest_param_value\n'
-        display += '\tDefault value is \tdefault_value'
-        self.assertEqual(self.test_param.disp(), display)
+        '''
+        length8string = '12345678'
+        length9string = '123456789'
+        attr_dict = {'name': 'Test_String_Value',
+                     'value': length9string,
+                     'value_set': [length8string, length9string],
+                     'max_length': 8,
+                     '_messages': StringP.initial_templates,
+                     'default': 'default_value'}
+        string_param = StringP(**attr_dict)
+
+        display = '{name} parameter of class {cls}P\n,'
+        display += '\tCurrent Value is:\t{value}\n'
+        display += '\tDefault value is:\t{default}\n'
+        display += '\tPossible Values are:\t{value_set}\n'
+        display += '\tMaximum length is:\t{max_length}'
+        display_str = display.format(attr_dict)
+        self.assertEqual(self.test_param.disp(), display_str)
 
 
 if __name__ == '__main__':
