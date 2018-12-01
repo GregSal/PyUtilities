@@ -28,38 +28,18 @@
 import unittest
 from parameters import Parameter, ParameterSet
 
-@unittest.skip('Not Implemented')
-class TestParameter(Parameter):
-    '''A Test String Parameter
-    '''
-    _name = 'test_string'
-    _type = str
-
-    def __init__(self, **kwds):
-        '''Create a new instance of the string parameter.'''
-        super().__init__(**kwds)
-
-    def check_validity(self, value):
-        '''Check that value is a string.
-        '''
-        error_message = super().check_validity(value)
-        if error_message is None:
-            if len(value) <= 0:
-                error_message = 'not_valid'
-        return error_message
-
 
 class TwoStringP(ParameterSet):
     '''A Parameter set with two string Parameters:
             "test_string1"
             "test_string2"
     '''
-    test_string2 = TestParameter(name='test_string2',
-                                 value='test_string2',
-                                 default='string2 default')
+    test_string2 = StringP(name='test_string2',
+                           value='test_string2',
+                           default='string2 default')
     parameter_definitions = [
         {'name': 'test_string1',
-         'parameter_type': TestParameter,
+         'parameter_type': StringP,
          'required': False,
          'on_update': None},
         {'parameter': test_string2,
@@ -80,7 +60,7 @@ class TestNoInitialValues(unittest.TestCase):
     def setUp(self):
         '''Initialize parameter set with no passed values
         '''
-        self.test_param_set = TestParameter()
+        self.test_param_set = OneStringP() # FIXME Wrong class used
 
     def test_for_default(self):
         '''verify that default value is returned (get_values)
@@ -95,7 +75,6 @@ class TestNoInitialValues(unittest.TestCase):
         self.assertEqual(
             self.test_param_set.get_values('test_string1'),
             'string1 default')
-
 
     def test_check_not_initialized(self):
         '''verify that initialized is False

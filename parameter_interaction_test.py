@@ -29,7 +29,6 @@ import unittest
 from parameters import Parameter, ParameterSet, StringP
 
 
-@unittest.skip('Not Implemented')
 class TwoStringP(ParameterSet):
     '''A Parameter set with two string Parameters:
             "test_string1"

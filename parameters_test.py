@@ -1,10 +1,10 @@
 '''Basic Parameter class object tests.
 '''
 import unittest
-from parameters import Parameter, get_class_name
+from parameters import Parameter
 from parameters import NotValidError
 
-class TestParameter(Parameter):
+class StringP(Parameter):
     '''A subclass of parameters that accepts a string opf less than 64
     characters
     '''
@@ -14,7 +14,7 @@ class TestParameter(Parameter):
     def __init__(self, **kwds):
         '''Create a new instance of the string parameter.
         '''
-        self.cls = get_class_name(type(self))
+        self.cls = None
         super().__init__(**kwds)
 
     def check_validity(self, value):
@@ -31,12 +31,12 @@ class TestBaseParameterNoValue(unittest.TestCase):
         '''Create an instance of StringP with no initialization.
         name='Test String'
         '''
-        self.test_param = TestParameter()
+        self.test_param = StringP()
 
     def test_name(self):
         '''Verify the name is the Parameter class name.
         '''
-        self.assertEqual(self.test_param.name, 'TestParameter')
+        self.assertEqual(self.test_param.name, 'StringP')
 
     def test_initialization(self):
         '''Verify that the parameter is not initialized'''
@@ -70,7 +70,7 @@ class TestBaseParameterNoValue(unittest.TestCase):
         '''Verify that trying to set an invalid default value returns the
         appriopriate error message.
         '''
-        error_message = '1 is an invalid value for TestParameter.'
+        error_message = '1 is an invalid value for StringP.'
         try:
             self.test_param.set_default(1)
         except NotValidError as err:
@@ -123,7 +123,7 @@ class TestBaseParameterNoValue(unittest.TestCase):
         '''
         default_value = 'default'
         test_value = 'value'
-        test_type = get_class_name(self.test_param.value_type)
+        test_type = str(type(self))
         setting = dict(cls=test_type, default=default_value)
         self.test_param.set_attributes(**setting)
         self.test_param.value = test_value
@@ -158,7 +158,7 @@ class TestBaseParameterValue(unittest.TestCase):
         '''Create an instance of StringP with initialized values.
         '''
         self.str_value = 'test_param_value'
-        self.test_param = TestParameter(
+        self.test_param = StringP(
             name='Test_String_Value',
             value=self.str_value,
             default='default_value')
@@ -193,14 +193,11 @@ class TestBaseParameterValue(unittest.TestCase):
     def test_copy(self):
         '''Verify that copy() returns an exact copy of the instance.
         '''
-        self.maxDiff=None
         attr_dict = dict(
-            _name='Test_String_Value',
+            name='Test_String_Value',
             _value=self.str_value,
-            initialized=True,
             default='default_value',
-            cls='TestParameter',
-            _messages=TestParameter.initial_templates)
+            _messages=StringP.initial_templates)
         copied_param = self.test_param.copy()
         self.assertDictEqual(copied_param.__dict__, attr_dict)
 
@@ -211,7 +208,7 @@ class TestBaseParameterValue(unittest.TestCase):
             value=self.str_value,
             default='default_value'
             '''
-        display = 'Test_String_Value parameter of class TestParameter\n,'
+        display = 'Test_String_Value parameter of class StringP\n,'
         display += '\tCurrent Value is:\ttest_param_value\n'
         display += '\tDefault value is \tdefault_value'
         self.assertEqual(self.test_param.disp(), display)
