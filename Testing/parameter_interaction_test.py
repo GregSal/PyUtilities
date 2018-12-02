@@ -26,15 +26,15 @@
                     entries for the non-parameter arguments.
 '''
 import unittest
-from parameters import Parameter, ParameterSet, StringP
+from parameters import ParameterSet, StringP
 
 
+@unittest.skip('Not Implemented')
 class TwoStringP(ParameterSet):
     '''A Parameter set with two string Parameters:
             "test_string1"
             "test_string2"
     '''
-    # FIXME update StringP creater call
     test_string2 = StringP(name='test_string2',
                            value='test_string2',
                            default='string2 default')

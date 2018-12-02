@@ -19,15 +19,23 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="initial_testing.py" />
-    <Compile Include="one_string_parameter_set_test.py" />
     <Compile Include="parameters.py" />
-    <Compile Include="parameters_test.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="parameter_interaction_test.py" />
-    <Compile Include="parameter_set_test.py" />
-    <Compile Include="two_string_parameter_set_test.py" />
+    <Compile Include="Testing\one_string_parameter_set_test.py" />
+    <Compile Include="Testing\parameters_test.py" />
+    <Compile Include="Testing\parameter_interaction_test.py" />
+    <Compile Include="Testing\StringP_tests.py" />
+    <Compile Include="Testing\two_parameter_set_test.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Testing\" />
+    <Folder Include="Testing\__pycache__\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Testing\__pycache__\one_string_parameter_set_test.cpython-36.pyc" />
+    <Content Include="Testing\__pycache__\parameters_test.cpython-36.pyc" />
+    <Content Include="Testing\__pycache__\parameter_interaction_test.cpython-36.pyc" />
+    <Content Include="Testing\__pycache__\StringP_tests.cpython-36.pyc" />
+    <Content Include="Testing\__pycache__\two_parameter_set_test.cpython-36.pyc" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>
