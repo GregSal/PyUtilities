@@ -264,7 +264,7 @@ class StringP(Parameter):
         '''Getter for max_length.'''
         return self._max_length
 
-    def set_max_length(self, length: int):
+    def set_max_length(self, length: int = None):
         '''If valid, change maximum string length.
         Arguments:
             length {int} -- The new maximum string length limit.
@@ -303,7 +303,8 @@ class StringP(Parameter):
     def drop_item(self, item: str):
         '''Drop an item from the set of possible values.
         Arguments:
-            item {str} -- The item to drop from the list of valid string values.
+            item {str} -- The item to drop from the list of valid string
+                values.
         '''
         if item in self._value_set:
             if self.value == item:
@@ -336,8 +337,8 @@ class StringP(Parameter):
     def initialize_messages(self, messages: Dict[str, str]):
         '''Update message templates.
         Arguments:
-            length -- A dictionary of message templates referencing StringP
-                attributes.
+            messages -- A dictionary of message templates referencing
+                StringP attributes.
         '''
         message_templates = dict(
             too_long='{new_value} is longer than the maximum allowable '
@@ -385,22 +386,186 @@ class StringP(Parameter):
 
 
 class IntegerP(Parameter):
-    '''An Integer Parameter with optional range limit (value_range)
+    '''An Integer Parameter with optional:
+        maximum and minimum values (max_value, min_value), or
+        a limited set of values (value_set)
+    If value_set is defined, the max_value and min_value will not be checked.
     '''
     _name = 'integer_parameter'
     _type = int
-    _range = None
 
-    def __init__(self, **kwds):
+    def __init__(self, *args, value_set=None, min_value=None, max_value=None,
+                 **kwds):
         '''Create a new instance of the integer parameter.
+        If both value and value_set are given, include value in the value set.
         '''
-        msg = '{new_value} is longer than the maximum allowable length '
-        msg += 'of {max_length}.'
-        if 'messages' in kwds:
-            kwds['messages'].update({'too_long': msg})
+        self._value = None # type int
+        self._min_value = None # type int
+        self._max_value = None # type int
+        self._value_set = set() # type: Set[int]
+        super().__init__(*args, **kwds)
+        if value_set is not None:
+            self.add_items(item)
+            if self._value is not None and self._value not in self.value_set:
+                self.add_items(self._value)
+        if min_value is not None:
+            self._min_value = min_value
+        if max_value is not None:
+            self._max_value = max_value
+
+    def get_min_value(self):
+        '''Getter for min_value.'''
+        return self._min_value
+
+    def set_min_value(self, limit: int = None):
+        '''If valid, change the minimum value.
+        Arguments:
+            limit {int} -- The new minimum value.
+        '''
+        if limit is None:
+            self._min_value = None
         else:
-            kwds['messages'] = dict(too_long=msg)
-        super().__init__(**kwds)
+            min_value = int(limit)
+            if (self.value is None) or (min_value <= self.value):
+                self._min_value = min_value
+            else:
+                msg = self.build_message('length_conflict',
+                                         min_value=min_value)
+                raise UpdateError(msg)
+
+    min_value = property(get_min_value, set_min_value)
+
+
+    def get_max_value(self):
+        '''Getter for max_value.'''
+        return self._max_value
+
+    def set_max_value(self, limit: int = None):
+        '''If valid, change the maximum value.
+        Arguments:
+            limit {int} -- The new maximum value.
+        '''
+        if limit is None:
+            self._max_value = None
+        else:
+            max_value = int(limit)
+            if (self.value is None) or (max_value >= self.value):
+                self._max_value = max_value
+            else:
+                msg = self.build_message('length_conflict',
+                                         max_value=max_value)
+                raise UpdateError(msg)
+
+    max_value = property(get_max_value, set_max_value)
+
+    def get_value_set(self):
+        '''Getter for value_set.'''
+        return self._value_set
+
+    value_set = property(get_value_set)
+
+    def add_item(self, item: int):
+        '''Add additional items to the set of possible values.
+        Arguments:
+            item {int} -- The item to add to the list of valid integer values
+        '''
+        error_message = super().check_validity(item)
+        if error_message is None:
+            self._value_set.add(item)
+        else:
+            msg = self.build_message(error_message, new_value=item)
+            raise NotValidError(msg)
+
+    def drop_item(self, item: int):
+        '''Drop an item from the set of possible values.
+        Arguments:
+            item {int} -- The item to drop from the list of valid integer
+                values.
+        '''
+        if item in self._value_set:
+            if self.value == item:
+                msg = self.build_message('value_conflict', new_value=item)
+                raise UpdateError(msg)
+            self._value_set.remove(item)
+        else:
+            msg = self.build_message('not_in_value_set', new_value=item)
+            raise UnMatchedValuesError(msg)
+
+    def check_validity(self, value)->ErrorString:
+        '''Check that value is an integer and is a member of the value set, or
+        within the minimum to maximum range, if specified.
+        Arguments:
+            value {int} -- The value to be tested.
+        Returns
+            The error message describing the reason the value is not valid, or
+            None - if the value is valid.
+        '''
+        error_message = super().check_validity(value)
+        if error_message is not None:
+            return error_message
+        elif self._value_set:
+           if value not in self._value_set:
+               return 'disp_value_set'
+        elif self._min_value is not None:
+            if value < self._min_value:
+                return 'too_low'
+        elif self._max_value is not None:
+            if value > self._max_value:
+                return 'too_high'
+        return None
+
+    def initialize_messages(self, messages: Dict[str, str]):
+        '''Update message templates.
+        Arguments:
+            length -- A dictionary of message templates referencing
+                IntegerP attributes.
+        '''
+        # FIXME Done to here
+        message_templates = dict(
+            too_long='{new_value} is longer than the maximum allowable '
+                     'length of {max_length}.',
+            disp_value_set='{new_value} is an invalid value for {name}.'
+                           '\n\tPossible values are: {value_set}',
+            not_in_value_set='{new_value} is not in the set of possible '
+                             'values:\n\t{value_set}',
+            value_conflict='{value} cannot be removed from the list of '
+                           'possible values because it is the current value',
+            length_conflict='new maximum length of {max_length} is less '
+                            'than the length of the current value: {value}.'
+                            '\n\tmax_value was not changed.',
+            value_set='\n\tPossible values are:\t{value_set}',
+            max_length='\n\tThe maximum allowable length is: {max_length}'
+            )
+        if messages:
+            message_templates.update(messages)
+        super().initialize_messages(message_templates)
+
+    def build_message(self, message: str, **value_set)->str:
+        '''Return a message string using format and a message template.
+        if message is a key in self.messages use the corresponding template,
+        otherwise treat message as a template.
+        Arguments:
+            message {str} -- Either a key in self.messages, or
+                a custom message template.
+            value_set {dict} -- value definition overrides for the message
+                templates.
+        '''
+        values = {'max_length': self.max_length,
+                  'value_set': self.value_set}
+        values.update(value_set)
+        return super().build_message(message, **values)
+
+    def disp(self)->str:
+        '''A template formatted string
+        '''
+        value_str = super().disp()
+        if self._value_set is not None:
+            disp_str = value_str + self.build_message('value_set')
+        elif self.max_length is not None:
+            disp_str = value_str + self.build_message('max_length')
+        return disp_str
+
+
 
     def get_value_range(self):
         '''Determine the range limit for the value.

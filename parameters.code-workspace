@@ -4,5 +4,7 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"python.pythonPath": "C:\\Users\\Greg\\AppData\\Local\\Programs\\Python\\Python36"
+	}
 }

@@ -20,6 +20,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="parameters.py" />
+    <Compile Include="Testing\IntegerP_tests.py" />
     <Compile Include="Testing\one_string_parameter_set_test.py" />
     <Compile Include="Testing\parameters_test.py" />
     <Compile Include="Testing\parameter_interaction_test.py" />
