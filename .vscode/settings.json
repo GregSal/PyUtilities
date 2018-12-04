@@ -1,15 +1,4 @@
 {
-    "python.pythonPath": "C:\\Users\\Greg\\Anaconda3\\python.exe",
-    "python.linting.pylintEnabled": true,
-    "editor.foldingStrategy": "indentation",
-    "python.unitTest.unittestArgs": [
-        "-v",
-        "-s",
-        "./Testing",
-        "-p",
-        "*test*.py"
-    ],
-    "python.unitTest.pyTestEnabled": false,
-    "python.unitTest.nosetestsEnabled": false,
-    "python.unitTest.unittestEnabled": true
+    "python.pythonPath": "C:\\Users\\gsalomon\\AppData\\Local\\Continuum\\Anaconda3\\python.exe",
+    "python.linting.pylintEnabled": true
 }

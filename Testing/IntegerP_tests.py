@@ -43,13 +43,13 @@ class TestIntegerP(unittest.TestCase):
         '''Verify that initializing with a string raises an error.
         '''
         with self.assertRaises(NotValidError):
-            int_param = IntegerP('Test String')
+            IntegerP('Test String')
 
     def test_not_int(self):
         '''Verify that initializing with a non-integer number raises an error.
         '''
         with self.assertRaises(NotValidError):
-            int_param = IntegerP(2.3)
+            IntegerP(2.3)
 
     def test_max_value_check(self):
         '''Verify that the maximum value check is functional
@@ -76,7 +76,7 @@ class TestIntegerP(unittest.TestCase):
         max_value = 99
         test_value = 100
         int_param = IntegerP(**{'max_value': max_value})
-        error_message = str(test_value) + ' is larger than the maximum '
+        error_message = str(test_value) + ' is greater than the maximum '
         error_message += 'allowable value of ' + str(max_value) + '.'
         try:
             int_param.value = test_value
@@ -92,7 +92,7 @@ class TestIntegerP(unittest.TestCase):
         min_value = 51
         test_value = 50
         int_param = IntegerP(**{'min_value': min_value})
-        error_message = str(test_value) + ' is less than the maximum '
+        error_message = str(test_value) + ' is less than the minimum '
         error_message += 'allowable value of ' + str(min_value) + '.'
         try:
             int_param.value = test_value
@@ -149,8 +149,7 @@ class TestIntegerP(unittest.TestCase):
         '''Test that an impossible number range raises an error.
         '''
         with self.assertRaises(UpdateError):
-            int_param = IntegerP(**{'min_value': 5,
-                                    'max_value': 1})
+            IntegerP(**{'min_value': 5, 'max_value': 1})
 
     def test_group_member(self):
         '''Verify that a member of the value set is a valid value.
@@ -199,7 +198,7 @@ class TestIntegerP(unittest.TestCase):
         self.assertEqual(int_param.value, 5)
 
     def test_add_range_as_value_set(self):
-        '''Verify that it is possible to supply a range as the set of
+        '''Verify that it is possible to add a range to the set of
         possible values.
         '''
         int_param = IntegerP(**{'value': 2, 'value_set': [0, 2]})
@@ -207,7 +206,7 @@ class TestIntegerP(unittest.TestCase):
         int_param.value = 6
         self.assertEqual(int_param.value, 6)
 
-    def test_add_range_as_value_set(self):
+    def test_set_range_as_value_set(self):
         '''Verify that it is possible to supply a range as the set of
         possible values.
         '''
@@ -238,7 +237,7 @@ class TestIntegerP(unittest.TestCase):
         '''
         int_param = IntegerP(**{'value': 5, 'value_set': [1, 3, 5, 7]})
         with self.assertRaises(NotValidError):
-            int_param.add_item(1.5)
+            int_param.add_items(1.5)
 
     def test_invalid_group_member(self):
         '''Verify that trying to initialize with an invalid item int the set
@@ -272,22 +271,22 @@ class TestIntegerP(unittest.TestCase):
     def test_change_max_length(self):
         '''Verify that the maximum value can be changed.
         '''
-        int_param = IntegerP(**{'max_value': 3}})
+        int_param = IntegerP(**{'max_value': 3})
         int_param.value = 1
         self.assertTrue(int_param == 1)
         int_param.max_value = 5
-        string_param.value = 5
-        self.assertTrue(string_param == 5)
+        int_param.value = 5
+        self.assertTrue(int_param == 5)
 
-    def test_change_max_length(self):
+    def test_change_min_length(self):
         '''Verify that the minimum value can be changed.
         '''
         int_param = IntegerP(**{'min_value': 5})
         int_param.value = 6
         self.assertTrue(int_param == 6)
         int_param.min_value = 2
-        string_param.value = 2
-        self.assertTrue(string_param == 2)
+        int_param.value = 2
+        self.assertTrue(int_param == 2)
 
     def test_cant_change_max_value(self):
         '''Verify that trying to change the maximum value to be less than
@@ -298,7 +297,7 @@ class TestIntegerP(unittest.TestCase):
         with self.assertRaises(UpdateError):
             int_param.max_value = 1
 
-    def test_cant_change_max_value(self):
+    def test_cant_change_min_value(self):
         '''Verify that trying to change the minimum value to be more than
         the current value raises NotValidError.
         '''
@@ -313,7 +312,7 @@ class TestIntegerP(unittest.TestCase):
         '''
         int_param = IntegerP(**{'value': 4, 'min_value': 2, 'max_value': 8,
                                 'value_set': range(2,8,2)})
-        int_param.add_item(10)
+        int_param.add_items(10)
         int_param.value = 10
         self.assertEqual(int_param.value, 10)
 

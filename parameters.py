@@ -3,15 +3,15 @@
 
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from typing import TypeVar, List, Dict, Tuple, Set, Iterable, Any
+from typing import Optional, List, Dict, Tuple, Set, Iterable, Any, Union
 import logging
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
 # pylint: disable=invalid-name
-ParameterSelection = TypeVar('ParameterSelection', str, List[str],
-                             Dict[str, Any])
-ParameterValues = TypeVar('ParameterValues', List[Any], Dict[str, Any])
-ErrorString = TypeVar('ErrorString', str, None)
+ParameterSelection = Union[str, List[str], Dict[str, Any]]
+ParameterValues = Union[Any, List[Any], Dict[str, Any]]
+ErrorString = Optional[str]
+IntValue = Union[str, float, int]
 
 
 class ParameterError(Exception):
@@ -171,7 +171,7 @@ class Parameter(ABC):
         '''
         error_message = self.check_validity(value)
         if error_message is None:
-            self._value = value
+            self._value = self._type(value)
             self.initialized = True
         else:
             msg = self.build_message(error_message, new_value=value)
@@ -324,15 +324,14 @@ class StringP(Parameter):
             None - if the value is valid.
         '''
         error_message = super().check_validity(value)
-        if error_message is not None:
-            return error_message
-        elif self._value_set:
-           if value not in self._value_set:
-               return 'disp_value_set'
-        elif self._max_length is not None:
-            if len(value) > self._max_length:
-                return 'too_long'
-        return None
+        if error_message is None:
+            if self._value_set:
+                if value not in self._value_set:
+                    error_message = 'disp_value_set'
+            elif ((self._max_length is not None) and
+                  (len(value) > self._max_length)):
+                error_message = 'too_long'
+        return error_message
 
     def initialize_messages(self, messages: Dict[str, str]):
         '''Update message templates.
@@ -405,13 +404,28 @@ class IntegerP(Parameter):
         self._value_set = set() # type: Set[int]
         super().__init__(*args, **kwds)
         if value_set is not None:
-            self.add_items(item)
+            self.add_items(value_set)
             if self._value is not None and self._value not in self.value_set:
                 self.add_items(self._value)
         if min_value is not None:
             self._min_value = min_value
         if max_value is not None:
             self._max_value = max_value
+
+    def int_value(self, value: IntValue)->int:
+        '''Convert a string or float representation of an integer to an integer.
+        '''
+        try:
+            float_value = float(value)
+        except ValueError:
+            msg = self.build_message('not_valid', new_value=value)
+            raise NotValidError(msg)
+        if float_value.is_integer():
+            int_value = int(float_value)
+        else:
+            msg = self.build_message('not_valid', new_value=value)
+            raise NotValidError(msg)
+        return int_value
 
     def get_min_value(self):
         '''Getter for min_value.'''
@@ -422,10 +436,11 @@ class IntegerP(Parameter):
         Arguments:
             limit {int} -- The new minimum value.
         '''
+        # TODO Check for minimum greater than maximum
         if limit is None:
             self._min_value = None
         else:
-            min_value = int(limit)
+            min_value = self.int_value(limit)
             if (self.value is None) or (min_value <= self.value):
                 self._min_value = min_value
             else:
@@ -434,7 +449,6 @@ class IntegerP(Parameter):
                 raise UpdateError(msg)
 
     min_value = property(get_min_value, set_min_value)
-
 
     def get_max_value(self):
         '''Getter for max_value.'''
@@ -445,10 +459,11 @@ class IntegerP(Parameter):
         Arguments:
             limit {int} -- The new maximum value.
         '''
+        # TODO Check for maximum less than minimum
         if limit is None:
             self._max_value = None
         else:
-            max_value = int(limit)
+            max_value = self.int_value(limit)
             if (self.value is None) or (max_value >= self.value):
                 self._max_value = max_value
             else:
@@ -464,17 +479,21 @@ class IntegerP(Parameter):
 
     value_set = property(get_value_set)
 
-    def add_item(self, item: int):
+    def add_items(self, *items):
         '''Add additional items to the set of possible values.
         Arguments:
-            item {int} -- The item to add to the list of valid integer values
+            items{int, List[int]} -- The items to add to the list of valid
+                integer values
         '''
-        error_message = super().check_validity(item)
-        if error_message is None:
-            self._value_set.add(item)
-        else:
-            msg = self.build_message(error_message, new_value=item)
-            raise NotValidError(msg)
+        item_list = list(items)
+        for item in item_list:
+            error_message = super().check_validity(item)
+            if error_message is None:
+                int_item = self.int_value(item)
+                self._value_set.add(int_item)
+            else:
+                msg = self.build_message(error_message, new_value=item)
+                raise NotValidError(msg)
 
     def drop_item(self, item: int):
         '''Drop an item from the set of possible values.
@@ -482,14 +501,16 @@ class IntegerP(Parameter):
             item {int} -- The item to drop from the list of valid integer
                 values.
         '''
-        if item in self._value_set:
-            if self.value == item:
-                msg = self.build_message('value_conflict', new_value=item)
-                raise UpdateError(msg)
-            self._value_set.remove(item)
-        else:
-            msg = self.build_message('not_in_value_set', new_value=item)
+        int_value(item)
+        if self.value == self.int_value(item):
+            msg = self.build_message('value_conflict', new_value=item)
+            raise UpdateError(msg)
+        elif int_value not in self._value_set:
+            msg = self.build_message('not_in_value_set',
+                                        new_value=int_value)
             raise UnMatchedValuesError(msg)
+        else:
+            self._value_set.remove(item)
 
     def check_validity(self, value)->ErrorString:
         '''Check that value is an integer and is a member of the value set, or
@@ -500,19 +521,28 @@ class IntegerP(Parameter):
             The error message describing the reason the value is not valid, or
             None - if the value is valid.
         '''
-        error_message = super().check_validity(value)
-        if error_message is not None:
-            return error_message
-        elif self._value_set:
-           if value not in self._value_set:
-               return 'disp_value_set'
-        elif self._min_value is not None:
-            if value < self._min_value:
-                return 'too_low'
-        elif self._max_value is not None:
-            if value > self._max_value:
-                return 'too_high'
-        return None
+        # Test for integer as float or string
+        try:
+            int_value = self.int_value(value)
+        except NotValidError:
+            error_message = 'not_valid'
+        else:
+            error_message = super().check_validity(int_value)
+        # Test integer values
+        if error_message is None:
+            if self._value_set and (int_value not in self._value_set):
+               error_message = 'disp_value_set'
+            elif (self.max_value is not None) and (int_value > self.max_value):
+                error_message = 'too_high'
+            elif (self.min_value is not None) and (int_value < self.min_value):
+                error_message = 'too_low'
+        return error_message
+
+    def set_value(self, value):
+        '''Set a new value for parameter.
+        '''
+        int_value = self.int_value(value)
+        super().set_value(int_value)
 
     def initialize_messages(self, messages: Dict[str, str]):
         '''Update message templates.
@@ -520,21 +550,26 @@ class IntegerP(Parameter):
             length -- A dictionary of message templates referencing
                 IntegerP attributes.
         '''
-        # FIXME Done to here
         message_templates = dict(
-            too_long='{new_value} is longer than the maximum allowable '
-                     'length of {max_length}.',
+            too_high='{new_value} is greater than the maximum allowable '
+                     'value of {max_value}.',
+            too_low='{new_value} is less than the minimum allowable '
+                     'value of {min_value}.',
             disp_value_set='{new_value} is an invalid value for {name}.'
                            '\n\tPossible values are: {value_set}',
             not_in_value_set='{new_value} is not in the set of possible '
                              'values:\n\t{value_set}',
             value_conflict='{value} cannot be removed from the list of '
                            'possible values because it is the current value',
-            length_conflict='new maximum length of {max_length} is less '
-                            'than the length of the current value: {value}.'
-                            '\n\tmax_value was not changed.',
+            max_limit_conflict='new maximum value of {max_value} is less '
+                               'than the current value: {value}.'
+                               '\n\tmax_value was not changed.',
+            min_limit_conflict='new minimum value of {min_value} is less '
+                               'than the current value: {value}.'
+                               '\n\tmin_value was not changed.',
             value_set='\n\tPossible values are:\t{value_set}',
-            max_length='\n\tThe maximum allowable length is: {max_length}'
+            max_value='\n\tThe maximum allowable value is: {max_value}',
+            min_value='\n\tThe minimum allowable value is: {min_value}'
             )
         if messages:
             message_templates.update(messages)
@@ -550,7 +585,7 @@ class IntegerP(Parameter):
             value_set {dict} -- value definition overrides for the message
                 templates.
         '''
-        values = {'max_length': self.max_length,
+        values = {'max_value': self.max_value, 'min_value': self.min_value,
                   'value_set': self.value_set}
         values.update(value_set)
         return super().build_message(message, **values)
@@ -558,75 +593,17 @@ class IntegerP(Parameter):
     def disp(self)->str:
         '''A template formatted string
         '''
-        value_str = super().disp()
+        disp_str = super().disp()
         if self._value_set is not None:
-            disp_str = value_str + self.build_message('value_set')
-        elif self.max_length is not None:
-            disp_str = value_str + self.build_message('max_length')
+            disp_str = disp_str + self.build_message('value_set')
+        else:
+            if self.max_value is not None:
+                disp_str = disp_str + self.build_message('max_value')
+            if self.min_value is not None:
+                disp_str = disp_str + self.build_message('min_value')
         return disp_str
 
 
-
-    def get_value_range(self):
-        '''Determine the range limit for the value.
-        '''
-        return self._range
-
-    def set_value_range(self,
-                        value_set: List[int] = None,
-                        min_value: int = 0,
-                        max_value: int = None,
-                        value_step: int = 1):
-        '''Set the range limits for the value
-        Defines a range based on a set of integers or max and min limits.
-            value_set (Iterable[int], optional): Defaults to None.
-                An iterable of integers defining the range of
-                    acceptable values.
-            min_value (int, optional): Defaults to 0.
-                The minimum valid value.
-            max_value (int, optional): Defaults to none.
-                The maximum valid value.
-            value_step (int, optional): Defaults to 1.
-                The step size for a range of valid values.
-        If neither value_set nor max_value are given the range is set to None.
-        '''
-        if value_set is not None:
-            if all(float(n).is_integer() for n in value_set):
-                self._range = value_set
-            else:
-                msg_template = '{new_value} contains a non integer value.'
-                msg = self.build_message(msg_template, new_value=value_set)
-                raise NotValidError(msg)
-        elif max_value is None:
-            self._range =  None
-        else:
-            self._range = range(min_value,
-                                max_value+1,
-                                value_step)
-
-    range = property(get_value_range, set_value_range)
-
-    def check_validity(self, value)->str:
-        '''Check that value is a an integer in the defined range.
-        Arguments:
-            value {int} -- The value to be tested.
-        Returns
-            The error message describing the reason the value is not valid, or
-            None - if the value is valid.
-        '''
-        error_message = super().check_validity(value)
-        if error_message is not None:
-            return error_message
-        if self.range is not None:
-            if value not in self.range:
-                return 'not_valid'
-            return 'too_long'
-        return None
-
-    def disp(self)->str:
-        '''A template formatted string
-        '''
-        return super().disp()
 
 
 class ParameterSet(OrderedDict):
@@ -648,7 +625,7 @@ class ParameterSet(OrderedDict):
 
         Can access individual parameters as items of the parameter set
     '''
-    parameter_definitions = list()
+    parameter_definitions = list() # type: List[Dict[str, Any]]
     defaults = {'required': True,
                 'on_update': None}
 
@@ -758,11 +735,13 @@ class ParameterSet(OrderedDict):
                 If any of the names in the list don't match a parameter name,
                 If no dictionary key matches a parameter name.
         '''
+        return_values = None
         if isinstance(selection, str):
             if selection in self:
-                return self[selection].value
-            raise NoParameterError(
-                '{} is not a valid Parameter name'.format(selection))
+                return_values = self[selection].value
+            else:
+                raise NoParameterError(
+                    '{} is not a valid Parameter name'.format(selection))
         elif isinstance(selection, dict):
             values_dict = selection.copy()
             found_parameter = False
@@ -780,15 +759,17 @@ class ParameterSet(OrderedDict):
                 raise NoParameterError(
                     'No Parameter was found in {}'.format(str(selection)))
             else:
-                return values_dict
-        values_list = list()
-        for name in selection:
-            if name in self:
-                values_list.append(self[name].value)
-            else:
-                raise NoParameterError(
-                    '{} is not a valid Parameter name'.format(selection))
-        return values_list
+                return_values = values_dict
+        else:
+            values_list = list()
+            for name in selection:
+                if name in self:
+                    values_list.append(self[name].value)
+                else:
+                    raise NoParameterError(
+                        '{} is not a valid Parameter name'.format(selection))
+            return_values = values_list
+        return return_values
 
     def set_values(self, *value_set, **parameter_values):
         '''Set the values of parameters.
