@@ -109,6 +109,15 @@ class TestStringP(unittest.TestCase):
         with self.assertRaises(UpdateError):
             string_param.drop_item('three')
 
+    def test_drop_non_existing_group_member(self):
+        '''Verify that trying to remove a non-existing value from the set of
+        possible values raises UnMatchedValuesError.
+        '''
+        string_param = StringP(**{'value': 'three',
+                                  'value_set': ['one', 'two', 'three']})
+        with self.assertRaises(UnMatchedValuesError):
+            string_param.drop_item('four')
+
     def test_add_invalid_group_member(self):
         '''Verify that trying to add an invalid item to the set of possible
         values raises NotValidError.

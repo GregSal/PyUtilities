@@ -112,7 +112,7 @@ class TestNoInitialValues(unittest.TestCase):
         '''Verify that set_values can be used to set the parameter value
         '''
         test_value = 'new_value'
-        self.test_param_set.set_values(**test_value)
+        self.test_param_set.set_values(test_value)
         self.assertEqual(
             self.test_param_set.get_values('test_string1'),
             test_value)

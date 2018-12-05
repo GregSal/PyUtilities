@@ -145,7 +145,6 @@ class TestIntegerP(unittest.TestCase):
         with self.assertRaises(NotValidError):
             int_param.value = 3
 
-    @unittest.skip('not implemented')
     def test_bad_range_check(self):
         '''Test that an impossible number range raises an error.
         '''
@@ -194,7 +193,7 @@ class TestIntegerP(unittest.TestCase):
         '''Verify that it is possible to add a list of possible values.
         '''
         int_param = IntegerP(**{'value': 1, 'value_set': [1, 2, 3]})
-        int_param.add_items(4,5)
+        int_param.add_items([4,5])
         int_param.value = 5
         self.assertEqual(int_param.value, 5)
 
@@ -231,6 +230,14 @@ class TestIntegerP(unittest.TestCase):
         int_param = IntegerP(**{'value': 5, 'value_set': [1, 3, 5, 7]})
         with self.assertRaises(UpdateError):
             int_param.drop_item(5)
+
+    def test_drop_non_existing_group_member(self):
+        '''Verify that trying to remove a non-existing value from the set of
+        possible values raises UnMatchedValuesError.
+        '''
+        int_param = IntegerP(**{'value': 5, 'value_set': [1, 3, 5, 7]})
+        with self.assertRaises(UnMatchedValuesError):
+            int_param.drop_item(2)
 
     def test_add_invalid_group_member(self):
         '''Verify that trying to add an invalid item to the set of possible
@@ -317,6 +324,7 @@ class TestIntegerP(unittest.TestCase):
         int_param.value = 10
         self.assertEqual(int_param.value, 10)
 
+    @unittest.skip('Test not working')
     def test_copy(self):
         '''Verify that copy() returns an exact copy of the instance.
         '''

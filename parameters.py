@@ -2,8 +2,8 @@
 '''
 
 from abc import ABC, abstractmethod
-from collections import OrderedDict
-from typing import Optional, List, Dict, Tuple, Set, Iterable, Any, Union
+from collections import OrderedDict, Iterable
+from typing import Optional, List, Dict, Tuple, Set, Any, Union
 import logging
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -49,6 +49,11 @@ class UpdateError(ParameterError):
     '''An error occurred attempting to modify a parameter attribute.
     '''
     pass
+
+def trueiterable(x):
+    '''Indicate if the variable is anon-string type iterable
+    '''
+    return not isinstance(x, str) and isinstance(x, Iterable)
 
 
 def get_class_name(class_type: type)->str:
@@ -404,7 +409,7 @@ class IntegerP(Parameter):
         self._value_set = set() # type: Set[int]
         super().__init__(*args, **kwds)
         if value_set is not None:
-            self.add_items(*value_set) # FIXME change back
+            self.add_items(value_set)
             if self._value is not None and self._value not in self.value_set:
                 self.add_items(self._value)
         if min_value is not None:
@@ -427,26 +432,83 @@ class IntegerP(Parameter):
             raise NotValidError(msg)
         return int_value
 
+    def no_limit_conflict(self, limit_type: str, new_limit: int,
+                          other_limit: int, current_value: int)->bool:
+        '''Check for limit conflicts.
+        Compare new Maximum or Minimum limit with the opposing limit and
+        the current value to identify any conflicts.
+        Arguments:
+            limit_type {str} -- The type of limit, can be:
+                "Maximum" or "Minimum".
+            new_limit {int} -- The limit being tested.
+            other_limit {int} -- The current opposite limit value.
+            current_value {int} -- The current parameter value.
+        Raises
+            UpdateError -- if a limit conflict exists.
+            ValueError -- If limit_type is not valid.
+        Returns
+            True if no limit conflict exists.
+        '''
+
+        def bad_limit(limit_type: str, new_limit: int, value: int)->bool:
+            '''compare values based on limit type.
+            if limit_type is Maximum return True if new_limit < value.
+            if limit_type is Minimum return True if new_limit > value.
+        Arguments:
+            limit_type {str} -- The type of limit, can be:
+                "Maximum" or "Minimum".
+            new_limit {int} -- The limit being tested.
+            value {int} -- The value to test new_limit against.
+        Raises:
+            ValueError -- If limit_type is not valid.
+        Returns
+            True new_limit is on the wrong side of value.
+            False if  new_limit is OK or value is None.
+        '''
+            is_bad = False
+            if value is None:
+                is_bad = False
+            if limit_type == 'Minimum':
+                is_bad = (new_limit > value)
+            elif limit_type == 'Maximum':
+                is_bad = (new_limit < value)
+            else:
+                raise ValueError(
+                    'limit_type must be "Minimum" or "Maximum"')
+            return is_bad
+
+        direction = {'Minimum': 'greater', 'Maximum': 'less'}
+        opposite = {'Minimum': 'Maximum', 'Maximum': 'Minimum'}
+        msg_names = {'limit_type': limit_type, 'limit_value': new_limit,
+                        'direction': direction[limit_type],
+                        'conflict_type': opposite[limit_type], 'value': None}
+        if bad_limit(limit_type, new_limit, other_limit):
+            msg_names['value'] = other_limit
+            msg = self.build_message('limit_conflict', *msg_names)
+            raise UpdateError(msg)
+        elif bad_limit(limit_type, new_limit, current_value):
+            msg_names.update({'conflict_type': 'value',
+                                'value': current_value})
+            msg = self.build_message('limit_conflict', *msg_names)
+            raise UpdateError(msg)
+        return True
+
     def get_min_value(self):
         '''Getter for min_value.'''
         return self._min_value
 
-    def set_min_value(self, limit: int = None):
+    def set_min_value(self, min_limit: int = None):
         '''If valid, change the minimum value.
         Arguments:
-            limit {int} -- The new minimum value.
+            min_limit {int} -- The new minimum value.
         '''
-        # TODO Check for minimum greater than maximum
-        if limit is None:
+        if min_limit is None:
             self._min_value = None
         else:
-            min_value = self.int_value(limit)
-            if (self.value is None) or (min_value <= self.value):
+            min_value = self.int_value(min_limit)
+            if self.no_limit_conflict('Minimum', min_value,
+                                      self.max_value, self.value):
                 self._min_value = min_value
-            else:
-                msg = self.build_message('length_conflict',
-                                         min_value=min_value)
-                raise UpdateError(msg)
 
     min_value = property(get_min_value, set_min_value)
 
@@ -454,22 +516,18 @@ class IntegerP(Parameter):
         '''Getter for max_value.'''
         return self._max_value
 
-    def set_max_value(self, limit: int = None):
+    def set_max_value(self, max_limit: int = None):
         '''If valid, change the maximum value.
         Arguments:
-            limit {int} -- The new maximum value.
+            max_limit {int} -- The new maximum value.
         '''
-        # TODO Check for maximum less than minimum
-        if limit is None:
+        if max_limit is None:
             self._max_value = None
         else:
-            max_value = self.int_value(limit)
-            if (self.value is None) or (max_value >= self.value):
+            max_value = self.int_value(max_limit)
+            if self.no_limit_conflict('Maximum', max_value,
+                                      self.min_value, self.value):
                 self._max_value = max_value
-            else:
-                msg = self.build_message('length_conflict',
-                                         max_value=max_value)
-                raise UpdateError(msg)
 
     max_value = property(get_max_value, set_max_value)
 
@@ -479,13 +537,16 @@ class IntegerP(Parameter):
 
     value_set = property(get_value_set)
 
-    def add_items(self, *items): # FIXME Need to check for itterator
+    def add_items(self, items):
         '''Add additional items to the set of possible values.
         Arguments:
             items{int, List[int]} -- The items to add to the list of valid
                 integer values
         '''
-        item_list = list(items)
+        if trueiterable(items):
+            item_list = items
+        else:
+            item_list = (items,)
         for item in item_list:
             error_message = super().check_validity(item)
             if error_message is None:
@@ -531,7 +592,7 @@ class IntegerP(Parameter):
         # Test integer values
         if error_message is None:
             if self._value_set and (int_value not in self._value_set):
-               error_message = 'disp_value_set'
+                error_message = 'disp_value_set'
             elif (self.max_value is not None) and (int_value > self.max_value):
                 error_message = 'too_high'
             elif (self.min_value is not None) and (int_value < self.min_value):
@@ -561,12 +622,10 @@ class IntegerP(Parameter):
                              'values:\n\t{value_set}',
             value_conflict='{value} cannot be removed from the list of '
                            'possible values because it is the current value',
-            max_limit_conflict='new maximum value of {max_value} is less '
-                               'than the current value: {value}.'
-                               '\n\tmax_value was not changed.',
-            min_limit_conflict='new minimum value of {min_value} is less '
-                               'than the current value: {value}.'
-                               '\n\tmin_value was not changed.',
+            limit_conflict='new {limit_type} value of {limit_value} is '
+                               '{direction} than the current {conflict_type}: '
+                               '{value}.\n\t'
+                               'The {limit_type} value was not changed.',
             value_set='\n\tPossible values are:\t{value_set}',
             max_value='\n\tThe maximum allowable value is: {max_value}',
             min_value='\n\tThe minimum allowable value is: {min_value}'
@@ -602,8 +661,6 @@ class IntegerP(Parameter):
             if self.min_value is not None:
                 disp_str = disp_str + self.build_message('min_value')
         return disp_str
-
-
 
 
 class ParameterSet(OrderedDict):
