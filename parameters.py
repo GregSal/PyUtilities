@@ -404,7 +404,7 @@ class IntegerP(Parameter):
         self._value_set = set() # type: Set[int]
         super().__init__(*args, **kwds)
         if value_set is not None:
-            self.add_items(value_set)
+            self.add_items(*value_set) # FIXME change back
             if self._value is not None and self._value not in self.value_set:
                 self.add_items(self._value)
         if min_value is not None:
@@ -479,7 +479,7 @@ class IntegerP(Parameter):
 
     value_set = property(get_value_set)
 
-    def add_items(self, *items):
+    def add_items(self, *items): # FIXME Need to check for itterator
         '''Add additional items to the set of possible values.
         Arguments:
             items{int, List[int]} -- The items to add to the list of valid
@@ -501,8 +501,8 @@ class IntegerP(Parameter):
             item {int} -- The item to drop from the list of valid integer
                 values.
         '''
-        int_value(item)
-        if self.value == self.int_value(item):
+        int_value = self.int_value(item)
+        if self.value == int_value:
             msg = self.build_message('value_conflict', new_value=item)
             raise UpdateError(msg)
         elif int_value not in self._value_set:

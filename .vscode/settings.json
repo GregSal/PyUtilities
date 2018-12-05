@@ -1,4 +1,15 @@
 {
-    "python.pythonPath": "C:\\Users\\gsalomon\\AppData\\Local\\Continuum\\Anaconda3\\python.exe",
-    "python.linting.pylintEnabled": true
+    "python.pythonPath": "C:\\Users\\Greg.Upstairs-PC\\Anaconda3\\python.exe",
+    "python.linting.pylintEnabled": true,
+    "cSpell.language": "en,en-GB",
+    "python.unitTest.unittestArgs": [
+        "-v",
+        "-s",
+        "./Testing",
+        "-p",
+        "*_test*.py"
+    ],
+    "python.unitTest.pyTestEnabled": false,
+    "python.unitTest.nosetestsEnabled": false,
+    "python.unitTest.unittestEnabled": true
 }
