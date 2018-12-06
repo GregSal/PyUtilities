@@ -202,7 +202,7 @@ class TestIntegerP(unittest.TestCase):
         possible values.
         '''
         int_param = IntegerP(**{'value': 2, 'value_set': [0, 2]})
-        int_param.add_items(*range(2,8,2))
+        int_param.add_items(range(2,8,2))
         int_param.value = 6
         self.assertEqual(int_param.value, 6)
 
@@ -314,6 +314,7 @@ class TestIntegerP(unittest.TestCase):
         with self.assertRaises(UpdateError):
             int_param.min_value = 4
 
+    @unittest.skip('Not Yet implemented')
     def test_group_overides_length(self):
         '''Verify that when both a value_set and max_length are given the
         value_set is used and the max_length is ignored.
@@ -353,7 +354,7 @@ class TestIntegerP(unittest.TestCase):
         display += '\tCurrent value is:\t1\n'
         display += '\tDefault value is:\t0\n'
         display += '\tPossible values are:\t'
-        display += str({0, 1, 2})
+        display += str([0, 1, 2])
         # display += '\n\tMaximum length is:\t9'
         self.assertEqual(int_param.disp(), display)
 

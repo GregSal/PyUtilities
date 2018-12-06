@@ -413,9 +413,9 @@ class IntegerP(Parameter):
             if self._value is not None and self._value not in self.value_set:
                 self.add_items(self._value)
         if min_value is not None:
-            self._min_value = min_value
+            self.min_value = min_value
         if max_value is not None:
-            self._max_value = max_value
+            self.max_value = max_value
 
     def int_value(self, value: IntValue)->int:
         '''Convert a string or float representation of an integer to an integer.
@@ -468,7 +468,7 @@ class IntegerP(Parameter):
             is_bad = False
             if value is None:
                 is_bad = False
-            if limit_type == 'Minimum':
+            elif limit_type == 'Minimum':
                 is_bad = (new_limit > value)
             elif limit_type == 'Maximum':
                 is_bad = (new_limit < value)
@@ -484,12 +484,12 @@ class IntegerP(Parameter):
                         'conflict_type': opposite[limit_type], 'value': None}
         if bad_limit(limit_type, new_limit, other_limit):
             msg_names['value'] = other_limit
-            msg = self.build_message('limit_conflict', *msg_names)
+            msg = self.build_message('limit_conflict', **msg_names)
             raise UpdateError(msg)
         elif bad_limit(limit_type, new_limit, current_value):
             msg_names.update({'conflict_type': 'value',
                                 'value': current_value})
-            msg = self.build_message('limit_conflict', *msg_names)
+            msg = self.build_message('limit_conflict', **msg_names)
             raise UpdateError(msg)
         return True
 

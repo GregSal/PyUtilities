@@ -28,6 +28,7 @@
 import unittest
 from parameters import Parameter, ParameterSet
 
+# FIXME Use StringP and IntegerP here
 @unittest.skip('Not Implemented')
 class TestParameter(Parameter):
     '''A Test String Parameter

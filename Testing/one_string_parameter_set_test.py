@@ -26,26 +26,7 @@
                     entries for the non-parameter arguments.
 '''
 import unittest
-from parameters import Parameter, ParameterSet, NotValidError
-
-
-class TestParameter(Parameter):
-    '''A Test String Parameter
-    '''
-    _name = 'test_string'
-    _type = str
-
-    def __init__(self, **kwds):
-        '''Create a new instance of the string parameter.'''
-        super().__init__(**kwds)
-
-    def check_validity(self, value):
-        '''Check that value is a string.
-        '''
-        error_message = super().check_validity(value)
-        if error_message is None:
-            error_message = 'not_valid'
-        return error_message
+from parameters import StringP, ParameterSet, NotValidError
 
 
 class OneStringP(ParameterSet):
@@ -54,7 +35,7 @@ class OneStringP(ParameterSet):
     '''
     parameter_definitions = [
         {'name': 'test_string1',
-         'parameter_type': TestParameter,
+         'parameter_type': StringP,
          'default': 'string1 default',
          'required': False,
          'on_update': None}
