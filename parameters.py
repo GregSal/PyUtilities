@@ -50,10 +50,10 @@ class UpdateError(ParameterError):
     '''
     pass
 
-def trueiterable(x):
-    '''Indicate if the variable is anon-string type iterable
+def trueiterable(variable):
+    '''Indicate if the variable is a non-string type iterable
     '''
-    return not isinstance(x, str) and isinstance(x, Iterable)
+    return not isinstance(variable, str) and isinstance(variable, Iterable)
 
 
 def get_class_name(class_type: type)->str:
@@ -661,6 +661,10 @@ class IntegerP(Parameter):
             if self.min_value is not None:
                 disp_str = disp_str + self.build_message('min_value')
         return disp_str
+
+
+class PathP(Parameter):
+    pass
 
 
 class ParameterSet(OrderedDict):

@@ -19,11 +19,13 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="file_checking.py" />
     <Compile Include="parameters.py" />
     <Compile Include="Testing\IntegerP_tests.py" />
     <Compile Include="Testing\one_string_parameter_set_test.py" />
-    <Compile Include="Testing\parameters_test.py" />
+    <Compile Include="Testing\parameters_tests.py" />
     <Compile Include="Testing\parameter_interaction_test.py" />
+    <Compile Include="Testing\PathP_tests.py" />
     <Compile Include="Testing\StringP_tests.py" />
     <Compile Include="Testing\two_parameter_set_test.py" />
   </ItemGroup>
