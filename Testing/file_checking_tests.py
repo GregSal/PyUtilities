@@ -180,22 +180,11 @@ def remove_test_dir(test_files: List[Path]):
 
 
 class TestOneFileType(unittest.TestCase):
-    '''Initialize with txt type
-        'Text File':('*.txt',)
-        Confirm that txt tuple is returned
-        Confirm the txt is in the extensions list
-                type_list
-               Confirm that all files is false
-            all_types
-        Confirm that is directory is false
-            is_dir
-    '''
+    '''Test FileTypes with a single file type.'''
     def setUp(self):
-        '''Initialize with txt type.
-        '''
+        '''Initialize with txt type.'''
         self.test_type = FileTypes('Text File')
         
-
     def test_one_type_tuple(self):
         '''Confirm that txt tuple is returned'''
         text_tuple = ('Text File','*.txt')
@@ -203,7 +192,7 @@ class TestOneFileType(unittest.TestCase):
 
     def test_one_type_ext_list(self):
         '''Confirm the txt is in the extensions list'''
-        self.assertIn('.txt', self.test_type.type_list)
+        self.assertIn('.txt', self.test_type.type_select)
 
     def test_one_type_not_all(self):
         '''Confirm that all files is false'''
@@ -212,3 +201,22 @@ class TestOneFileType(unittest.TestCase):
     def test_one_type_not_dir(self):
         '''Confirm that is directory is false'''
         self.assertFalse(self.test_type.is_dir)
+
+class TestTwoFileTypes(unittest.TestCase):
+    '''Test FileTypes with a two file types.'''
+    def setUp(self):
+        '''Initialize with txt type.
+        '''
+        self.test_type = FileTypes(['Text File', 'Excel Files'])
+        
+    def test_two_type_list(self):
+        '''Confirm that Text  and Excel  tuples are returned'''
+        file_type_list = [('Text File','*.txt'),
+                          ('Excel Files', '*.xls;*.xlsx;*.xlsm')]
+        self.assertListEqual(self.test_type, file_type_list)
+
+    def test_multi_type_ext_list(self):
+        '''Confirm the extensions list contents'''
+        file_types = {'.txt', '.xls', '.xlsx', '.xlsm'}
+        self.assertSetEqual(file_types, self.test_type.type_select)
+

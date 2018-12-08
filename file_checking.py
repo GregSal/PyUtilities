@@ -60,7 +60,7 @@ class FileTypes(list):
             type_selection {List[str]} -- A list of the desired file types.
         '''
         super().__init__()
-        self.type_list = list()
+        self.type_select = set()
         self.all_types = False
         self.is_dir = False
         if type_selection is None:
@@ -74,16 +74,16 @@ class FileTypes(list):
         for item in selection_list:
             type_name = str(item)
             if 'directory' in type_name:
-                self.type_list = None
+                self.type_select = set()
                 self.is_dir = True
             elif type_name in self.file_types:
                 self.append((type_name, ';'.join(self.file_types[type_name])))
-                self.type_list.extend(suffix.replace('*.', '.')
-                                      for suffix in self.file_types[type_name])
+                for suffix in self.file_types[type_name]:
+                    self.type_select.add(suffix.replace('*.', '.'))
             else:
                 msg = '{} is not a valid file type group.'.format(type_name)
                 raise FileTypeError(msg)
-        if '.*' in self.type_list:
+        if '.*' in self.type_select:
             self.all_types = True
 
     def check_type(self, file_name: Path)->bool:
@@ -99,7 +99,7 @@ class FileTypes(list):
         elif self.all_types:
             is_match = True
         else:
-            is_match = file_name.suffix in self.type_list
+            is_match = file_name.suffix in self.type_select
         return is_match
     
     def disp(self)->str:
