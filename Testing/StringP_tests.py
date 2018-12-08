@@ -1,4 +1,4 @@
-'''Basic Parameter class object tests.
+'''StringP Parameter class object tests.
 '''
 import unittest
 from parameters import StringP

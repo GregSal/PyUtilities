@@ -65,10 +65,12 @@ class FileTypes(list):
         self.is_dir = False
         if type_selection is None:
             selection_list = list(self.file_types.keys())
-        elif not true_iterable(type_selection):
-            raise TypeError('type_selection must be a list of strings')
-        else:
+        elif isinstance(type_selection, str):
+            selection_list = (type_selection,)
+        elif isinstance(type_selection, Iterable):
             selection_list = type_selection
+        else:
+            raise TypeError('type_selection must be a list of strings')
         for item in selection_list:
             type_name = str(item)
             if 'directory' in type_name:
