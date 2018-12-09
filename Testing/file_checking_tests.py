@@ -146,37 +146,39 @@ from file_checking import *
 from typing import Optional, List, Dict, Tuple, Set, Any, Union
 
 
-def build_test_directory()->List[Path]:
+def build_test_directory()->Dict[str, Path]:
     '''Create a test directory tree.
     Returns:
         List[Path] -- A list of the files in the test tree
     '''
     base_path = Path.cwd() / 'Testing'
+    files = [('text_file', 'test_file.txt'),
+             ('excel_file', 'test_excel.xls'),
+             ('log_file', 'test.log')]
     test_dir = base_path / 'test folder'
-    test_file1 = test_dir / 'test_file.txt'
-    test_file2 = test_dir / 'test_excel.xls'
-    test_files = [test_dir, test_file1, test_file2]
-
     test_dir.mkdir(exist_ok=True)
-    test_file1.touch()
-    test_file2.touch()
-
+    test_files = {'test_dir': test_dir}
+    for file, file_name in files:
+        test_file = test_dir / file_name
+        test_file.touch()
+        test_files[file] = test_file
     return test_files
 
-def remove_test_dir(test_files: List[Path]):
+def remove_test_dir(test_files: Dict[str, Path]):
     '''Remove all files and directories in the test_files list.
     Arguments:
         test_files {List[Path]} -- A list of all files and directories to be
         removed.
     '''
-    dir_list = [(len(str(file)), file) for file in test_files if file.is_dir()]
+    dir_list = [(len(str(file)), file)
+                for file in test_files.values() 
+                if file.is_dir()]
     dir_list = sorted(dir_list, key=itemgetter(1), reverse=True)
-    file_list = [file for file in test_files if not file.is_dir()]
+    file_list = [file for file in test_files.values()  if not file.is_dir()]
     for file in file_list:
         os.remove(file)
     for dir in dir_list:
         dir[1].rmdir()
-
 
 
 class TestOneFileType(unittest.TestCase):
@@ -219,4 +221,87 @@ class TestTwoFileTypes(unittest.TestCase):
         '''Confirm the extensions list contents'''
         file_types = {'.txt', '.xls', '.xlsx', '.xlsm'}
         self.assertSetEqual(file_types, self.test_type.type_select)
+
+class TestSpecialTypes(unittest.TestCase):
+    '''Test Directory and All files types.'''
+    def test_directory_type(self):
+        '''Initialize with directory type.
+        Confirm that all files is false.
+        Confirm that is directory is True.
+        Confirm that type_select is empty.
+        '''
+        test_type = FileTypes('directory')
+        self.assertTrue(test_type.is_dir)
+        self.assertTrue(len(test_type.type_select) == 0)
+        self.assertFalse(test_type.all_types)
+
+    def test_all_types(self):
+        '''Initialize with All and Excel type.
+        Confirm that All and Excel tuples are returned.
+        Confirm that all files is True.
+        Confirm that is directory is false.
+        '''
+        test_type = FileTypes(['All Files', 'Excel Files'])
+        self.assertTrue(test_type.all_types)
+        self.assertFalse(test_type.is_dir)
+        file_type_list = [('All Files','*.*'),
+                          ('Excel Files', '*.xls;*.xlsx;*.xlsm')]
+        self.assertListEqual(test_type, file_type_list)
+
+class TestFileTypeCheck(unittest.TestCase):
+    '''Check file type method.'''
+    def setUp(self):
+        '''Make txt and xls files.'''
+        self.files = build_test_directory()        
+
+    def tearDown(self):
+        '''Remove the test directory.
+        '''
+        remove_test_dir(self.files)
+        
+    def test_txt_type_check(self):
+        '''Confirm that check_type is true for txt file.
+        Initialize with txt typeself.
+        Confirm that check_type is false for xls file.
+        Confirm that check_type is false for dir.
+        '''
+        test_type = FileTypes('Text File')
+        self.assertTrue(test_type.check_type(self.files['text_file']))
+        self.assertFalse(test_type.check_type(self.files['excel_file']))
+        self.assertFalse(test_type.check_type(self.files['test_dir']))
+
+    def test_multi_type_check(self):
+        '''Check file type with multiple types.
+        Initialize with txt and excel types.
+        Confirm that check_type is true for txt .
+        Confirm that check_type is true for xls file.
+        Confirm that check_type is false for dir.
+        '''
+        test_type = FileTypes(['Text File', 'Excel Files'])
+        self.assertTrue(test_type.check_type(self.files['text_file']))
+        self.assertTrue(test_type.check_type(self.files['excel_file']))
+        self.assertFalse(test_type.check_type(self.files['test_dir']))
+
+    def test_dir_type_check(self):
+        '''Check file type with dir
+        Initialize with directory type
+        Confirm that check_type is false for txt file
+        Confirm that check_type is true for dir.
+        '''
+        test_type = FileTypes('directory')
+        self.assertFalse(test_type.check_type(self.files['text_file']))
+        self.assertFalse(test_type.check_type(self.files['excel_file']))
+        self.assertTrue(test_type.check_type(self.files['test_dir']))
+
+    def test_all_files_type_check(self):
+        '''Check file type with all files
+        Confirm that check_type is true for txt file
+        Confirm that check_type is true for xls file
+        Confirm that check_type is false for dir
+        '''
+        test_type = FileTypes(['All Files', 'Excel Files'])
+        self.assertTrue(test_type.check_type(self.files['text_file']))
+        self.assertTrue(test_type.check_type(self.files['excel_file']))
+        self.assertTrue(test_type.check_type(self.files['log_file']))
+        self.assertFalse(test_type.check_type(self.files['test_dir']))
 
