@@ -97,7 +97,7 @@ class FileTypes(list):
         if self.is_dir:
             is_match = file_name.is_dir()
         elif self.all_types:
-            is_match = True
+            is_match = not file_name.is_dir()
         else:
             is_match = file_name.suffix in self.type_select
         return is_match
