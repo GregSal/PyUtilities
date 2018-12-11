@@ -101,7 +101,7 @@ class FileTypes(list):
         else:
             is_match = file_name.suffix in self.type_select
         return is_match
-    
+
     def disp(self)->str:
         '''Generate a string describing the file types.
         Returns:
@@ -128,10 +128,11 @@ def insert_base_path(file_name: PathInput, base_path: Path = None)->Path:
     if isinstance(file_name, Path):
         full_path = file_name.resolve()
     elif isinstance(file_name, str):
-        if any(a in file_name for a in[':', './']):  # Check for a full path of type str
+        if any(a in file_name for a in[':', './/']):  # Check for a full path of type str
             full_path = Path(file_name).resolve()
         elif base_path:
             full_path = base_path / file_name
+            full_path = full_path.resolve()
         else:
             msg_str = 'No base path was provided, so the file name must be a '
             msg_str +='complete path.\n\tGot {}'
@@ -164,10 +165,9 @@ def make_full_path(file_name: PathInput, valid_types: FileTypes,
         if not full_file_path.exists():
             msg = 'The file path must refer to an existing file'
             raise FileNotFoundError(msg)
-    else:
-        if not valid_types.check_type(full_file_path):
-            msg = '{} is not a valid file type.'.format(full_file_path)
-            raise FileTypeError(msg)
+    if not valid_types.check_type(full_file_path):
+        msg = '{} is not a valid file type.'.format(full_file_path)
+        raise FileTypeError(msg)
     return full_file_path
 
 
@@ -200,5 +200,6 @@ def replace_top_dir(dir_path: Path, file_path: Path, new_name: str)->str:
         msg_str = ' The top directory path will not be removed.'
         msg = msg_str.format(dir_str=str(dir_path),
                              file_str=str(file_path))
+        # TODO output warning message
     file_str_sup = str(file_path).replace(remove_str, new_name)
     return file_str_sup

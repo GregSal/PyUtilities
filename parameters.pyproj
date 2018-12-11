@@ -21,6 +21,7 @@
   <ItemGroup>
     <Compile Include="file_checking.py" />
     <Compile Include="parameters.py" />
+    <Compile Include="Testing\file_checking_tests.py" />
     <Compile Include="Testing\IntegerP_tests.py" />
     <Compile Include="Testing\one_string_parameter_set_test.py" />
     <Compile Include="Testing\parameters_tests.py" />

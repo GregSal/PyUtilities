@@ -171,7 +171,7 @@ def remove_test_dir(test_files: Dict[str, Path]):
         removed.
     '''
     dir_list = [(len(str(file)), file)
-                for file in test_files.values() 
+                for file in test_files.values()
                 if file.is_dir()]
     dir_list = sorted(dir_list, key=itemgetter(1), reverse=True)
     file_list = [file for file in test_files.values()  if not file.is_dir()]
@@ -186,7 +186,7 @@ class TestOneFileType(unittest.TestCase):
     def setUp(self):
         '''Initialize with txt type.'''
         self.test_type = FileTypes('Text File')
-        
+
     def test_one_type_tuple(self):
         '''Confirm that txt tuple is returned'''
         text_tuple = ('Text File','*.txt')
@@ -210,7 +210,7 @@ class TestTwoFileTypes(unittest.TestCase):
         '''Initialize with txt type.
         '''
         self.test_type = FileTypes(['Text File', 'Excel Files'])
-        
+
     def test_two_type_list(self):
         '''Confirm that Text  and Excel  tuples are returned'''
         file_type_list = [('Text File','*.txt'),
@@ -252,13 +252,13 @@ class TestFileTypeCheck(unittest.TestCase):
     '''Check file type method.'''
     def setUp(self):
         '''Make txt and xls files.'''
-        self.files = build_test_directory()        
+        self.files = build_test_directory()
 
     def tearDown(self):
         '''Remove the test directory.
         '''
         remove_test_dir(self.files)
-        
+
     def test_txt_type_check(self):
         '''Confirm that check_type is true for txt file.
         Initialize with txt typeself.
@@ -310,25 +310,25 @@ class TestInsertBasePath(unittest.TestCase):
     def setUp(self):
         '''Make txt and xls files.
         Make Testing as base path'''
-        self.files = build_test_directory()   
-        self.base_path = Path.cwd() /'Testing'
+        self.files = build_test_directory()
+        self.base_path = Path.cwd() / 'Testing'
 
     def tearDown(self):
         '''Remove the test directory.
         '''
         remove_test_dir(self.files)
-        
+
     def test_make_dir(self):
         '''Confirm that insert_base_path returns full path for directory name only.
         '''
         test_dir = insert_base_path('test folder', self.base_path)
         self.assertEqual(test_dir, self.files['test_dir'])
 
-    def test_already_full_dir(self):
-        '''Confirm that insert_base_path returns full path for full path in.
+    def test_make_relative_dir(self):
+        '''Confirm that insert_base_path returns full path for a relative path name.
         '''
-        test_dir = insert_base_path(self.files['test_dir'], self.base_path)
-        self.assertEqual(test_dir, self.files['test_dir'])
+        test_dir = insert_base_path('..', self.base_path)
+        self.assertEqual(test_dir, self.base_path.parent)
 
     def test_already_full_dir_str(self):
         '''Confirm that insert_base_path returns full path for full path in as str.
@@ -348,6 +348,16 @@ class TestInsertBasePath(unittest.TestCase):
         test_dir = insert_base_path('test folder//test_file.txt', self.base_path)
         self.assertEqual(test_dir, self.files['text_file'])
 
+    def test_make_relative_file(self):
+        '''Confirm that insert_base_path returns full path for a relative path.
+        '''
+        relative_path = '..//parameters//Testing//test folder//test_file.txt'
+        # This call ignores the base path
+        test_dir = insert_base_path(relative_path, self.base_path)
+        self.assertEqual(test_dir, self.files['text_file'])
+        test_dir = insert_base_path(relative_path)
+        self.assertEqual(test_dir, self.files['text_file'])
+
     def test_make_file_error_no_base(self):
         '''Confirm that insert_base_path raises ValueError  for directory name / txt file and no base_dir.
         '''
@@ -358,62 +368,24 @@ class TestInsertBasePath(unittest.TestCase):
         '''Confirm that insert_base_path raises TypeError for number input.
         '''
         with self.assertRaises(TypeError):
-            test_dir = insert_base_path(1, self.base_path)
+            insert_base_path(1, self.base_path)
 
 class TestMakeDirPath(unittest.TestCase):
     '''Make_full_path dir test
         Make Testing as based path
-        Initialize with directory type
-            'directory'
-       
-        
-    make_full_path all files test
-        Make Testing/test_dir  as base path
-        Initialize with All and txt type
-            'All Files':('*.*',),
-            'Text Files':('*.txt', '*.csv', '*.tab',
-        Confirm that make_full_path returns full path for txt file name only
-        Confirm that make_full_path  returns full path  for xls file name only
-        Confirm that make_full_path  returns full path  for full path xls file
-        Confirm that make_full_path returns full path for file with no extension
-        Confirm that make_full_path raises FileTypeError for directory full path
-    make_full_path dir exists test
-        Make Testing as based path
-        Initialize with directory type
-            'directory'
-        Confirm that make_full_path returns full path for directory name only
-        Confirm that make_full_path raises FileNotFoundError for fake directory name only
-        Confirm that make_full_path raises FileNotFoundError for fake full directory path
-        Confirm that make_full_path returns full path for fake directory name only with exists false
-    make_full_path file exists test
-        Make Testing/test_dir  as base path
-        Initialize with txt type
-            'Text File':('*.txt',)
-        Confirm that make_full_path returns full path for txt file name only
-        Confirm that make_full_path raises FileNotFoundError for fake file name only
-        Confirm that make_full_path returns full path for full txt file path
-        Confirm that make_full_path raises FileNotFoundError for full txt file path
-        Confirm that make_full_path returns full path for fake file name only with exists false
-    make_full_path all files test
-        Make Testing/test_dir  as base path
-        Initialize with All and txt type
-            'All Files':('*.*',),
-            'Text Files':('*.txt', '*.csv', '*.tab',
-        Confirm that make_full_path returns full path for fake file name with no extension and with exists false
-        Confirm that make_full_path returns full path for real file name with no extension and with exists true
     '''
     def setUp(self):
         '''Make test files.
         Make Testing as based path
         '''
-        self.files = build_test_directory()   
+        self.files = build_test_directory()
         self.base_path = Path.cwd() /'Testing'
 
     def tearDown(self):
         '''Remove the test directory.
         '''
         remove_test_dir(self.files)
-        
+
     def test_make_dir(self):
         '''Confirm that make_full_path returns full path for directory name only.
         '''
@@ -428,9 +400,9 @@ class TestMakeDirPath(unittest.TestCase):
         '''
         test_type = FileTypes('Text File')
         with self.assertRaises(FileTypeError):
-            test_dir = make_full_path(file_name='test folder',
-                                    valid_types=test_type,
-                                    base_path=self.base_path)
+            make_full_path(file_name='test folder',
+                           valid_types=test_type,
+                           base_path=self.base_path)
 
 
 class TestMakeFilePath(unittest.TestCase):
@@ -441,15 +413,15 @@ class TestMakeFilePath(unittest.TestCase):
         Make Testing/test_dir as base path.
         Initialize FileTypes with text type
         '''
-        self.files = build_test_directory()   
-        self.base_path = Path.cwd() / 'Testing' / 'Testing/test_dir'
+        self.files = build_test_directory()
+        self.base_path = Path.cwd() / 'Testing' / 'test folder'
         self.test_type = FileTypes('Text File')
 
     def tearDown(self):
         '''Remove the test directory.
         '''
         remove_test_dir(self.files)
-        
+
     def test_make_file(self):
         '''Confirm that make_full_path returns full path for txt file name only.
         '''
@@ -460,19 +432,19 @@ class TestMakeFilePath(unittest.TestCase):
 
     def test_wrong_file_type_error(self):
         '''Confirm that make_full_path raises FileTypeError for xls file name only.
-        '''        
+        '''
         with self.assertRaises(FileTypeError):
-            test_dir = make_full_path(file_name='test_excel.xls',
-                                    valid_types=self.test_type,
-                                    base_path=self.base_path)
+            make_full_path(file_name='test_excel.xls',
+                           valid_types=self.test_type,
+                           base_path=self.base_path)
 
     def test_wrong_file_type_full_path_error(self):
         '''Confirm that make_full_path raises FileTypeError for full path xls file.
-        '''        
+        '''
         with self.assertRaises(FileTypeError):
-            test_dir = make_full_path(file_name=self.files['excel_file'],
-                                    valid_types=self.test_type,
-                                    base_path=self.base_path)
+            make_full_path(file_name=self.files['excel_file'],
+                           valid_types=self.test_type,
+                           base_path=self.base_path)
 
 
 class TestMakeAllFiles(unittest.TestCase):
@@ -480,18 +452,18 @@ class TestMakeAllFiles(unittest.TestCase):
     '''
     def setUp(self):
         '''Make test files.
-        Make Testing/test_dir  as base path
+        Make Testing/test_dir as base path
         Initialize with All and txt type
         '''
-        self.files = build_test_directory()   
-        self.base_path = Path.cwd() / 'Testing' / 'Testing/test_dir'
+        self.files = build_test_directory()
+        self.base_path = Path.cwd() / 'Testing' / 'test folder'
         self.test_type = FileTypes(['All Files', 'Excel Files'])
 
     def tearDown(self):
         '''Remove the test directory.
         '''
         remove_test_dir(self.files)
-        
+
     def test_make_txt_file(self):
         '''Confirm that make_full_path returns full path for txt file name only.
         '''
@@ -501,7 +473,7 @@ class TestMakeAllFiles(unittest.TestCase):
         self.assertEqual(test_full_path, self.files['text_file'])
 
     def test_make_xls_file(self):
-        '''Confirm that make_full_path  returns full path  for xls file name only.
+        '''Confirm that make_full_path  returns full path for xls file name only.
         '''
         test_dir = make_full_path(file_name='test_excel.xls',
                                   valid_types=self.test_type,
@@ -521,16 +493,15 @@ class TestMakeAllFiles(unittest.TestCase):
         '''
         test_path = self.base_path / 'empty_file'
         test_full_path = make_full_path(file_name='empty_file',
-                                  valid_types=self.test_type,
-                                  base_path=self.base_path)
+                                        valid_types=self.test_type,
+                                        base_path=self.base_path,
+                                        must_exist=False)
         self.assertEqual(test_full_path, test_path)
 
     def test_make_dir_error(self):
         '''Confirm that make_full_path raises FileTypeError for directory full path.
         '''
         with self.assertRaises(FileTypeError):
-            test_full_path = make_full_path(file_name='test folder',
-                                    valid_types=self.test_type,
-                                    base_path=self.base_path.parent)
-
-
+            make_full_path(file_name='test folder',
+                           valid_types=self.test_type,
+                           base_path=self.base_path.parent)
