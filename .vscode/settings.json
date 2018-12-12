@@ -6,7 +6,7 @@
         "-s",
         "./Testing",
         "-p",
-        "*_test*.py"
+        "*_tests.py"
     ],
     "spellright.language": [
         "en"
@@ -16,5 +16,7 @@
         "latex",
         "plaintext"
     ],
-    "python.pythonPath": "C:\\Users\\gsalomon\\AppData\\Local\\Continuum\\Anaconda3\\python.exe"
+    "python.unitTest.pyTestEnabled": false,
+    "python.unitTest.nosetestsEnabled": false,
+    "python.unitTest.unittestEnabled": true
 }

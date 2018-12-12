@@ -4,7 +4,7 @@ from parameters import StringP
 from parameters import NotValidError, UpdateError, UnMatchedValuesError
 
 
-class TestStringP(unittest.TestCase):
+class TestPathP(unittest.TestCase):
     '''Test instance creation passing nothing.
     '''
     def test_init(self):

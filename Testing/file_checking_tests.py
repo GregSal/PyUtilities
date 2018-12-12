@@ -4,138 +4,10 @@ Created on Dec 7 2018
 Testing of methods in file_checking
 
 File_checking tests
-    One file type
-        Initialize with txt type
-        'Text File':('*.txt',)
-        Confirm that txt tuple is returned
-        Confirm the txt is in the extensions list
-                type_list
-               Confirm that all files is false
-            all_types
-        Confirm that is directory is false
-            is_dir
-    two file types
-        Initialize with txt and excel types
-        'Text File':('*.txt',)
-        'Excel Files':('*.xls', '*.xlsx', '*.xlsm'),
-        Confirm that Text  and Excel  tuples are returned
-        Confirm the extensions list contents
-                type_list
-    Directory
-        Initialize with directory type
-            'directory'
-               Confirm that all files is false
-            all_types
-        Confirm that is directory is True
-            is_dir
-    all files
-        Initialize with All and txt type
-            'All Files':('*.*',),
-            'Text Files':('*.txt', '*.csv', '*.tab',
-        Confirm that All and test tuples are returned
-            'All Files':('*.*',),
-            'Text Files':('*.txt', '*.csv', '*.tab',
-               Confirm that all files is True
-            all_types
-        Confirm that is directory is false
-            is_dir
-    Check file type
-        Make txt and xls files
-        Initialize with txt type
-        'Text File':('*.txt',)
-        Confirm that check_type is true for txt file
-        Confirm that check_type is false for xls file
-        Confirm that check_type is false for dir
-    Check file type with multiple types
-        Initialize with txt and excel types
-        'Text File':('*.txt',)
-        'Excel Files':('*.xls', '*.xlsx', '*.xlsm'),
-        Confirm that check_type is true for txt file
-        Confirm that check_type is true for xls file
-        Confirm that check_type is false for dir
-    Check file type with dir
-        Initialize with directory type
-            'directory'
-        Confirm that check_type is false for txt file
-        Confirm that check_type is true for dir
-    Check file type with all files
-        Confirm that All and test tuples are returned
-            'All Files':('*.*',),
-            'Text Files':('*.txt', '*.csv', '*.tab',
-        Confirm that check_type is true for txt file
-        Confirm that check_type is true for xls file
-        Confirm that check_type is false for dir
-
-    insert_base_path
-        Make Testing as based path
-        Initialize with directory type
-            'directory'
-        Confirm that insert_base_path returns full path for full path in
-        Confirm that insert_base_path returns full path for full path in as str
-        Confirm that insert_base_path returns full path for full path in as str and no base_dir
-        Confirm that insert_base_path returns full path for directory name only
-        Confirm that insert_base_path returns full path for directory name / txt file
-        Confirm that insert_base_path raises ValueError  for directory name / txt file and no base_dir
-        Confirm that insert_base_path raises TypeError for number input
-    make_full_path dir test
-        Make Testing as based path
-        Initialize with directory type
-            'directory'
-        Confirm that make_full_path returns full path for directory name only
-        Confirm that make_full_path raises FileTypeError for full path txt file
-    make_full_path file test
-        Make Testing/test_dir  as base path
-        Initialize with txt type
-            'Text File':('*.txt',)
-        Confirm that make_full_path returns full path for txt file name only
-        Confirm that make_full_path raises FileTypeError for xls file name only
-        Confirm that make_full_path raises FileTypeError for full path xls file
-    make_full_path all files test
-        Make Testing/test_dir  as base path
-        Initialize with All and txt type
-            'All Files':('*.*',),
-            'Text Files':('*.txt', '*.csv', '*.tab',
-        Confirm that make_full_path returns full path for txt file name only
-        Confirm that make_full_path  returns full path  for xls file name only
-        Confirm that make_full_path  returns full path  for full path xls file
-        Confirm that make_full_path returns full path for file with no extension
-        Confirm that make_full_path raises FileTypeError for directory full path
-    make_full_path dir exists test
-        Make Testing as based path
-        Initialize with directory type
-            'directory'
-        Confirm that make_full_path returns full path for directory name only
-        Confirm that make_full_path raises FileNotFoundError for fake directory name only
-        Confirm that make_full_path raises FileNotFoundError for fake full directory path
-        Confirm that make_full_path returns full path for fake directory name only with exists false
-    make_full_path file exists test
-        Make Testing/test_dir  as base path
-        Initialize with txt type
-            'Text File':('*.txt',)
-        Confirm that make_full_path returns full path for txt file name only
-        Confirm that make_full_path raises FileNotFoundError for fake file name only
-        Confirm that make_full_path returns full path for full txt file path
-        Confirm that make_full_path raises FileNotFoundError for full txt file path
-        Confirm that make_full_path returns full path for fake file name only with exists false
-    make_full_path all files test
-        Make Testing/test_dir  as base path
-        Initialize with All and txt type
-            'All Files':('*.*',),
-            'Text Files':('*.txt', '*.csv', '*.tab',
-        Confirm that make_full_path returns full path for fake file name with no extension and with exists false
-        Confirm that make_full_path returns full path for real file name with no extension and with exists true
-
-    replace_top_dir tests
-        Make Testing as top path
-        Make 'Top Test' as replacement
-        Confirm that replace_top_dir returns modified path string for full txt file path
-        Confirm that replace_top_dir returns modified path string for full directory path
-        Confirm that replace_top_dir returns modified path string for fake full directory path
-        Make '' as replacement
-        Confirm that replace_top_dir returns abbreviated path for full txt file path
-        Confirm that replace_top_dir returns abbreviated path string for full directory path
-        Confirm that replace_top_dir returns abbreviated path string for fake full txt path
-
+    Check file type definitions
+    Check insert_base_path
+    Check make_full_path
+    Check replace_top_dir tests
 '''
 
 import unittest
@@ -143,7 +15,7 @@ import os
 from pathlib import Path
 from operator import itemgetter
 from file_checking import *
-from typing import Optional, List, Dict, Tuple, Set, Any, Union
+from typing import Dict
 
 
 def build_test_directory()->Dict[str, Path]:
@@ -505,3 +377,136 @@ class TestMakeAllFiles(unittest.TestCase):
             make_full_path(file_name='test folder',
                            valid_types=self.test_type,
                            base_path=self.base_path.parent)
+
+
+class TestDirExists(unittest.TestCase):
+    '''Make_full_path existing directory test
+    '''
+    def setUp(self):
+        '''Make test files.
+        Make Testing as based path
+        Initialize with directory type
+        '''
+        self.files = build_test_directory()
+        self.base_path = Path.cwd() / 'Testing'
+        self.test_type = FileTypes('directory')
+
+    def tearDown(self):
+        '''Remove the test directory.
+        '''
+        remove_test_dir(self.files)
+
+    def test_fake_dir_error(self):
+        '''Confirm that make_full_path raises FileNotFoundError for fake directory name only.
+        '''
+        with self.assertRaises(FileNotFoundError):
+            make_full_path(file_name='does_not_exists',
+                           valid_types=self.test_type,
+                           base_path=self.base_path)
+
+    def test_fake_full_dir_error(self):
+        '''Confirm that make_full_path raises FileNotFoundError for fake full directory path.
+        '''
+        dir_path = self.base_path / 'does_not_exists'
+        with self.assertRaises(FileNotFoundError):
+            make_full_path(file_name=dir_path,
+                           valid_types=self.test_type,
+                           base_path=self.base_path)
+
+    def test_fake_dir(self):
+        '''Confirm that make_full_path returns full path for fake directory name only with exists false.
+        '''
+        dir_path = self.base_path / 'does_not_exists'
+        test_dir = make_full_path(file_name=dir_path,
+                                  valid_types=self.test_type,
+                                  base_path=self.base_path,
+                                  must_exist=False)
+        self.assertEqual(test_dir, dir_path)
+
+
+class TestFileExists(unittest.TestCase):
+    '''Make_full_path existing files test
+    '''
+    def setUp(self):
+        '''Make test files.
+        Make Testing/test_dir as base path
+        Initialize with text type
+        '''
+        self.files = build_test_directory()
+        self.base_path = Path.cwd() / 'Testing' / 'test folder'
+        self.test_type = FileTypes('Text File')
+
+    def tearDown(self):
+        '''Remove the test directory.
+        '''
+        remove_test_dir(self.files)
+
+    def test_fake_file_error(self):
+        '''Confirm that make_full_path raises FileNotFoundError for fake file name only.
+        '''
+        with self.assertRaises(FileNotFoundError):
+            make_full_path(file_name='does_not_exists.txt',
+                           valid_types=self.test_type,
+                           base_path=self.base_path)
+
+    def test_fake_full_file_error(self):
+        '''		Confirm that make_full_path raises FileNotFoundError for full txt file path
+.
+        '''
+        file_path = self.base_path / 'does_not_exist.txt'
+        with self.assertRaises(FileNotFoundError):
+            make_full_path(file_name=file_path,
+                           valid_types=self.test_type,
+                           base_path=self.base_path)
+
+    def test_fake_file(self):
+        '''Confirm that make_full_path returns full path for fake file name only with exists false.
+        '''
+        file_path = self.base_path / 'does_not_exist.txt'
+        test_dir = make_full_path(file_name=file_path,
+                                  valid_types=self.test_type,
+                                  base_path=self.base_path,
+                                  must_exist=False)
+        self.assertEqual(test_dir, file_path)
+class TestReplaceTop(unittest.TestCase):
+    '''	replace_top_dir tests
+    '''
+    def setUp(self):
+        '''Make test files.
+        Make Testing/test_dir as base path
+        Make Testing as top path
+        Make 'Top Test' as replacement
+        '''
+        self.files = build_test_directory()
+        self.base_path = Path.cwd() / 'Testing' / 'test folder'
+        self.top_path = Path.cwd() / 'Testing'
+        self.replacement = 'Top Test\:t'
+
+    def tearDown(self):
+        '''Remove the test directory.
+        '''
+        remove_test_dir(self.files)
+
+    def test_str_path(self):
+        '''Confirm that replace_top_dir returns modified path string for full txt file path.
+        Confirm that replace_top_dir returns modified path string for full directory path
+		Confirm that replace_top_dir returns modified path string for fake full directory path
+		Make '' as replacement
+		Confirm that replace_top_dir returns abbreviated path for full txt file path
+        '''
+        test_str = self.replacement + 'test folder//test_file.txt'
+        path_str = replace_top_dir(self.top_path, self.files['text_file'], self.replacement)
+        self.assertEqual(test_str, path_str)
+
+        test_str = self.replacement + 'test folder'
+        path_str = replace_top_dir(self.top_path, self.files['test_dir'], self.replacement)
+        self.assertEqual(test_str, path_str)
+
+        dir_path = self.base_path / 'does_not_exists'
+        test_str = self.replacement + 'test folder//does_not_exist'
+        path_str = replace_top_dir(self.top_path, dir_path, self.replacement)
+        self.assertEqual(test_str, path_str)
+
+        test_str = 'test folder//test_file.txt'
+        path_str = replace_top_dir(self.top_path, self.files['text_file'], '')
+        self.assertEqual(test_str, path_str)
