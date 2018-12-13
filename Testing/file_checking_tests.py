@@ -14,7 +14,8 @@ import unittest
 import os
 from pathlib import Path
 from operator import itemgetter
-from file_checking import *
+from file_checking import FileTypes, insert_base_path, make_full_path
+from file_checking import replace_top_dir, FileTypeError
 from typing import Dict
 
 
@@ -36,6 +37,7 @@ def build_test_directory()->Dict[str, Path]:
         test_files[file] = test_file
     return test_files
 
+	
 def remove_test_dir(test_files: Dict[str, Path]):
     '''Remove all files and directories in the test_files list.
     Arguments:
@@ -76,6 +78,7 @@ class TestOneFileType(unittest.TestCase):
         '''Confirm that is directory is false'''
         self.assertFalse(self.test_type.is_dir)
 
+		
 class TestTwoFileTypes(unittest.TestCase):
     '''Test FileTypes with a two file types.'''
     def setUp(self):
@@ -94,6 +97,7 @@ class TestTwoFileTypes(unittest.TestCase):
         file_types = {'.txt', '.xls', '.xlsx', '.xlsm'}
         self.assertSetEqual(file_types, self.test_type.type_select)
 
+		
 class TestSpecialTypes(unittest.TestCase):
     '''Test Directory and All files types.'''
     def test_directory_type(self):
@@ -120,6 +124,7 @@ class TestSpecialTypes(unittest.TestCase):
                           ('Excel Files', '*.xls;*.xlsx;*.xlsm')]
         self.assertListEqual(test_type, file_type_list)
 
+		
 class TestFileTypeCheck(unittest.TestCase):
     '''Check file type method.'''
     def setUp(self):
@@ -133,7 +138,7 @@ class TestFileTypeCheck(unittest.TestCase):
 
     def test_txt_type_check(self):
         '''Confirm that check_type is true for txt file.
-        Initialize with txt typeself.
+        Initialize with txt type.
         Confirm that check_type is false for xls file.
         Confirm that check_type is false for dir.
         '''
@@ -177,6 +182,7 @@ class TestFileTypeCheck(unittest.TestCase):
         self.assertTrue(test_type.check_type(self.files['log_file']))
         self.assertFalse(test_type.check_type(self.files['test_dir']))
 
+		
 class TestInsertBasePath(unittest.TestCase):
     '''Check insert_base_path method.'''
     def setUp(self):
@@ -242,6 +248,7 @@ class TestInsertBasePath(unittest.TestCase):
         with self.assertRaises(TypeError):
             insert_base_path(1, self.base_path)
 
+			
 class TestMakeDirPath(unittest.TestCase):
     '''Make_full_path dir test
         Make Testing as based path
@@ -468,6 +475,8 @@ class TestFileExists(unittest.TestCase):
                                   base_path=self.base_path,
                                   must_exist=False)
         self.assertEqual(test_dir, file_path)
+
+		
 class TestReplaceTop(unittest.TestCase):
     '''	replace_top_dir tests
     '''
@@ -480,33 +489,42 @@ class TestReplaceTop(unittest.TestCase):
         self.files = build_test_directory()
         self.base_path = Path.cwd() / 'Testing' / 'test folder'
         self.top_path = Path.cwd() / 'Testing'
-        self.replacement = 'Top Test\:t'
+        self.replacement = 'Top Test:\t'
 
     def tearDown(self):
         '''Remove the test directory.
         '''
         remove_test_dir(self.files)
 
-    def test_str_path(self):
+    def test_str_file_path(self):
         '''Confirm that replace_top_dir returns modified path string for full txt file path.
-        Confirm that replace_top_dir returns modified path string for full directory path
-		Confirm that replace_top_dir returns modified path string for fake full directory path
-		Make '' as replacement
-		Confirm that replace_top_dir returns abbreviated path for full txt file path
         '''
-        test_str = self.replacement + 'test folder//test_file.txt'
+        test_str = self.replacement + '\\test folder\\test_file.txt'
         path_str = replace_top_dir(self.top_path, self.files['text_file'], self.replacement)
         self.assertEqual(test_str, path_str)
 
-        test_str = self.replacement + 'test folder'
+		
+    def test_str_dir_path(self):
+        '''Confirm that replace_top_dir returns modified path string for full directory path.
+		'''
+        test_str = self.replacement + '\\test folder'
         path_str = replace_top_dir(self.top_path, self.files['test_dir'], self.replacement)
         self.assertEqual(test_str, path_str)
 
-        dir_path = self.base_path / 'does_not_exists'
-        test_str = self.replacement + 'test folder//does_not_exist'
+    def test_str_fake_dir_path(self):
+        '''Confirm that replace_top_dir returns modified path string for fake full directory path.
+        '''
+        dir_path = self.base_path / 'does_not_exist'
+        test_str = self.replacement + '\\test folder\\does_not_exist'
         path_str = replace_top_dir(self.top_path, dir_path, self.replacement)
         self.assertEqual(test_str, path_str)
 
-        test_str = 'test folder//test_file.txt'
+    def test_str_path(self):
+        '''Make "" as replacement
+		Confirm that replace_top_dir returns abbreviated path for full txt file path.
+        '''
+        test_str = '\\test folder\\test_file.txt'
         path_str = replace_top_dir(self.top_path, self.files['text_file'], '')
         self.assertEqual(test_str, path_str)
+
+		

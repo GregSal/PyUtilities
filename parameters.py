@@ -2,7 +2,8 @@
 '''
 
 from abc import ABC, abstractmethod
-from collections import OrderedDict, Iterable
+from collections import OrderedDict
+from collections.abc import Iterable
 from typing import Optional, List, Dict, Tuple, Set, Any, Union
 import logging
 LOGGER = logging.getLogger(__name__)

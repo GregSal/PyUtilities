@@ -86,18 +86,25 @@ class FileTypes(list):
         if '.*' in self.type_select:
             self.all_types = True
 
-    def check_type(self, file_name: Path)->bool:
+    def check_type(self, file_name: Path, must_exist=True)->bool:
         '''Indicate whether the file has one of the suffixes.
         Arguments:
             file_name {Path} -- The full path to a file or directory.
+            file_name {bool} -- Indicates whether the file must exist.
         Returns:
             True if file_name matches one of the suffixes otherwise False.
         '''
         is_match = False
         if self.is_dir:
-            is_match = file_name.is_dir()
+            if must_exist:
+                is_match = file_name.is_dir()
+            else:
+                is_match = not bool(file_name.suffix)
         elif self.all_types:
-            is_match = not file_name.is_dir()
+            if must_exist:
+                is_match = file_name.is_file()
+            else:
+                is_match = not file_name.is_dir()
         else:
             is_match = file_name.suffix in self.type_select
         return is_match
@@ -165,7 +172,7 @@ def make_full_path(file_name: PathInput, valid_types: FileTypes,
         if not full_file_path.exists():
             msg = 'The file path must refer to an existing file'
             raise FileNotFoundError(msg)
-    if not valid_types.check_type(full_file_path):
+    if not valid_types.check_type(full_file_path, must_exist):
         msg = '{} is not a valid file type.'.format(full_file_path)
         raise FileTypeError(msg)
     return full_file_path
@@ -178,7 +185,7 @@ def replace_top_dir(dir_path: Path, file_path: Path, new_name: str)->str:
         file_path {Path} -- The full path to a file.
         new_name {str} -- The string to substitute for the root directory.
     Returns:
-        A string with thr root directory portion replaced.
+        A string with the root directory portion replaced.
     Raises:
         TypeError exception
         FileNotFoundError exception
