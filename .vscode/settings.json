@@ -21,5 +21,10 @@
     "python.unitTest.nosetestsEnabled": false,
     "python.unitTest.unittestEnabled": true,
     "python.unitTest.cwd": "",
-    "pythonTestExplorer.testFramework": "unittest"
+    "pythonTestExplorer.testFramework": "unittest",
+    "python.pythonPath": "C:\\Users\\gsalomon\\anaconda3\\python.exe",
+    "cSpell.words": [
+        "disp",
+        "trueiterable"
+    ]
 }

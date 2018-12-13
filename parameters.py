@@ -1,6 +1,7 @@
 '''Parameter objects with defined validity conditions and defaults.
 '''
 
+from pathlib import Path
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Iterable
@@ -665,7 +666,27 @@ class IntegerP(Parameter):
 
 
 class PathP(Parameter):
-    pass
+    '''A File or Directory Parameter with:
+    Optional limited File Types (file_types),
+    Optional Base directory for building the full path (base_directory),
+    Option to allow non-existing File or Directory paths (must_exist),
+    Optional nickname for a top portion of the full path (top_path_name),
+    '''
+    _name = 'path_parameter'
+    _type = Path
+
+    def __init__(self, *args, file_types=None, base_directory=None,
+                 must_exist=True, top_path_name=None, **kwds):
+        '''Create a new instance of the path parameter.
+        '''
+        super().__init__(*args, **kwds)
+
+    def check_validity(self, value):
+        '''Test to see if value is a valid parameter value.
+        If valid return None.
+        If not valid, return the name if the error message template to use.
+        '''
+        return super().check_validity(value)
 
 
 class ParameterSet(OrderedDict):
