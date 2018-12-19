@@ -6,9 +6,10 @@ from abc import ABC, abstractmethod
 from collections import OrderedDict
 from collections.abc import Iterable
 from typing import Optional, List, Dict, Tuple, Set, Any, Union
-import logging
-LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.DEBUG)
+from file_utilities import FileTypes, set_base_dir, make_full_path
+from file_utilities import PathInput, FileTypeError
+from data_utilities import true_iterable
+
 # pylint: disable=invalid-name
 ParameterSelection = Union[str, List[str], Dict[str, Any]]
 ParameterValues = Union[Any, List[Any], Dict[str, Any]]
@@ -51,11 +52,6 @@ class UpdateError(ParameterError):
     '''An error occurred attempting to modify a parameter attribute.
     '''
     pass
-
-def trueiterable(variable):
-    '''Indicate if the variable is a non-string type iterable
-    '''
-    return not isinstance(variable, str) and isinstance(variable, Iterable)
 
 
 def get_class_name(class_type: type)->str:
@@ -154,7 +150,7 @@ class Parameter(ABC):
         return msg_str
 
     @abstractmethod
-    def check_validity(self, value):
+    def check_validity(self, value)->ErrorString:
         '''Test to see if value is a valid parameter value.
         If valid return None.
         If not valid, return the name if the error message template to use.
@@ -482,15 +478,15 @@ class IntegerP(Parameter):
         direction = {'Minimum': 'greater', 'Maximum': 'less'}
         opposite = {'Minimum': 'Maximum', 'Maximum': 'Minimum'}
         msg_names = {'limit_type': limit_type, 'limit_value': new_limit,
-                        'direction': direction[limit_type],
-                        'conflict_type': opposite[limit_type], 'value': None}
+                     'direction': direction[limit_type],
+                     'conflict_type': opposite[limit_type], 'value': None}
         if bad_limit(limit_type, new_limit, other_limit):
             msg_names['value'] = other_limit
             msg = self.build_message('limit_conflict', **msg_names)
             raise UpdateError(msg)
         elif bad_limit(limit_type, new_limit, current_value):
             msg_names.update({'conflict_type': 'value',
-                                'value': current_value})
+                              'value': current_value})
             msg = self.build_message('limit_conflict', **msg_names)
             raise UpdateError(msg)
         return True
@@ -585,12 +581,13 @@ class IntegerP(Parameter):
             None - if the value is valid.
         '''
         # Test for integer as float or string
+        error_message = None  # type Optional[str]
         try:
             int_value = self.int_value(value)
         except NotValidError:
             error_message = 'not_valid'
         else:
-            error_message = super().check_validity(int_value)
+            error_message = super().check_validity(int_value) 
         # Test integer values
         if error_message is None:
             if self._value_set and (int_value not in self._value_set):
@@ -674,19 +671,69 @@ class PathP(Parameter):
     '''
     _name = 'path_parameter'
     _type = Path
+    initial_settings = dict(default=set_base_dir())
 
-    def __init__(self, *args, file_types=None, base_directory=None,
-                 must_exist=True, top_path_name=None, **kwds):
+    def __init__(self, *args, file_types: List[str] = None,
+        base_directory: Path = None, must_exist=True, **kwds):
         '''Create a new instance of the path parameter.
         '''
+        self._value = None # type Path
+        self.must_exist = must_exist # type bool
+        
         super().__init__(*args, **kwds)
+        if file_types:
+            self._file_types = FileTypes(file_types)
+        else:
+            self._file_types = FileTypes()
+        if base_directory:
+            self.base_directory = base_directory
+        else:
+            self.base_directory = set_base_dir()
 
-    def check_validity(self, value):
-        '''Test to see if value is a valid parameter value.
-        If valid return None.
-        If not valid, return the name if the error message template to use.
+    @Parameter
+    def file_types(self)->List[str]:
+        '''Return the file categories selected.
+        Extract and return the names of the file types in use.
         '''
-        return super().check_validity(value)
+        type_names = [type_set[0] for type_set in self._file_types]
+        return type_names
+
+    @file_types.setter
+    def set_types(self, file_types: List[str]):
+        '''Define the valid file types.
+        Create a FileTypes instance defining valid file types.
+        Args:
+            file_types (List[str]): The list of valid file types.
+        '''
+        self._file_types = FileTypes(file_types)
+
+    @property
+    def type_list(self)->Set[str]:
+        '''Return a set of valid file suffixes.
+        '''
+        return self._file_types.type_select
+
+    def check_validity(self, value: PathInput):
+        '''Check that value produces a valid path.
+        Test whether value can be built into a valid path.
+        Arguments:
+            value {Path} -- The value to be tested.
+        Returns
+            The error message describing the reason the value is not valid, or
+            None - if the value is valid.
+        '''
+        error_message = None
+        try:
+            make_full_path(value, self._file_types, self.must_exist,
+                           self.base_directory)
+        except (FileTypeError) as err:
+            error_message = 'wrong type'
+            self.message = err.args[0]
+        except (FileNotFoundError) as err:
+            error_message = 'doesnt exist'
+            self.message = err.args[0]
+        return error_message
+    # TODO Add more methods: set_value, initialize_messages, build_messages, disp
 
 
 class ParameterSet(OrderedDict):
