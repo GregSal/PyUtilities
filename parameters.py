@@ -69,7 +69,7 @@ class Parameter(ABC):
     '''This is an abstract base class for all of the parameter sub-classes.
     '''
     _type = object
-    initial_settings = dict(default=None)
+    initial_settings: Dict[str, Any] = {'default': None}
 
     @abstractmethod
     def __init__(self, value=None, name=None, messages=None, **kwds):
@@ -541,7 +541,7 @@ class IntegerP(Parameter):
             items{int, List[int]} -- The items to add to the list of valid
                 integer values
         '''
-        if trueiterable(items):
+        if true_iterable(items):
             item_list = items
         else:
             item_list = (items,)
@@ -671,7 +671,7 @@ class PathP(Parameter):
     '''
     _name = 'path_parameter'
     _type = Path
-    initial_settings = dict(default=set_base_dir())
+    initial_settings = {'default': set_base_dir()}
 
     def __init__(self, *args, file_types: List[str] = None,
         base_directory: Path = None, must_exist=True, **kwds):
@@ -733,7 +733,55 @@ class PathP(Parameter):
             error_message = 'doesnt exist'
             self.message = err.args[0]
         return error_message
-    # TODO Add more methods: set_value, initialize_messages, build_messages, disp
+
+    def set_value(self, value):
+        '''Set a new value for parameter.
+        '''
+        path_value = make_full_path(value, self._file_types, self.must_exist,
+                                    self.base_directory)
+        super().set_value(path_value)
+
+    # FIXME corect initialize_messages and build_messages
+    def initialize_messages(self, messages: Dict[str, str]):
+        '''Update message templates.
+        Arguments:
+            messages -- A dictionary of message templates referencing
+                StringP attributes.
+        '''
+        message_templates = dict(
+            too_long='{new_value} is longer than the maximum allowable '
+                     'length of {max_length}.',
+            disp_value_set='{new_value} is an invalid value for {name}.'
+                           '\n\tPossible values are: {value_set}',
+            not_in_value_set='{new_value} is not in the set of possible '
+                             'values:\n\t{value_set}',
+            value_conflict='{value} cannot be removed from the list of '
+                           'possible values because it is the current value',
+            length_conflict='new maximum length of {max_length} is less '
+                            'than the length of the current value: {value}.'
+                            '\n\tmax_value was not changed.',
+            value_set='\n\tPossible values are:\t{value_set}',
+            max_length='\n\tThe maximum allowable length is: {max_length}'
+            )
+        if messages:
+            message_templates.update(messages)
+        super().initialize_messages(message_templates)
+
+    def build_message(self, message: str, **value_set)->str:
+        '''Return a message string using format and a message template.
+        if message is a key in self.messages use the corresponding template,
+        otherwise treat message as a template.
+        Arguments:
+            message {str} -- Either a key in self.messages, or
+                a custom message template.
+            value_set {dict} -- value definition overrides for the message
+                templates.
+        '''
+        values = {'max_length': self.max_length,
+                  'value_set': self.value_set}
+        values.update(value_set)
+        return super().build_message(message, **values)
+    # TODO Add disp methods
 
 
 class ParameterSet(OrderedDict):
