@@ -30,25 +30,6 @@ from parameters import Parameter, ParameterSet
 
 # FIXME Use StringP and IntegerP here
 @unittest.skip('Not Implemented')
-class TestParameter(Parameter):
-    '''A Test String Parameter
-    '''
-    _name = 'test_string'
-    _type = str
-
-    def __init__(self, **kwds):
-        '''Create a new instance of the string parameter.'''
-        super().__init__(**kwds)
-
-    def check_validity(self, value):
-        '''Check that value is a string.
-        '''
-        error_message = super().check_validity(value)
-        if error_message is None:
-            error_message = 'not_valid'
-        return error_message
-
-
 class TwoStringP(ParameterSet):
     '''A Parameter set with two string Parameters:
             "test_string1"

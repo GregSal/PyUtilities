@@ -57,8 +57,11 @@ class UpdateError(ParameterError):
 def get_class_name(class_type: type)->str:
     '''parse the full class type string to get the abbreviated class name.
     It expects the class string to be in the form:
-    "<class '__module__.ClassName'>"
+        "<class '__module__.ClassName'>"    
+    Returns:
+        str: The name of the class.
     '''
+    # TODO Move to data_utilities
     full_class_name = str(class_type)
     name_portion = full_class_name.replace("<class '", "").replace("'>", "")
     class_name = name_portion.rsplit('.', 1)[-1]
@@ -78,6 +81,7 @@ class Parameter(ABC):
         self.initialized = False
         self._value = None
         self.default = None
+        self.status = BaseException
         if name:
             self._name = name
         else:
@@ -150,14 +154,20 @@ class Parameter(ABC):
         return msg_str
 
     @abstractmethod
-    def check_validity(self, value)->ErrorString:
+    def check_validity(self, value)->bool:
         '''Test to see if value is a valid parameter value.
-        If valid return None.
-        If not valid, return the name if the error message template to use.
+        If valid return True.
+        If not valid, build an error message, set the status attribute to
+        NotValidError and return False.
         '''
+        is_valid = False
         if isinstance(value, self.value_type):
-            return None
-        return 'not_valid'
+            is_valid = False
+        else:
+            is_valid = False
+            msg = self.build_message('not_valid', new_value=value)
+            self.status = NotValidError(msg)
+        return is_valid
 
     def get_value(self):
         '''Return the set value of the parameter.
@@ -172,13 +182,11 @@ class Parameter(ABC):
     def set_value(self, value):
         '''Set a new value for parameter.
         '''
-        error_message = self.check_validity(value)
-        if error_message is None:
+        if self.check_validity(value):
             self._value = self._type(value)
             self.initialized = True
         else:
-            msg = self.build_message(error_message, new_value=value)
-            raise NotValidError(msg)
+            raise self.status
 
     value = property(get_value, set_value)
 
@@ -204,7 +212,7 @@ class Parameter(ABC):
         '''Test to see if self is set to "value".
         Equality is only based on value not on other attributes.
         '''
-        if self.check_validity(value) is None:
+        if self.check_validity(value):
             return self.get_value() == value
         return False
 
@@ -224,13 +232,10 @@ class Parameter(ABC):
         '''
         if value is None:
             self.default = self._value
+        elif self.check_validity(value):
+            self.default = value
         else:
-            error_message = self.check_validity(value)
-            if error_message is None:
-                self.default = value
-            else:
-                msg = self.build_message(error_message, new_value=value)
-                raise NotValidError(msg)
+            raise self.status
 
     def is_initialized(self):
         '''Test whether a value has been explicitly assigned to the parameter
@@ -296,12 +301,10 @@ class StringP(Parameter):
         Arguments:
             item {str} -- The item to add to the list of valid string values
         '''
-        error_message = super().check_validity(item)
-        if error_message is None:
+        if super().check_validity(item):
             self._value_set.add(item)
         else:
-            msg = self.build_message(error_message, new_value=item)
-            raise NotValidError(msg)
+            raise self.status
 
     def drop_item(self, item: str):
         '''Drop an item from the set of possible values.
@@ -318,23 +321,28 @@ class StringP(Parameter):
             msg = self.build_message('not_in_value_set', new_value=item)
             raise UnMatchedValuesError(msg)
 
-    def check_validity(self, value)->ErrorString:
+    def check_validity(self, value)->bool:
         '''Check that value is a string.
+        If the value is not valid the status atribute is set with the error
+        message describing the reason the value is not valid.
         Arguments:
             value {str} -- The value to be tested.
         Returns
-            The error message describing the reason the value is not valid, or
-            None - if the value is valid.
+            True if the value is valid, False otherwise.
         '''
-        error_message = super().check_validity(value)
-        if error_message is None:
-            if self._value_set:
-                if value not in self._value_set:
-                    error_message = 'disp_value_set'
-            elif ((self._max_length is not None) and
-                  (len(value) > self._max_length)):
-                error_message = 'too_long'
-        return error_message
+        if not super().check_validity(value):
+            return False
+        if self._value_set:
+            if value not in self._value_set:
+                msg = self.build_message('disp_value_set', new_value=value)
+                self.status = NotValidError(msg)
+                return False
+        elif self._max_length:
+            if len(value) > self._max_length:
+                msg = self.build_message('too_long', new_value=value)
+                self.status = NotValidError(msg)
+                return False
+        return True
 
     def initialize_messages(self, messages: Dict[str, str]):
         '''Update message templates.
@@ -546,13 +554,11 @@ class IntegerP(Parameter):
         else:
             item_list = (items,)
         for item in item_list:
-            error_message = super().check_validity(item)
-            if error_message is None:
+            if super().check_validity(item):
                 int_item = self.int_value(item)
                 self._value_set.add(int_item)
             else:
-                msg = self.build_message(error_message, new_value=item)
-                raise NotValidError(msg)
+                raise self.status
 
     def drop_item(self, item: int):
         '''Drop an item from the set of possible values.
@@ -571,37 +577,49 @@ class IntegerP(Parameter):
         else:
             self._value_set.remove(item)
 
-    def check_validity(self, value)->ErrorString:
+    def check_validity(self, value)->bool:
         '''Check that value is an integer and is a member of the value set, or
         within the minimum to maximum range, if specified.
+        If the value is not valid the status atribute is set with the error
+        message describing the reason the value is not valid.
         Arguments:
             value {int} -- The value to be tested.
         Returns
-            The error message describing the reason the value is not valid, or
-            None - if the value is valid.
+            True if the value is valid, False otherwise. 
         '''
         # Test for integer as float or string
-        error_message = None  # type Optional[str]
         try:
             int_value = self.int_value(value)
         except NotValidError:
-            error_message = 'not_valid'
-        else:
-            error_message = super().check_validity(int_value) 
+            msg = self.build_message('not_valid', new_value=value)
+            self.status = NotValidError(msg)
+            return False
+        if not super().check_validity(int_value):
+            return False
         # Test integer values
-        if error_message is None:
-            if self._value_set and (int_value not in self._value_set):
-                error_message = 'disp_value_set'
-            elif (self.max_value is not None) and (int_value > self.max_value):
-                error_message = 'too_high'
-            elif (self.min_value is not None) and (int_value < self.min_value):
-                error_message = 'too_low'
-        return error_message
+        if self._value_set and (int_value not in self._value_set):
+            msg = self.build_message('disp_value_set', new_value=value)
+            self.status = NotValidError(msg)
+            return False
+        elif (self.max_value is not None) and (int_value > self.max_value):
+            msg = self.build_message('too_high', new_value=value)
+            self.status = NotValidError(msg)
+            return False
+        elif (self.min_value is not None) and (int_value < self.min_value):
+            msg = self.build_message('too_low', new_value=value)
+            self.status = NotValidError(msg)
+            return False
+        return True
 
     def set_value(self, value):
         '''Set a new value for parameter.
         '''
-        int_value = self.int_value(value)
+        try:
+            int_value = self.int_value(value)
+        except NotValidError:
+            msg = self.build_message('not_valid', new_value=value)
+            self.status = NotValidError(msg)
+            raise self.status
         super().set_value(int_value)
 
     def initialize_messages(self, messages: Dict[str, str]):
@@ -713,74 +731,36 @@ class PathP(Parameter):
         '''
         return self._file_types.type_select
 
-    def check_validity(self, value: PathInput):
+    def check_validity(self, value: PathInput)->bool:
         '''Check that value produces a valid path.
         Test whether value can be built into a valid path.
+        If the value cannot be built into a valid path the status atribute
+        is set with the error message describing the reason the value is not
+        valid.
         Arguments:
-            value {Path} -- The value to be tested.
+            value {Path, str} -- The value to be tested.
         Returns
-            The error message describing the reason the value is not valid, or
-            None - if the value is valid.
+            True if the value is valid, False otherwise.
         '''
-        error_message = None
         try:
             make_full_path(value, self._file_types, self.must_exist,
                            self.base_directory)
-        except (FileTypeError) as err:
-            error_message = 'wrong type'
-            self.message = err.args[0]
-        except (FileNotFoundError) as err:
-            error_message = 'doesnt exist'
-            self.message = err.args[0]
-        return error_message
+        except (FileTypeError, FileNotFoundError) as err:
+            self.status = err
+        return True
 
     def set_value(self, value):
         '''Set a new value for parameter.
         '''
-        path_value = make_full_path(value, self._file_types, self.must_exist,
-                                    self.base_directory)
+        try:
+            path_value = make_full_path(value, self._file_types,
+                                        self.must_exist,
+                                        self.base_directory)
+        except (FileTypeError, FileNotFoundError) as err:
+            self.status = err
+            raise self.status
         super().set_value(path_value)
 
-    # FIXME corect initialize_messages and build_messages
-    def initialize_messages(self, messages: Dict[str, str]):
-        '''Update message templates.
-        Arguments:
-            messages -- A dictionary of message templates referencing
-                StringP attributes.
-        '''
-        message_templates = dict(
-            too_long='{new_value} is longer than the maximum allowable '
-                     'length of {max_length}.',
-            disp_value_set='{new_value} is an invalid value for {name}.'
-                           '\n\tPossible values are: {value_set}',
-            not_in_value_set='{new_value} is not in the set of possible '
-                             'values:\n\t{value_set}',
-            value_conflict='{value} cannot be removed from the list of '
-                           'possible values because it is the current value',
-            length_conflict='new maximum length of {max_length} is less '
-                            'than the length of the current value: {value}.'
-                            '\n\tmax_value was not changed.',
-            value_set='\n\tPossible values are:\t{value_set}',
-            max_length='\n\tThe maximum allowable length is: {max_length}'
-            )
-        if messages:
-            message_templates.update(messages)
-        super().initialize_messages(message_templates)
-
-    def build_message(self, message: str, **value_set)->str:
-        '''Return a message string using format and a message template.
-        if message is a key in self.messages use the corresponding template,
-        otherwise treat message as a template.
-        Arguments:
-            message {str} -- Either a key in self.messages, or
-                a custom message template.
-            value_set {dict} -- value definition overrides for the message
-                templates.
-        '''
-        values = {'max_length': self.max_length,
-                  'value_set': self.value_set}
-        values.update(value_set)
-        return super().build_message(message, **values)
     # TODO Add disp methods
 
 

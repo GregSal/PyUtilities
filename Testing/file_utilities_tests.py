@@ -14,7 +14,7 @@ import unittest
 import os
 from pathlib import Path
 from operator import itemgetter
-from test_files_setup import build_test_directory, remove_test_dir
+from Testing.test_files_setup import build_test_directory, remove_test_dir
 from file_utilities import FileTypes, get_file_path, make_full_path
 from file_utilities import replace_top_dir, FileTypeError
 from typing import Dict

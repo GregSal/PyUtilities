@@ -4,26 +4,6 @@ import unittest
 from parameters import Parameter, get_class_name
 from parameters import NotValidError
 
-
-class TestParameter(Parameter):
-    '''A subclass of parameters that accepts a string opf less than 64
-    characters
-    '''
-    _type = str
-
-    def __init__(self, **kwds):
-        '''Create a new instance of the string parameter.
-        '''
-        self.cls = get_class_name(type(self))
-        super().__init__(**kwds)
-
-    def check_validity(self, value):
-        '''Check that value is a string.
-        '''
-        error_message = super().check_validity(value)
-        return error_message
-
-
 class TestBaseParameterNoValue(unittest.TestCase):
     '''Test instance creation passing nothing.
     '''

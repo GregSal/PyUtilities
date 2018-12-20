@@ -1,15 +1,10 @@
 {
-    "pythonTestExplorer.testFramework": "unittest",
-    "python.unitTest.unittestEnabled": false,
-    "python.unitTest.unittestArgs": [
-        "-v",
-        "-s",
-        ".",
-        "-p",
-        "./Testing",
-        "*test*.py"
+    "python.pythonPath": "C:\\ProgramData\\Anaconda3\\python.exe",
+    "python.linting.pylintEnabled": true,
+    "python.unitTest.pyTestArgs": [
+        "Testing"
     ],
-    "python.unitTest.promptToConfigure": false,
-    "python.unitTest.pyTestEnabled": false,
-    "python.unitTest.nosetestsEnabled": false
+    "python.unitTest.unittestEnabled": true,
+    "python.unitTest.nosetestsEnabled": false,
+    "python.unitTest.pyTestEnabled": true,
 }
