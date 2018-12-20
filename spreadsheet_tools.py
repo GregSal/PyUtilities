@@ -20,9 +20,11 @@ Data Types
         It contains the following items:
             file_name (FileName): A full Path or a string file name of an
                 excel file.
-            sub_dir (str): A string containing a sub directory path from
-                base_path to the excel file.
-            sheet_name (str): THe name of the desired worksheet.
+            sub_dir (str): A string containing a sub directory path to the
+                excel file relative to the base path or the current working
+                directory. 
+            base_path (Path): A full path to the starting directory.
+            sheet_name (str): The name of the desired worksheet.
             new_file (bool, optional): True if a new book is to be created.
                 Default is False.
             new_sheet (bool, optional): If True, a new sheet will be created
@@ -41,9 +43,9 @@ from typing import TypeVar, Dict, List, Any
 
 import xlwings as xw
 import pandas as pd
-from Tools.data_utilities import value2num
-from Tools.file_utilities import get_file_path
-from Tools.data_utilities import select_data
+from Utilities.data_utilities import value2num
+from Utilities.file_utilities import get_file_path
+from Utilities.data_utilities import select_data
 
 # pylint: disable=invalid-name
 Data = TypeVar('Data', pd.DataFrame, pd.Series, List[Any])
@@ -107,14 +109,17 @@ def get_data_sheet(workbook: xw.Book, sheet_name: str,
     return data_sheet
 
 
-def select_sheet(file_name: FileName, sub_dir: str = None, new_file=False,
+def select_sheet(file_name: FileName, sub_dir: str = None,
+                 base_path: Path = None, new_file=False,
                  **sheet_info)->xw.Sheet:
     '''Open the excel file specified by file_name and returns the requested
     sheet.
     Args:
         file_name: Either the full path to the file name or the name of the
             file.
-        sub_dir: A string path relative to the current working directory.
+        sub_dir (str): A string path relative to the base path or current working
+            directory.
+        base_path (Path): A full path of type Pathto the starting directory.
         new_file: True if a new book is to be created. Default is False.
         sheet_name (str): The name of the desired worksheet.
         new_sheet (bool): If True, a new sheet will be created in the
@@ -125,7 +130,7 @@ def select_sheet(file_name: FileName, sub_dir: str = None, new_file=False,
     Returns:
         An XLWings Sheet object pointing to the requested sheet.
     '''
-    data_file_path = get_file_path(file_name, sub_dir)
+    data_file_path = get_file_path(file_name, sub_dir, base_path)
     data_book = open_book(data_file_path, new_file)
     data_sheet = get_data_sheet(data_book, **sheet_info)
     return data_sheet
@@ -263,6 +268,10 @@ def load_reference_table(reference_sheet_info, reference_table_info,
                 file_name: Either the full path to the file name or the name
                     of the file.
                 sub_dir: A string path relative to the current working
+                    directory.
+                sub_dir (str): A string path relative to the base path or
+                    current working directory.
+                base_path (Path): A full path of type Pathto the starting
                     directory.
                 sheet_name (str): The name of the worksheet the table is in.
         reference_table_info: The table reference info supplied to
