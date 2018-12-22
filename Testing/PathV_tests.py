@@ -21,9 +21,9 @@ PathP tests
 
 import unittest
 from pathlib import Path
-from parameters import PathP
-from parameters import NotValidError, UpdateError
-from file_checking import FileTypeError
+from custom_variable_sets import PathV
+from custom_variable_sets import NotValidError, UpdateError
+from file_utilities import FileTypeError
 from Testing.test_files_setup import build_test_directory, remove_test_dir
 
 
@@ -45,21 +45,21 @@ class TestPathPCreation(unittest.TestCase):
         '''Verify that PathP initializes with a Path value.
         '''
         text_file = self.files['text_file']
-        path_param = PathP(text_file)
+        path_param = PathV(text_file)
         self.assertEqual(path_param, text_file)
 
     def test_init_str(self):
         '''Verify that PathP initializes with a string value.
         '''
         text_file = self.files['text_file']
-        path_param = PathP(str(text_file))
+        path_param = PathV(str(text_file))
         self.assertEqual(path_param, text_file)
 
     def test_default_path(self):
         '''Verify that PathP initializes to the default path with a blank value.
         '''
         default_path = Path.cwd()
-        path_param = PathP()
+        path_param = PathV()
         self.assertEqual(path_param, default_path)
 
     def test_partial(self):
@@ -68,7 +68,7 @@ class TestPathPCreation(unittest.TestCase):
         base_path = Path.cwd()
         file_name = '\\Testing\\test_file.txt'
         text_file = base_path / file_name
-        path_param = PathP(str(text_file))
+        path_param = PathV(str(text_file))
         self.assertEqual(path_param, text_file)
 
 
@@ -78,7 +78,7 @@ class TestPathPTypeCheck(unittest.TestCase):
     def setUp(self):
         '''Make txt and xls files.'''
         self.files = build_test_directory()
-        self.path_param = PathP(file_types='Text File')
+        self.path_param = PathV(file_types='Text File')
 
     def tearDown(self):
         '''Remove the test directory.
@@ -114,7 +114,7 @@ class TestPathPAdditionalTypeCheck(unittest.TestCase):
     def test_type_check_multi(self):
         '''Verify that PathP accepts Text and excel type files.
         '''
-        path_param = PathP(file_types=['Text File', 'Excel Files'])
+        path_param = PathV(file_types=['Text File', 'Excel Files'])
         text_file = self.files['text_file']
         excel_file = self.files['excel_file']
         path_param.value = text_file
@@ -125,7 +125,7 @@ class TestPathPAdditionalTypeCheck(unittest.TestCase):
     def test_type_check_multi_error(self):
         '''Verify that PathP raises error for not Text or excel file.
         '''
-        path_param = PathP(file_types=['Text File', 'Excel Files'])
+        path_param = PathV(file_types=['Text File', 'Excel Files'])
         log_file = self.files['log_file']
         with self.assertRaises(FileTypeError):
             path_param.value = log_file
@@ -133,14 +133,14 @@ class TestPathPAdditionalTypeCheck(unittest.TestCase):
     def test_type_check_not_path(self):
         '''Verify that PathP raises error for not valid path.
         '''
-        path_param = PathP(file_types=['Text File', 'Excel Files'])
+        path_param = PathV(file_types=['Text File', 'Excel Files'])
         with self.assertRaises(NotValidError):
             path_param.value = 'a:#'
 
     def test_type_check_dir(self):
         '''Verify that PathP accepts directory.
         '''
-        path_param = PathP(file_types='directory')
+        path_param = PathV(file_types='directory')
         dir_path = self.files['test_dir']
         path_param.value = dir_path
         self.assertEqual(path_param, dir_path)
@@ -148,7 +148,7 @@ class TestPathPAdditionalTypeCheck(unittest.TestCase):
     def test_type_check_dir_error(self):
         '''Verify that PathP raises error for non directory.
         '''
-        path_param = PathP(file_types='directory')
+        path_param = PathV(file_types='directory')
         text_file = self.files['text_file']
         with self.assertRaises(FileTypeError):
             path_param.value = text_file
@@ -156,7 +156,7 @@ class TestPathPAdditionalTypeCheck(unittest.TestCase):
     def test_type_check_non_dir(self):
         '''Verify that PathP accepts non-existing directory.
         '''
-        path_param = PathP(file_types='directory', must_exist=False)
+        path_param = PathV(file_types='directory', must_exist=False)
         dir_path = Path.cwd() / 'Testing' / 'does_not_exist'
         path_param.value = dir_path
         self.assertEqual(path_param, dir_path)
@@ -164,7 +164,7 @@ class TestPathPAdditionalTypeCheck(unittest.TestCase):
     def test_type_check_missing_dir_error(self):
         '''Verify that PathP raises error for non-existing directory.
         '''
-        path_param = PathP(file_types='directory')
+        path_param = PathV(file_types='directory')
         dir_path = Path.cwd() / 'Testing' / 'does_not_exist'
         with self.assertRaises(FileNotFoundError):
             path_param.value = dir_path
@@ -175,7 +175,7 @@ class TestChangeSetings(unittest.TestCase):
     def setUp(self):
         '''Make txt and xls files.'''
         self.files = build_test_directory()
-        self.path_param = PathP(file_types='Text File')
+        self.path_param = PathV(file_types='Text File')
 
     def tearDown(self):
         '''Remove the test directory.
@@ -218,7 +218,7 @@ class FutureTests(unittest.TestCase):
     def setUp(self):
         '''Make txt and xls files.'''
         self.files = build_test_directory()
-        self.path_param = PathP(file_types='Text File')
+        self.path_param = PathV(file_types='Text File')
 
     def tearDown(self):
         '''Remove the test directory.
@@ -230,7 +230,7 @@ class FutureTests(unittest.TestCase):
         '''Verify that trying to set a invalid file type
         returns the appropriate error message.
         '''
-        path_param = PathP(file_types=['Text File', 'Excel Files'])
+        path_param = PathV(file_types=['Text File', 'Excel Files'])
         log_file = self.files['log_file']
         error_message = str(log_file) + ' is not a valid file type '
         error_message += 'Expected Text Files or Excel Files'
@@ -246,7 +246,7 @@ class FutureTests(unittest.TestCase):
         '''Verify that trying to set a file for a directory
         returns the appropriate error message.
         '''
-        path_param = PathP(file_types='directory')
+        path_param = PathV(file_types='directory')
         log_file = self.files['log_file']
         error_message = str(log_file) + ' is not a directory'
         try:

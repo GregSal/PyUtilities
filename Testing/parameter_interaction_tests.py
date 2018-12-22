@@ -1,70 +1,70 @@
-'''	Make subclass of Parameters that accepts a string
-    Single Parameter Tests
-        Make subclass of ParameterSet with one required string parameter
-            i. initialize parameter set with no passed values
-                d. Verify that set_values can be used to set the parameter
+'''	Make subclass of CustomVariable that accepts a string
+    Single CustomVariable Tests
+        Make subclass of CustomVariableSet with one required string CustomVariable
+            i. initialize CustomVariable set with no passed values
+                d. Verify that set_values can be used to set the CustomVariable
                     value
                 e. Verify that after using  set_values  initialized is True
-            ii. initialize parameter set with value for parameter
+            ii. initialize CustomVariable set with value for CustomVariable
                 - verify that value is returned
                 - verify that initialized is True
-                a. Verify that to_dict returns an the parameter value in a
+                a. Verify that to_dict returns an the CustomVariable value in a
                     dictionary
-                b. Verify that set_values can be used to change the parameter
+                b. Verify that set_values can be used to change the CustomVariable
                     value
                 c. After drop is used:
                     a. verify that initialized is False
                     b. Verify that to_dict returns an empty dictionary
-            iii. initialize parameter set with invalid value for parameter
+            iii. initialize CustomVariable set with invalid value for CustomVariable
                 - verify that NotValidError is raised
-                - verify that Error message includes Parameter name and
-                    parameter set name.
-            iv. initialize parameter set with value for parameter and
-                    non-parameter arguments
+                - verify that Error message includes CustomVariable name and
+                    CustomVariable set name.
+            iv. initialize CustomVariable set with value for CustomVariable and
+                    non-CustomVariable arguments
                 - verify that value is returned
-                - verify that the ParameterSet instance includes dictionary
-                    entries for the non-parameter arguments.
+                - verify that the CustomVariableSet instance includes dictionary
+                    entries for the non-CustomVariable arguments.
 '''
 import unittest
-from parameters import ParameterSet, StringP
+from custom_variable_sets import CustomVariableSet, StringV
 
 
 @unittest.skip('Not Implemented')
-class TwoStringP(ParameterSet):
-    '''A Parameter set with two string Parameters:
+class TwoStringV(CustomVariableSet):
+    '''A CustomVariable set with two string Variables:
             "test_string1"
             "test_string2"
     '''
-    test_string2 = StringP(name='test_string2',
+    test_string2 = StringV(name='test_string2',
                            value='test_string2',
                            default='string2 default')
-    parameter_definitions = [
+    variable_definitions = [
         {'name': 'test_string1',
-         'parameter_type': StringP,
+         'variable_type': StringV,
          'required': False,
          'on_update': None},
-        {'parameter': test_string2,
+        {'CustomVariable': test_string2,
          'required': True}
         ]
 
     def __init__(self, **kwds):
-        '''Create a new instance of the Parameter Set.'''
+        '''Create a new instance of the CustomVariable Set.'''
         super().__init__(**kwds)
 
 
-@unittest.skip('Not implimented')
+@unittest.skip('Not implemented')
 class TestNoInitialValues(unittest.TestCase):
-    '''Make subclass of ParameterSet with one required string parameter
-        Initialize parameter set with no passed values
+    '''Make subclass of CustomVariableSet with one required string CustomVariable
+        Initialize CustomVariable set with no passed values
             1. verify that default value is returned (get_values)
             2. verify that initialized is False
             3. Verify that to_dict returns an empty dictionary
-            4. Verify that set_values can be used to set the parameter value
+            4. Verify that set_values can be used to set the CustomVariable value
             5. Verify that after using set_values initialized is True
     '''
 
     def setUp(self):
-        '''Initialize parameter set with no passed values
+        '''Initialize CustomVariable set with no passed values
         '''
         pass
 

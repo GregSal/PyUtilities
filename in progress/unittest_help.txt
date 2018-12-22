@@ -1,0 +1,47 @@
+usage: python.exe -m unittest [-h] [-v] [-q] [--locals] [-f] [-c] [-b]
+                              [-k TESTNAMEPATTERNS]
+                              [tests [tests ...]]
+
+positional arguments:
+  tests                a list of any number of test modules, classes and test
+                       methods.
+
+optional arguments:
+  -h, --help           show this help message and exit
+  -v, --verbose        Verbose output
+  -q, --quiet          Quiet output
+  --locals             Show local variables in tracebacks
+  -f, --failfast       Stop on first fail or error
+  -c, --catch          Catch Ctrl-C and display results so far
+  -b, --buffer         Buffer stdout and stderr during tests
+  -k TESTNAMEPATTERNS  Only run tests which match the given substring
+
+Examples:
+  python.exe -m unittest test_module               - run tests from test_module
+  python.exe -m unittest module.TestClass          - run tests from module.TestClass
+  python.exe -m unittest module.Class.test_method  - run specified test method
+  python.exe -m unittest path/to/test_file.py      - run tests from test_file.py
+
+usage: python.exe -m unittest discover [-h] [-v] [-q] [--locals] [-f] [-c]
+                                       [-b] [-k TESTNAMEPATTERNS] [-s START]
+                                       [-p PATTERN] [-t TOP]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -v, --verbose         Verbose output
+  -q, --quiet           Quiet output
+  --locals              Show local variables in tracebacks
+  -f, --failfast        Stop on first fail or error
+  -c, --catch           Catch Ctrl-C and display results so far
+  -b, --buffer          Buffer stdout and stderr during tests
+  -k TESTNAMEPATTERNS   Only run tests which match the given substring
+  -s START, --start-directory START
+                        Directory to start discovery ('.' default)
+  -p PATTERN, --pattern PATTERN
+                        Pattern to match tests ('test*.py' default)
+  -t TOP, --top-level-directory TOP
+                        Top level directory of project (defaults to start
+                        directory)
+
+For test discovery all test modules must be importable from the top level
+directory of the project.

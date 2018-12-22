@@ -22,7 +22,7 @@ Data Types
                 excel file.
             sub_dir (str): A string containing a sub directory path to the
                 excel file relative to the base path or the current working
-                directory. 
+                directory.
             base_path (Path): A full path to the starting directory.
             sheet_name (str): The name of the desired worksheet.
             new_file (bool, optional): True if a new book is to be created.
@@ -43,9 +43,9 @@ from typing import TypeVar, Dict, List, Any
 
 import xlwings as xw
 import pandas as pd
-from Utilities.data_utilities import value2num
-from Utilities.file_utilities import get_file_path
-from Utilities.data_utilities import select_data
+from data_utilities import value2num
+from file_utilities import get_file_path
+from data_utilities import select_data
 
 # pylint: disable=invalid-name
 Data = TypeVar('Data', pd.DataFrame, pd.Series, List[Any])

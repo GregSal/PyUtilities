@@ -17,7 +17,7 @@ Classes
         A user select-able list of file type options
         Definition of file type groups
     FileTypeError:
-        The file extension is not the appropriate type.      
+        The file extension is not the appropriate type.
 '''
 from pathlib import Path
 from collections.abc import Iterable
@@ -29,7 +29,7 @@ Data = pd.DataFrame
 PathInput = Union[Path, str]
 
 
-def set_base_dir(sub_dir: str = None, 
+def set_base_dir(sub_dir: str = None,
                  base_options: Dict[str, str] = None)-> Path:
     '''Determine the base directory.
     The base directory is the Queen's OneDrive, but the path to it changes
@@ -76,18 +76,18 @@ class FileTypes(list):
     of the tuple and the second a ";" delimited string containing the related
     file suffixes in the form "*.???".
     '''
-    file_types = dict({'All Files':('*.*', ), 
-                       'Text Files':('*.txt', '*.csv', '*.tab', 
-                                     '*.rtf', '*.text'), 
-                       'Excel Files':('*.xls', '*.xlsx', '*.xlsm'), 
-                       'Image Files':('*.jpg', '*.jpeg', '*.gif', 
-                                      '*.gif', '*.png', 
-                                      '*.tif', '*.tiff', '*.psd'), 
-                       'Comma Separated Variable File':('*.csv', ), 
-                       'Text File':('*.txt', ), 
-                       'Excel 2003 File':('*.xls', ), 
-                       'Excel 2010 File':('*.xlsx', '*.xlsm'), 
-                       'Word 2003 File':('*.doc', ), 
+    file_types = dict({'All Files':('*.*', ),
+                       'Text Files':('*.txt', '*.csv', '*.tab',
+                                     '*.rtf', '*.text'),
+                       'Excel Files':('*.xls', '*.xlsx', '*.xlsm'),
+                       'Image Files':('*.jpg', '*.jpeg', '*.gif',
+                                      '*.gif', '*.png',
+                                      '*.tif', '*.tiff', '*.psd'),
+                       'Comma Separated Variable File':('*.csv', ),
+                       'Text File':('*.txt', ),
+                       'Excel 2003 File':('*.xls', ),
+                       'Excel 2010 File':('*.xlsx', '*.xlsm'),
+                       'Word 2003 File':('*.doc', ),
                        'Word 2010 File':('*.docx', '*.docm')})
 
 
@@ -166,7 +166,7 @@ def get_file_path(file_name: PathInput, sub_dir: str = None,
         name or partial path to a file or directory.
      Arguments:
         file_name {str, Path} -- a name or partial path to a file or directory.
-        sub_dir {str} -- A string containing the directory path from the base_dir to
+        sub_dir {str} -- A string containing the directory path from the base path to
             the file location.
         base_path {Path} -- A path to the top directory where files may be located.
     Returns:
@@ -174,26 +174,22 @@ def get_file_path(file_name: PathInput, sub_dir: str = None,
     Raises
         TypeError -- if file_name is not type Path or type str.
     '''
-    if isinstance(file_name, Path):
-        full_path = file_name.resolve()
-    elif isinstance(file_name, str):
-        if any(a in file_name for a in[':', './/']):  # Check for a full path of type str
-            full_path = Path(file_name).resolve()
-        elif base_path:
-            base_dir = base_path.resolve()
-        else:
-            base_dir = set_base_dir()
-        if sub_dir:
-            base_dir = base_dir / sub_dir
-        full_path = base_dir / file_name
+    if isinstance(file_name, Path): # Already full path
+        return file_name.resolve()
+    file_name = str(file_name)
+    if any(a in file_name for a in[':', './/']):  #Full path of type str
+        return Path(file_name).resolve()
+    if base_path:
+        base_dir = base_path.resolve()
     else:
-        msg_str = 'file_name must be Type Path or str.\n\tGot:\t{}'
-        msg = msg_str.format(type(file_name))
-        raise TypeError(msg)
-    return full_path
+        base_dir = set_base_dir()
+    if sub_dir:
+        base_dir = base_dir / sub_dir
+    full_path = base_dir / file_name
+    return full_path.resolve()
 
 
-def make_full_path(file_name: PathInput, valid_types: FileTypes, 
+def make_full_path(file_name: PathInput, valid_types: FileTypes,
                    must_exist=True, base_path: Path = None)-> Path:
     ''' If file_path is a string convert it to type Path.
         Resolve any relative path parts.
@@ -230,14 +226,6 @@ def replace_top_dir(dir_path: Path, file_path: Path, new_name: str)-> str:
     Raises:
         TypeError exception
         FileNotFoundError exception
-            Parameter
-        dir_path: Type Path or str
-            A valid path containing the first portion of the directory
-            name to be removed.
-    Raises
-        NameInUse
-    dir_path must be a parent of self.directory_to_scan or an empty
-    string.
     '''
     # If directory_path is a string treat it as a partial and combine it
     # with the base path.
@@ -246,7 +234,7 @@ def replace_top_dir(dir_path: Path, file_path: Path, new_name: str)-> str:
     if remove_str not in str(file_path):
         msg_str = '{dir_str} is not a parent of {file_str}\n\t'
         msg_str = ' The top directory path will not be removed.'
-        msg = msg_str.format(dir_str = str(dir_path), 
+        msg = msg_str.format(dir_str = str(dir_path),
                              file_str = str(file_path))
         # TODO output warning message
     file_str_sup = str(file_path).replace(remove_str, new_name)

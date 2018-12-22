@@ -96,6 +96,26 @@ Data = Union[pd.DataFrame, pd.Series]
 Value = Tuple[float, str]
 
 
+def logic_match(value: Any)->bool:
+    '''Convert input value to a boolean True or False.
+    Treats: 'YES', 'Y', 'TRUE', 'T', 1 as True
+    Treats: 'NO', 'N', 'FALSE', 'F', 0, -1 as False
+    For all other values, attempts to apply the bool conversion.
+    Arguments:
+        value {Any} -- the value to convert    
+    Returns:
+        bool -- [description]
+    '''
+    truth_values = {'YES', 'Y', 'TRUE', 'T', '1'}
+    false_values = {'NO', 'N', 'FALSE', 'F', '0', '-1'}
+    value_str = str(value).upper()
+    if value_str in truth_values:
+        return True
+    elif value_str in false_values:
+        return False
+    return bool(value)
+
+
 def true_iterable(variable)-> bool:
     '''Indicate if the variable is a non-string type iterable.
     Arguments:
