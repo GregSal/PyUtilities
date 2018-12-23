@@ -684,9 +684,11 @@ class PathV(CustomVariable):
     Option to allow non-existing File or Directory paths (must_exist),
     Optional nickname for a top portion of the full path (top_path_name),
     '''
-    _name = 'path_parameter'
+    # TODO Add disp method that uses the nickname
+    _name = 'path_variable'
     _type = Path
-    initial_settings = {'default': set_base_dir()}
+    initial_settings = {'default': Path.cwd(),
+                        '_file_types': FileTypes('All Files')}
 
     def __init__(self, *args, file_types: List[str] = None,
         base_directory: Path = None, must_exist=True, **kwds):
@@ -730,7 +732,7 @@ class PathV(CustomVariable):
     def check_validity(self, value: PathInput)->bool:
         '''Check that value produces a valid path.
         Test whether value can be built into a valid path.
-        If the value cannot be built into a valid path the status atribute
+        If the value cannot be built into a valid path the status attribute
         is set with the error message describing the reason the value is not
         valid.
         Arguments:
@@ -743,6 +745,7 @@ class PathV(CustomVariable):
                            self.base_directory)
         except (FileTypeError, FileNotFoundError) as err:
             self.status = err
+            return False
         return True
 
     def set_value(self, value):
@@ -757,7 +760,84 @@ class PathV(CustomVariable):
             raise self.status
         super().set_value(path_value)
 
-    # TODO Add disp methods
+class BoolV(CustomVariable):
+    '''A True/False CustomVariable.
+    BoolV can be customized to recognize additional true/false inputs:
+    By default, it recognizes:
+        'YES', 'Y', 'TRUE', 'T', 1 as True
+        'NO', 'N', 'FALSE', 'F', 0, -1 as False
+    '''
+    _name = 'bool_variable'
+    _type = bool
+    initial_settings = {
+        'default': True,
+        'truth_values': {'YES', 'Y', 'TRUE', 'T', '1'},
+        'false_values': {'NO', 'N', 'FALSE', 'F', '0', '-1'}
+        }
+
+    def __init__(self, *args, truth_values: Set[str] = None,
+                 false_values: Set[str] = None, **kwds):
+        '''Create a new instance of the bool CustomVariable.
+        '''
+        self._value = None # type Path
+        super().__init__(*args, **kwds)
+        if truth_values:
+            self.truth_values = truth_values
+        if false_values:
+            self.false_values = false_values
+
+    def check_validity(self, value: Any)->bool:
+        '''Check that value produces a valid boolean.
+        If the value cannot be built into a valid boolean, the status
+        attribute is set with the error message describing the reason the
+        value is not valid.
+        Arguments:
+            value {Any} -- The value to be tested.
+        Returns
+            True if the value is valid, False otherwise.
+        '''
+        try:
+            logic_match(value, self.truth_values, self.false_values)
+        except (TypeError) as err:
+            self.status = err
+            return False
+        return True
+
+    def set_value(self, value):
+        '''Set a new value for CustomVariable.
+        '''
+        try:
+            bool_value = logic_match(value, self.truth_values,
+                                     self.false_values)
+        except (TypeError) as err:
+            self.status = err
+            raise err
+        super().set_value(path_value)
+
+    def initialize_messages(self, messages: Dict[str, str]):
+        '''Update message templates.
+        Arguments:
+            messages -- A dictionary of message templates referencing
+                StringV attributes.
+        '''
+        message_templates = dict(
+            truth_values='Input values that return True are:'
+                         '\n\t{truth_values}.',
+            false_values='Input values that return False are:'
+                         '\n\t{false_values}.'
+            )
+        if messages:
+            message_templates.update(messages)
+        super().initialize_messages(message_templates)
+
+    def disp(self)->str:
+        '''A template formatted string
+        '''
+        value_str = super().disp()
+        disp_str = value_str + self.build_message('truth_values') + '\n'
+        disp_str = disp_str + self.build_message('false_values')
+        return disp_str
+
 
 
 class CustomVariableSet(OrderedDict):

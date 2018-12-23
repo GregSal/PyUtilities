@@ -1,10 +1,13 @@
 {
-    "python.pythonPath": "C:\\ProgramData\\Anaconda3\\python.exe",
     "python.linting.pylintEnabled": true,
-    "python.unitTest.pyTestArgs": [
-        "Testing"
-    ],
+    "python.unitTest.pyTestEnabled": false,
     "python.unitTest.unittestEnabled": true,
     "python.unitTest.nosetestsEnabled": false,
-    "python.unitTest.pyTestEnabled": true,
+    "python.unitTest.unittestArgs": [
+        "-v",
+        "-s",
+        "./Testing",
+        "-p",
+        "*test*.py"
+    ]
 }

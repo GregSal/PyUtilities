@@ -86,7 +86,7 @@ merge_columns(data_table: pd.DataFrame, columns: List[str],
 '''
 # TODO Move some of the functions to the BeamData Tools Module
 from collections.abc import Iterable
-from typing import List, Dict, Tuple, Any, Union
+from typing import List, Dict, Tuple, Any, Union, Set
 import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
@@ -96,18 +96,26 @@ Data = Union[pd.DataFrame, pd.Series]
 Value = Tuple[float, str]
 
 
-def logic_match(value: Any)->bool:
+def logic_match(value: Any,
+                truth_values: Set[str] = None,
+                false_values: Set[str] = None)->bool:
     '''Convert input value to a boolean True or False.
     Treats: 'YES', 'Y', 'TRUE', 'T', 1 as True
     Treats: 'NO', 'N', 'FALSE', 'F', 0, -1 as False
     For all other values, attempts to apply the bool conversion.
     Arguments:
-        value {Any} -- the value to convert    
+        value {Any} -- the value to convert
+        truth_values {Optional, Any} -- Set of string values to be recognized as true.
+            default {'YES', 'Y', 'TRUE', 'T', '1'}
+        false_values {Optional, Any} -- Set of string values to be recognized as false.
+            default {'NO', 'N', 'FALSE', 'F', '0', '-1'}
     Returns:
         bool -- [description]
     '''
-    truth_values = {'YES', 'Y', 'TRUE', 'T', '1'}
-    false_values = {'NO', 'N', 'FALSE', 'F', '0', '-1'}
+    if not truth_values:
+        truth_values = {'YES', 'Y', 'TRUE', 'T', '1'}
+    if not false_values:
+        false_values = {'NO', 'N', 'FALSE', 'F', '0', '-1'}
     value_str = str(value).upper()
     if value_str in truth_values:
         return True
@@ -123,7 +131,7 @@ def true_iterable(variable)-> bool:
     Returns:
         True if variable uis a non-string iterable.
     '''
-    return not isinstance(variable, str) and isinstance(variable, Iterable) 
+    return not isinstance(variable, str) and isinstance(variable, Iterable)
 
 
 def nearest_step(value: float, step_size: float = 1.0,

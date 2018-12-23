@@ -8,7 +8,7 @@ from collections.abc import Iterable
 from typing import Optional, List, Dict, Tuple, Set, Any, Union
 from file_utilities import FileTypes, set_base_dir, make_full_path
 from file_utilities import PathInput, FileTypeError
-from data_utilities import true_iterable
+from data_utilities import true_iterable, logic_match
 
 # pylint: disable=invalid-name
 ParameterSelection = Union[str, List[str], Dict[str, Any]]
@@ -730,6 +730,57 @@ class PathP(Parameter):
         '''Return a set of valid file suffixes.
         '''
         return self._file_types.type_select
+
+    def check_validity(self, value: PathInput)->bool:
+        '''Check that value produces a valid path.
+        Test whether value can be built into a valid path.
+        If the value cannot be built into a valid path the status atribute
+        is set with the error message describing the reason the value is not
+        valid.
+        Arguments:
+            value {Path, str} -- The value to be tested.
+        Returns
+            True if the value is valid, False otherwise.
+        '''
+        try:
+            make_full_path(value, self._file_types, self.must_exist,
+                           self.base_directory)
+        except (FileTypeError, FileNotFoundError) as err:
+            self.status = err
+        return True
+
+    def set_value(self, value):
+        '''Set a new value for parameter.
+        '''
+        try:
+            path_value = make_full_path(value, self._file_types,
+                                        self.must_exist,
+                                        self.base_directory)
+        except (FileTypeError, FileNotFoundError) as err:
+            self.status = err
+            raise self.status
+        super().set_value(path_value)
+
+    # TODO Add disp methods
+
+
+class BoolP(Parameter):
+    '''A Boolean Parameter which can recognize different True/False pairs:
+            YES/NO
+            Y/N
+            T/F
+            1/0
+            1/-1
+    '''
+    _name = 'boolean_parameter'
+    _type = bool
+    initial_settings = {'default': True}
+
+    def __init__(self, *args, **kwds):
+        '''Create a new instance of the path parameter.
+        '''
+        self._value = None # type Path
+        super().__init__(*args, **kwds)
 
     def check_validity(self, value: PathInput)->bool:
         '''Check that value produces a valid path.
