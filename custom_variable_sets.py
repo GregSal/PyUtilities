@@ -687,8 +687,7 @@ class PathV(CustomVariable):
     # TODO Add disp method that uses the nickname
     _name = 'path_variable'
     _type = Path
-    initial_settings = {'default': Path.cwd(),
-                        '_file_types': FileTypes('All Files')}
+    initial_settings = {'default': Path.cwd()}
 
     def __init__(self, *args, file_types: List[str] = None,
         base_directory: Path = None, must_exist=True, **kwds):
@@ -696,25 +695,23 @@ class PathV(CustomVariable):
         '''
         self._value = None # type Path
         self.must_exist = must_exist # type bool
-        super().__init__(*args, **kwds)
         if file_types:
             self._file_types = FileTypes(file_types)
         else:
-            self._file_types = FileTypes()
+            self._file_types = FileTypes('All Files')
         if base_directory:
             self.base_directory = base_directory
         else:
             self.base_directory = set_base_dir()
+        super().__init__(*args, **kwds)
 
-    @property
-    def file_types(self)->List[str]:
+    def get_types(self)->List[str]:
         '''Return the file categories selected.
         Extract and return the names of the file types in use.
         '''
         type_names = [type_set[0] for type_set in self._file_types]
         return type_names
 
-    @file_types.setter
     def set_types(self, file_types: List[str]):
         '''Define the valid file types.
         Create a FileTypes instance defining valid file types.
@@ -722,6 +719,26 @@ class PathV(CustomVariable):
             file_types (List[str]): The list of valid file types.
         '''
         self._file_types = FileTypes(file_types)
+
+    file_types = property(get_types, set_types)
+
+    def add_type(self, file_type: str):
+        '''Add a new type to the set of valid file types.
+        Args:
+            file_types (str): The new file type to add.
+        '''
+        current_types = set(self.file_types)
+        new_type_set = current_types.add(file_type)
+        self._file_types = FileTypes(new_type_set)
+
+    def drop_type(self, file_type: str):
+        '''Drop the file type if it exists.
+        Args:
+            file_types (str): The file type to drop.
+        '''
+        current_types = set(self.file_types)
+        new_type_set = current_types.discard(file_type)
+        self._file_types = FileTypes(new_type_set)
 
     @property
     def type_list(self)->Set[str]:
