@@ -40,12 +40,11 @@ from pathlib import Path
 # from typing import TypeVar, Dict, List, Any, NoReturn
 
 from typing import TypeVar, Dict, List, Any
-
 import xlwings as xw
 import pandas as pd
-from data_utilities import value2num
-from file_utilities import get_file_path
-from data_utilities import select_data
+from Utilities.data_utilities import value2num
+from Utilities.file_utilities import get_file_path
+from Utilities.data_utilities import select_data
 
 # pylint: disable=invalid-name
 Data = TypeVar('Data', pd.DataFrame, pd.Series, List[Any])
@@ -75,12 +74,12 @@ def open_book(file_name: Path, new_file=False)->xw.Book:
         data_book = exel_app.books.add()
         data_book.save(str(file_name))
     else:
-        raise FileNotFoundError('The file %s does not exist'%file_name)
+        raise FileNotFoundError('The file %s does not exist', file_name)
     return data_book
 
 
 def get_data_sheet(workbook: xw.Book, sheet_name: str,
-                   new_sheet=False, replace=True)->xw.Sheet:
+                   new_sheet=True, replace=True)->xw.Sheet:
     '''Returns the specified excel sheet from the given workbook.
     Args:
         workbook: An XLWings Book object pointing to the Excel workbook that
@@ -99,7 +98,7 @@ def get_data_sheet(workbook: xw.Book, sheet_name: str,
     sheet_names = [sheet.name for sheet in workbook.sheets]
     if sheet_name in sheet_names:
         if new_sheet and not replace:
-            raise ValueError('Sheet {} already exists'.format(sheet_name))
+            print('WARNING:\tSheet {} already exists'.format(sheet_name))
         sheet_index = sheet_names.index(sheet_name)
         data_sheet = workbook.sheets[sheet_index]
     elif new_sheet:
@@ -117,8 +116,8 @@ def select_sheet(file_name: FileName, sub_dir: str = None,
     Args:
         file_name: Either the full path to the file name or the name of the
             file.
-        sub_dir (str): A string path relative to the base path or current working
-            directory.
+        sub_dir (str): A string path relative to the base path or current
+            working directory.
         base_path (Path): A full path of type Pathto the starting directory.
         new_file: True if a new book is to be created. Default is False.
         sheet_name (str): The name of the desired worksheet.
@@ -371,7 +370,7 @@ def append_data_column(variable_name: str, data_column: List[Any],
 
 
 def replace_data_column(variable_name: str, data_column: List[Any],
-                        **table: TableInfo): # ->NoReturn
+                        **table: TableInfo):  # ->NoReturn
     '''Replace the data in the given data_column.
     If data_column is shorter than the original column, the remaining values
     will be blank.
@@ -399,7 +398,7 @@ def replace_data_column(variable_name: str, data_column: List[Any],
 
 
 def format_data_column(variable_name: str, style: str = '0',
-                       **table: TableInfo): # ->NoReturn
+                       **table: TableInfo):  # ->NoReturn
     '''format the data in the specified column.
     The format style uses the standard Excel format style string.
     After formatting an "Auto-Fit Column Width" is applied
@@ -424,7 +423,7 @@ def format_data_column(variable_name: str, style: str = '0',
     data_range.autofit()
 
 
-def rename_variable(name_pairs, **table: TableInfo): # ->NoReturn
+def rename_variable(name_pairs, **table: TableInfo):  # ->NoReturn
     '''Rename the data_columns from old_name to new_name.
     Args:
         name_swap: A list of tuple pairs where the first is the current
@@ -453,7 +452,7 @@ def rename_variable(name_pairs, **table: TableInfo): # ->NoReturn
 
 
 def strip_units(value_names: Variables, format_style: str = '0.00',
-                **table): # ->NoReturn
+                **table):  # ->NoReturn
     '''Replace string type column(s) with numeric column(s) by removing the
     unit portion of the string.
     Args:
@@ -517,6 +516,45 @@ def append_data_sheet(data_table: pd.DataFrame, starting_cell: str = 'A1',
     return new_sheet
 
 
+def insert_data_column(variable_name: str, data_column: List[Any],
+                       starting_cell: str = 'A1',
+                       **worksheet: WorksheetInfo)->xw.Range:
+    '''Adds the given data_column to the end of the designated excel table.
+    Args:
+        variable_name: The name for the new column.
+        data_column: A list containing the data to be placed into the new
+            column.
+        starting_cell: the top right cell in the excel table.
+        worksheet: The excel worksheet reference info.
+        It contains the following items:
+            file_name (FileName): A full Path or a string file name of an
+                excel file.
+            sub_dir (str): A string containing a sub directory path from
+                base_path to the excel file.
+            sheet_name (str): THe name of the desired worksheet.
+            new_file (bool, optional): True if a new book is to be created.
+                Default is False.
+            new_sheet (bool, optional): If True, a new sheet will be created
+                in the specified workbook if it does not already exist.
+                Default is True.
+            replace (bool, optional): If the specified worksheet already
+                exists and new_sheet is True, return the existing worksheet.
+                Default is True.
+    Returns:
+        An XLWings Range object for the new column.
+    '''
+    new_sheet = select_sheet(**worksheet)
+    replace = worksheet.get('replace')
+    if replace:
+        new_sheet.clear()
+    new_range = new_sheet.range(starting_cell).offset(row_offset=1)
+    header_range = new_range[0].offset(row_offset=-1)
+    header_range.value = variable_name
+    new_range.options(transpose=True).value = data_column
+    new_sheet.autofit(axis='columns')
+    return new_range
+
+
 def save_and_close(data_sheet: xw.Sheet):
     '''Saves and closes the workbook containing data_sheet.
     Args:
@@ -529,7 +567,7 @@ def save_and_close(data_sheet: xw.Sheet):
     exel_app.quit()
 
 
-def fill_gaps(variable_name: str, fill_value=None, **table): # ->NoReturn
+def fill_gaps(variable_name: str, fill_value=None, **table):  # ->NoReturn
     '''Fill blank cells in a row with the previous column's value.
     Args:
         variable_name: The name of the column to format.

@@ -4,11 +4,11 @@
 from pathlib import Path
 from abc import ABC, abstractmethod
 from collections import OrderedDict
-from collections.abc import Iterable
 from typing import Optional, List, Dict, Tuple, Set, Any, Union
 from file_utilities import FileTypes, set_base_dir, make_full_path
 from file_utilities import PathInput, FileTypeError
 from data_utilities import true_iterable, logic_match
+import logging_tools
 
 # pylint: disable=invalid-name
 VariableSelection = Union[str, List[str], Dict[str, Any]]
@@ -49,8 +49,12 @@ class UnMatchedValuesError(VariableError):
 
 
 class UpdateError(VariableError):
-    '''An error occurred attempting to modify a CustomVariable attribute.
-    '''
+    '''An error occurred attempting to modify a CustomVariable attribute.'''
+    pass
+
+
+class MissingRequiredError(VariableError):
+    '''A required CustomVariable was not initialized.'''
     pass
 
 
@@ -825,11 +829,11 @@ class BoolV(CustomVariable):
         '''
         try:
             bool_value = logic_match(value, self.truth_values,
-                                     self.false_values)
+                                                          self.false_values)
         except (TypeError) as err:
             self.status = err
             raise err
-        super().set_value(path_value)
+        super().set_value(bool_value)
 
     def initialize_messages(self, messages: Dict[str, str]):
         '''Update message templates.
@@ -870,20 +874,42 @@ class CustomVariableSet(OrderedDict):
         custom variables with the same name.
 
         A new CustomVariableSet class can be defined dynamically by passing an
-        existing class a list of Parameters.  For a CustomVariableSet subclass,
+        existing class a list of CustomVariables.  For a CustomVariableSet subclass,
         the new class will be an extension of the exiting class with the new
         CustomVariable definitions.
 
         Can access individual custom variables as items of the CustomVariable set
     '''
     variable_definitions = list() # type: List[Dict[str, Any]]
-    defaults = {'required': True,
-                'on_update': None}
-
-    def __init__(self, **variable_values):
+    defaults = {'required': True, 'on_update': None}
+    logger = logging_tools.config_logger()
+    def __init__(self, variable_definitions: List[Dict[str, Any]] = None, **variable_values):
         '''Create a new instance of the CustomVariableSet.
-        '''
+         Arguments:
+            variable_definitions (optional, List[Dict[str, Any]] ) -- A list of variable definitions.
+                 Each VariableDefinition must be a dictionary that contains either the key: 'name' - the name of the new Variable; or the : 'test_string1',
+         'variable_type': StringV,
+         'default': 'default_value',
+         'required': False},
+         {'CustomVariable': test_int,  'required': True}
+        ]
+            variable_values {dict} -- The keys are CustomVariable names,
+                The values are dictionaries containing one or more of the
+                CustomVariable's attribute values to set.
+                Any keys not matching a CustomVariable name are added as .
+                variable_definitions = [
+        {'name': 'test_string1',
+         'variable_type': StringV,
+         'default': 'default_value',
+         'required': False},
+         {'CustomVariable': test_int,  'required': True}
+        ]
+
+       '''
+       #FIXME add ability to pass new variable definitions to init
+       #FIXME variable_values should only pass values and not set other attributes
         super().__init__()
+#append passed variable definitions to class variable definition and pass to define_variables
         self.define_variables()
         remaining_items = self.initialize_variables(variable_values)
         self.update(remaining_items)
@@ -892,32 +918,22 @@ class CustomVariableSet(OrderedDict):
         '''Insert the CustomVariable class definitions.
         '''
         for variable_def in self.variable_definitions:
-            local_variable_def = variable_def.copy()
-            self.add_defaults(local_variable_def)
+            local_variable_def = self.defaults.copy()
+            local_variable_def.update(variable_def)
+            logging_tools.log_dict(self.logger, local_variable_def, 'local_variable_def')
             if 'CustomVariable' in local_variable_def:
                 new_variable = local_variable_def.pop('CustomVariable')
+                new_variable.set_attributes(**local_variable_def)
             else:
                 var_type = local_variable_def.pop('variable_type')
+                logging_tools.log_dict(self.logger, local_variable_def, 'variable attributes')
                 new_variable = var_type(**local_variable_def)
             self[new_variable.name] = new_variable
-
-    def add_defaults(self, variable_def: dict)->dict:
-        '''Add any missing default arguments to the CustomVariable definition.
-        Arguments:
-            variable_def {dict} -- [The attributes defining a CustomVariable.]
-        Returns:
-            dict -- [The updated attributes including any missing default
-                     values.]
-        '''
-        for attr_name, default_value in self.defaults.items():
-            if attr_name not in variable_def:
-                variable_def[attr_name] = default_value
-        return variable_def
 
     def initialize_variables(self, variable_values: dict)->dict:
         '''set initial values for parameters.
         Arguments:
-            parameter_values {dict} -- The keys are CustomVariable names,
+            variable_values {dict} -- The keys are CustomVariable names,
                 The values are dictionaries containing one or more of the
                 CustomVariable's attribute values to set.
                 Any keys not matching a CustomVariable name are returned.
@@ -925,14 +941,17 @@ class CustomVariableSet(OrderedDict):
             dict -- The remaining items in parameter_values that do not
                 correspond to a defined CustomVariable
         '''
+        logging_tools.log_dict(self.logger, variable_values, 'variable_values')
         local_values_def = variable_values.copy()
         for variable_name in self.keys():
             if variable_name in local_values_def:
-                attribute_def = local_values_def.pop(variable_name)
-                self[variable_name].set_attributes(**attribute_def)
-            elif self[variable_name].required:
-                initial_value = self[variable_name].default
-                self[variable_name].value = initial_value
+                new_value = local_values_def.pop(variable_name)
+                self[variable_name].value = new_value
+            elif (self[variable_name].required and not
+                    self[variable_name].is_initialized() and
+                    self[variable_name].default is None):
+                msg = 'The variable: {} is required, but was not initialized.'.format(variable_name)
+                raise MissingRequiredError(msg)
         return local_values_def
 
     def update_variables(self, variable_attr: dict):
@@ -957,13 +976,13 @@ class CustomVariableSet(OrderedDict):
                 the default values for any non-initialized required variables.
         '''
         values_dict = dict()
-        for name, CustomVariable in self.items():
-            if not issubclass(type(CustomVariable), CustomVariable):
-                values_dict[name] = CustomVariable
-            elif CustomVariable.is_initialized():
-                values_dict[name] = CustomVariable.value
-            elif CustomVariable.required:
-                values_dict[name] = CustomVariable.value
+        for name, variable in self.items():
+            if not issubclass(type(variable), CustomVariable):
+                values_dict[name] = variable
+            elif variable.is_initialized():
+                values_dict[name] = variable.value
+            elif variable.required:
+                values_dict[name] = variable.value
         return values_dict
 
     def get_values(self, selection: VariableSelection)->VariableValues:
@@ -1030,11 +1049,13 @@ class CustomVariableSet(OrderedDict):
                 The key is the name of the CustomVariable and the value is its new
                 value.
         Raises:
-            UnMatchedValuesError: If the number of values given does not match the number of CustomVariables
+            UnMatchedValuesError:
+                If the number of values given does not match the number of CustomVariables
             NotVariableError: If any key in parameter_values does not
                 correspond to a CustomVariable in the set.
         '''
         if value_set:
+            self.logger.debug('value_set: %s', value_set)
             if len(value_set) == len(self):
                 for parameter_name, new_value in zip(self.keys(), value_set):
                     self[parameter_name].value = new_value

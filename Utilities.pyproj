@@ -22,26 +22,34 @@
     <Compile Include="data_utilities.py" />
     <Compile Include="file_utilities.py" />
     <Compile Include="custom_variable_sets.py" />
+    <Compile Include="logging_tools.py" />
     <Compile Include="ql_fit.py" />
     <Compile Include="spreadsheet_tools.py" />
     <Compile Include="Testing\file_utilities_tests.py" />
     <Compile Include="Testing\IntegerV_tests.py" />
     <Compile Include="Testing\one_string_parameter_set_tests.py" />
-    <Compile Include="Testing\parameters_tests.py" />
-    <Compile Include="Testing\parameter_interaction_tests.py" />
     <Compile Include="Testing\PathV_tests.py" />
     <Compile Include="Testing\StringV_tests.py" />
     <Compile Include="Testing\test_files_setup.py" />
-    <Compile Include="Testing\two_parameter_set_tests.py" />
+    <Compile Include="Testing\two_variable_set_tests.py" />
+    <Compile Include="Testing\variable_set_initial_tests.py" />
     <Compile Include="Testing\__init__.py" />
+    <Compile Include="two_var_try.py" />
+    <Compile Include="xllm_to_csv.py" />
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Testing" />
+    <Folder Include="Testing\Test Data\" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="CondaEnv|CondaEnv|Anaconda3" />
     <InterpreterReference Include="Global|ContinuumAnalytics|Anaconda36-64" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Testing\Test Data\Date formats.xlsx" />
+    <Content Include="Testing\Test Data\test column.xlsx" />
+    <Content Include="Testing\Test Data\Test table.xlsx" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>
