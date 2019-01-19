@@ -134,6 +134,18 @@ def true_iterable(variable)-> bool:
     return not isinstance(variable, str) and isinstance(variable, Iterable)
 
 
+def drop_empty_items(dictionary: Dict[Any, Any])->Dict[Any, Any]:
+    '''Remove dictionary items containing None values.
+    Arguments:
+        dictionary {Dict[Any, Any]} -- The dictionary to be cleaned.
+    Returns:
+        A copy of the dictionary, dropping all items with a value of None.
+    '''
+    cleaned_dict = {key: value for (key, value) in dictionary.items()
+                    if value is not None}
+    return cleaned_dict
+
+
 def nearest_step(value: float, step_size: float = 1.0,
                  towards_zero=True)->float:
     '''Round value up or down to the nearest step_size.
@@ -248,7 +260,10 @@ def select_data(data: pd.DataFrame,
     if criteria_selection:
         # Do criteria based row selections
         for name, condition in criteria_selection.items():
-            selected_data = selected_data[selected_data[name] == condition]
+            if isinstance(condition, str):
+                selected_data = selected_data[selected_data[name].str.contains(condition)]
+            else:
+                selected_data = selected_data[selected_data[name] == condition]
     if unique_scans:
         selected_data.drop_duplicates(unique_scans, inplace=True)
     if select_columns:

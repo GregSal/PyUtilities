@@ -42,7 +42,7 @@ def config_logger(level: str = 'DEBUG')->logging.Logger:
         msg = msg_str.format(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], level)
         raise ValueError(msg)
     return logger
-        
+
 
 # Log to a file
 def file_logger(file_name: str, level: str = 'DEBUG')->logging.Logger:
@@ -86,15 +86,15 @@ def file_logger(file_name: str, level: str = 'DEBUG')->logging.Logger:
         msg = msg_str.format(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], level)
         raise ValueError(msg)
     return logger
-  
+
 def ch_logger(logger: logging.Logger = None, level: str = 'DEBUG')->logging.Logger:
     '''Create a console handler to basic logger.
-    Creates a logger if not supplied and adds a handler that prints to the consol
-    with the given level.
+    Creates a logger if not supplied and adds a handler that prints to the
+    console with the given level.
     The name of the calling module and log level is added to the messages.
     Arguments:
-        logger (optional, logging.Logger) -- the blogger to add the handler to.
-        level (optional, str) -- The level of the logger. One of:
+        logger {optional, logging.Logger} -- the logger to add the handler to.
+        level {optional, str} -- The level of the logger. One of:
             DEBUG
             INFO
             WARNING
@@ -159,4 +159,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    

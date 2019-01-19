@@ -42,9 +42,9 @@ from pathlib import Path
 from typing import TypeVar, Dict, List, Any
 import xlwings as xw
 import pandas as pd
-from Utilities.data_utilities import value2num
-from Utilities.file_utilities import get_file_path
-from Utilities.data_utilities import select_data
+from data_utilities import value2num
+from file_utilities import get_file_path
+from data_utilities import select_data
 
 # pylint: disable=invalid-name
 Data = TypeVar('Data', pd.DataFrame, pd.Series, List[Any])
@@ -256,6 +256,27 @@ def load_data_table(index_variables: List[str] = None, sort: bool = True,
         if sort:
             data_table.sort_index(inplace=True)
     return data_table
+
+
+def load_definitions(data_sheet: xw.Sheet, starting_cell='A1',
+                     rows: TableSpan = 'expand')->Dict[Any, Any]:
+    '''Extract the requested data definitions from the worksheet.
+     Args:
+         data_sheet: {xw.sheet} -- The excel worksheet containing the table.
+         starting_cell: {optional, str} -- The top right cell in the excel
+             table.
+         rows: {optional, TableSpan} -- The number of rows in the table.
+             If 'expand', the table will include all rows below the
+             starting_cell until the first empty cell is encountered.
+    Returns:
+        A dictionary, where the keys are the objects in the first column and
+        the values are the objects in the second column.
+    '''
+    table_range = get_table_range(data_sheet=data_sheet,
+                                  starting_cell=starting_cell,
+                                  rows=rows, header=0, columns=2)
+    definitions = table_range.options(dict).value
+    return definitions
 
 
 def load_reference_table(reference_sheet_info, reference_table_info,
@@ -486,24 +507,26 @@ def strip_units(value_names: Variables, format_style: str = '0.00',
 
 
 def append_data_sheet(data_table: pd.DataFrame, starting_cell: str = 'A1',
-                      **worksheet: WorksheetInfo)->xw.Sheet:
+                      add_index=False, **worksheet: WorksheetInfo)->xw.Sheet:
     '''Adds the given data to a new data sheet.
     Args:
-        data_table: The Pandas DataFrame data to be added.
-        starting_cell: the top right cell in the excel table.
-        worksheet: The excel worksheet reference info.
+        data_table {pd.DataFrame} -- The Pandas DataFrame data to be added.
+        starting_cell {str} -- The top right cell in the excel table.
+        add_index {bool} -- Whether to include the DataFrame index in the
+            spreadsheet table.  Default is False.
+        worksheet {Dict[Any, Any] -- The excel worksheet reference info.
         It contains the following items:
-            file_name (FileName): A full Path or a string file name of an
+            file_name {FileName} --  A full Path or a string file name of an
                 excel file.
-            sub_dir (str): A string containing a sub directory path from
+            sub_dir {str} --  A string containing a sub directory path from
                 base_path to the excel file.
-            sheet_name (str): THe name of the desired worksheet.
-            new_file (bool, optional): True if a new book is to be created.
+            sheet_name {str} --  THe name of the desired worksheet.
+            new_file {bool, optional} --  True if a new book is to be created.
                 Default is False.
-            new_sheet (bool, optional): If True, a new sheet will be created
+            new_sheet {bool, optional} -- If True, a new sheet will be created
                 in the specified workbook if it does not already exist.
                 Default is True.
-            replace (bool, optional): If the specified worksheet already
+            replace {bool, optional} -- If the specified worksheet already
                 exists and new_sheet is True, return the existing worksheet.
                 Default is True.
     '''
@@ -511,7 +534,7 @@ def append_data_sheet(data_table: pd.DataFrame, starting_cell: str = 'A1',
     replace = worksheet.get('replace')
     if replace:
         new_sheet.clear()
-    new_sheet.range(starting_cell).value = data_table
+    new_sheet.range(starting_cell).options(index=add_index).value = data_table
     new_sheet.autofit(axis='columns')
     return new_sheet
 

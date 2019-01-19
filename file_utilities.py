@@ -19,6 +19,7 @@ Classes
     FileTypeError:
         The file extension is not the appropriate type.
 '''
+import time
 from pathlib import Path
 from collections.abc import Iterable
 from typing import Dict, Union
@@ -152,7 +153,8 @@ class FileTypes(list):
     def disp(self)-> str:
         '''Generate a string describing the file types.
         Returns:
-            str -- a formatted multiline string listing the available file types.
+            str -- a formatted multi-line string listing the available file
+                types.
         '''
         pass
 
@@ -239,3 +241,41 @@ def replace_top_dir(dir_path: Path, file_path: Path, new_name: str)-> str:
         # TODO output warning message
     file_str_sup = str(file_path).replace(remove_str, new_name)
     return file_str_sup
+
+
+def clean_ascii_text(text: str, charater_map: Dict[str, str] = None)-> str:
+    '''Remove non ASCII characters from a string.
+    This is intended to deal with encoding incompatibilities.
+    Special character strings in the test are replace with their ASCII
+    equivalent All other non ASCII characters are removed.
+    Arguments:
+        text {str} -- The string to be cleaned.
+        charater_map {optional, Dict[str, str]} -- A mapping of UTF-8 or other
+        encoding strings to an alternate ASCII string.
+    '''
+    special_charaters = {'cm³': 'cc'}
+    if charater_map:
+        special_charaters.update(charater_map)
+    for (special_char, replacement) in special_charaters.items():
+        if special_char in text:
+            patched_text = text.replace(special_char, replacement)
+        else:
+            patched_text = text
+    bytes_text = patched_text.encode(encoding="ascii", errors="ignore")
+    clean_text = bytes_text.decode()
+    return clean_text
+
+
+def get_file_mod_time(file:Path, date_format='%Y-%m-%d %H:%M:%S')->str:
+    '''Return the file modification time as a formatted string.
+    Arguments:
+        file {Path} -- The path to the file.
+        date_format {str} -- The string specifying the format for the
+            returned time stamp.  Default is '%Y-%m-%d %H:%M:%S'
+    Returns:
+        The file modification date as a formatted string.
+    '''
+    modification_time = file.stat().st_mtime
+    modification_date=time.strftime(date_format,
+                                    time.localtime(modification_time))
+    return modification_date
