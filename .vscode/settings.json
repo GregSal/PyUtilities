@@ -9,5 +9,6 @@
         "./Testing",
         "-p",
         "*test*.py"
-    ]
+    ],
+    "python.pythonPath": "C:\\Users\\Greg\\Anaconda3\\python.exe"
 }
