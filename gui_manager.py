@@ -20,6 +20,8 @@ Cmd = Union[Callable, str]
 Var = Union[str, tk.DoubleVar, tk.IntVar, tk.StringVar]
 Bol = Union[bool, str]
 Dimension = Union[int, str]
+Widget = Union[str, tk.Widget]
+
 
 # If you set a dimension to an integer, it is assumed to be in pixels.
 # You can specify units by setting a dimension to a string containing a
@@ -72,6 +74,19 @@ class DataConfig(object):
             return var
         else:
             return self.data[var]
+
+    def get_widget(self, widget: Widget)-> Widget:
+        '''Return a tk widget.
+        If widget is not a placeable widget:
+            assume it is a data reference and return the corresponding value.
+        Arguments:
+            widget: {Widget} -- either a tk placeable widget or a string
+                referencing such a variable in data.
+        '''
+        if isinstance(widget, tk.Widget):
+            return widget
+        else:
+            return self.data[widget]
 
 
     def get_str(self, text: str)-> str:
@@ -271,6 +286,7 @@ class ManagerGUI(DataConfig, tk.Toplevel):
                     subgui.grid(**kwargs)
                 else:
                     subgui.grid()
+        pass
 
 
 class ButtonManager(WidgetManager, ttk.Button):
@@ -313,13 +329,6 @@ class ButtonManager(WidgetManager, ttk.Button):
         else:
             button_params['text'] = self.default_text
         return button_params
-
-    def update(self):
-        '''Update all data values from the GUI sub-frames.
-        This method is to be overwritten for each sub-class.
-        '''
-        action_label = self.data.action_text()
-        self.run_button.config(text=action_label)
 
 
 class EntryManager(WidgetManager, ttk.Entry):
@@ -376,13 +385,41 @@ class EntryManager(WidgetManager, ttk.Entry):
             entry_params['exportselection'] = manager.get_bool(to_clipboard)
         return entry_params
 
-    def update(self):
-        '''Update all data values from the GUI sub-frames.
-        This method is to be overwritten for each sub-class.
+
+class LabelFrameManager(WidgetManager, ttk.Frame):
+    '''Define a Base LabelFrame class.
+    Arguments:
+		name: {str} -- The instance name of the widget.
+        manager: {ManagerGUI} -- The top level GUI containing the
+            configuration data.
+        master: {tk.TK} -- The parent widget or frame.
+   		text: {optional, str} -- The text to appear as part of the border.
+	    labelwidget: {optional, tk.TK} -- A widget instance to use as the
+            label.
+    '''
+    widget_type = 'Layout'
+    default_text = ''
+    # TODO add variable describing sub widgets.
+
+    def __init__(self, name: str, manager: ManagerGUI, **frame_params):
+        '''Defines the main window for the GUI
         '''
-        pass
+        frame_params = self.set_frame_params(frame_params, manager)
+        super().__init__(name, manager, **frame_params)
 
-
+    def set_frame_params(self, frame_params: dict, manager: ManagerGUI)->dict:
+        '''Convert reference to manager.data into their appropriate values.
+        set defaults as needed.
+        '''
+        text_str = frame_params.get('text')
+        label_widget = frame_params.get('labelwidget')
+        if label_widget:
+            frame_params['labelwidget'] = manager.get_widget(label_widget)
+        elif text_str:
+            frame_params['text'] = manager.get_str(text_str)
+        else:
+            frame_params['text'] = self.default_text
+        return frame_params
 
 
 

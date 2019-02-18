@@ -92,7 +92,7 @@ class FileTypes(list):
                        'Word 2010 File':('*.docx', '*.docm')})
 
 
-    def __init__(self, type_selection = None):
+    def __init__(self, type_selection=None):
         '''Create a user select-able list of file type options.
         If type_selection is none, then all file types are allowed included.
         "directory" is a special file type that can be used to  trigger tests
@@ -105,14 +105,14 @@ class FileTypes(list):
         self.all_types = False
         self.is_dir = False
         if type_selection is None:
-            selection_list = list(self.file_types.keys())
+            self.selection_list = list(self.file_types.keys())
         elif isinstance(type_selection, str):
-            selection_list = (type_selection, )
+            self.selection_list = (type_selection, )
         elif isinstance(type_selection, Iterable):
-            selection_list = type_selection
+            self.selection_list = type_selection
         else:
             raise TypeError('type_selection must be a list of strings')
-        for item in selection_list:
+        for item in self.selection_list:
             type_name = str(item)
             if 'directory' in type_name:
                 self.type_select = set()
@@ -126,6 +126,23 @@ class FileTypes(list):
                 raise FileTypeError(msg)
         if '.*' in self.type_select:
             self.all_types = True
+
+    def valid_extension(self, extension: str)->bool:
+        '''True if the supplied extention is in the list of valid exstensions.
+        The extension string must be in the format ".???".
+        Arguments:
+            extension {str} -- The exstension to be tested.
+        Returns:
+            bool -- True if the supplied extention is valid.
+        '''
+        if self.is_dir:
+            return False
+        if self.all_types:
+            return True
+        if extension in self.type_select:
+            return True
+        else:
+            return False
 
     def check_type(self, file_name: Path, must_exist = True)-> bool:
         '''Indicate whether the file has one of the suffixes.
@@ -236,8 +253,8 @@ def replace_top_dir(dir_path: Path, file_path: Path, new_name: str)-> str:
     if remove_str not in str(file_path):
         msg_str = '{dir_str} is not a parent of {file_str}\n\t'
         msg_str = ' The top directory path will not be removed.'
-        msg = msg_str.format(dir_str = str(dir_path),
-                             file_str = str(file_path))
+        msg = msg_str.format(dir_str=str(dir_path),
+                             file_str=str(file_path))
         # TODO output warning message
     file_str_sup = str(file_path).replace(remove_str, new_name)
     return file_str_sup
