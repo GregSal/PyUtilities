@@ -779,7 +779,31 @@ class PathV(CustomVariable):
         except (FileTypeError, FileNotFoundError) as err:
             self.status = err
             raise self.status
-        super().set_value(path_value)
+        return super().set_value(path_value)
+
+
+class StrPathV(PathV):
+    '''A File or Directory CustomVariable with returned as a string path:
+    Optional limited File Types (file_types),
+    Optional Base directory for building the full path (base_directory),
+    Option to allow non-existing File or Directory paths (must_exist),
+    Optional nickname for a top portion of the full path (top_path_name),
+    '''
+    def get_value(self):
+        '''Return the path value as a string.
+        '''
+        path_value = super().get_value()
+        if path_value:
+            return str(path_value)
+        return None
+
+    def set_value(self, value):
+        '''Set a new value for CustomVariable.
+        '''
+        return super().set_value(value)
+    
+    value = property(get_value, set_value)
+
 
 class BoolV(CustomVariable):
     '''A True/False CustomVariable.
@@ -860,7 +884,6 @@ class BoolV(CustomVariable):
         return disp_str
 
 
-
 class CustomVariableSet(OrderedDict):
     '''This defines a collection of custom variables.
         For each CustomVariable the following instance attributes are added:
@@ -882,7 +905,7 @@ class CustomVariableSet(OrderedDict):
     '''
     variable_definitions = list() # type: List[Dict[str, Any]]
     defaults = {'required': True, 'on_update': None}
-    logger = logging_tools.config_logger()
+    logger = logging_tools.config_logger(level='WARNING')
     def __init__(self, variable_definitions: List[Dict[str, Any]] = None, **variable_values):
         '''Create a new instance of the CustomVariableSet.
          Arguments:

@@ -1,0 +1,7 @@
+# Lines starting with '#' are considered comments.
+# pycache files.
+*.pyc
+# Ignore mypy folder
+.mypy_cache/*
+.vs/*
+.vscode/*

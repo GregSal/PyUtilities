@@ -5,13 +5,13 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{167f98ff-f940-4216-a4b3-0ed2df5e40cd}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>file_select_window.py</StartupFile>
+    <StartupFile>GUI_Construction.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <InterpreterId>Global|ContinuumAnalytics|Anaconda37-64</InterpreterId>
+    <InterpreterId>Global|PythonCore|3.7</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
@@ -25,11 +25,13 @@
     </Compile>
     <Compile Include="file_utilities.py" />
     <Compile Include="custom_variable_sets.py" />
+    <Compile Include="GUI_Construction.py" />
     <Compile Include="gui_manager.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="logging_tools.py" />
     <Compile Include="ql_fit.py" />
+    <Compile Include="resizable_top.py" />
     <Compile Include="spreadsheet_tools.py" />
     <Compile Include="Testing\file_utilities_tests.py" />
     <Compile Include="Testing\IntegerV_tests.py" />
@@ -49,7 +51,7 @@
     <Folder Include="Testing\Test Data\" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="Global|ContinuumAnalytics|Anaconda37-64" />
+    <InterpreterReference Include="Global|PythonCore|3.7" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Testing\Test Data\Date formats.xlsx" />

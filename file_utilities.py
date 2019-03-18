@@ -36,14 +36,14 @@ def set_base_dir(sub_dir: str = None,
     The base directory is the Queen's OneDrive, but the path to it changes
     with PC location.
     Arguments:
-        file_name {str, Path} -- a name or partial path to a file or directory.
+        base_options {Dict[str, str]} -- A dictionary describing conditions
+            for setting the base directory. The key contains text to be
+            searched for in the current working directory path.  The value is
+            the base directory path to be set if the key is found.
         sub_dir {str} -- A string containing the directory path from the
             top directory to the desired base directory.
             A string containing the directory path from the base_dir to
             the file location.
-   Args:
-        sub_dir: A string containing the directory path from the
-            Queen's OneDrive to the desired base directory.
     Raises:
         FileNotFoundError
     Returns:

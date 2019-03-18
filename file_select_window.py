@@ -13,13 +13,14 @@ Classes
 '''
 from typing import Union, Callable, List, Dict, Tuple, Any
 from pathlib import Path
+from functools import partial
 import tkinter as tk
+import tkinter.ttk as ttk
 import tkinter.filedialog as tkf
 from file_utilities import FileTypes, get_file_path
-from file_utilities import set_base_dir
+from file_utilities import set_base_dir, PathInput
 
 FileTypeSelection = Union[List[str], FileTypes]
-PathInput = Union[Path, str]
 
 
 class SelectFile():
@@ -43,7 +44,7 @@ class SelectFile():
         initialdir: {optional, PathInput} -- The initial path, possibly
             including a default file name, for the file selection.
             Default is the path returned by set_base_dir().
-	    parent: {tk.Tk} -- The logical parent of the file dialog. The file
+	    master: {tk.Tk} -- The logical parent of the file dialog. The file
             dialog is displayed on top of its parent window.
     Directory Window:
         mustexist: {bool} -- Specifies whether the user may specify
@@ -69,11 +70,11 @@ class SelectFile():
         confirmoverwrite: {bool} -- A true value requests a confirmation
             dialog be presented to the user when the selected file already
             exists. A false value ignores existing files. Default is False.
-    Save File Selection Window
+    Open File Selection Window
 	    multiple: {bool} -- If True, Allows the user to choose multiple files
             from the Open dialog.
         '''
-    all_dialogue_options = ('parent',
+    all_dialogue_options = ('master',
                             'title',
                             'initialdir')
     dir_dialogue_options = all_dialogue_options + ('mustexist',)
@@ -86,25 +87,21 @@ class SelectFile():
     initialdir=None
     default_attributes = dict(
         action='save', filetypes=FileTypes(), check_validity=False,
-        parent=None, title='', initialdir=str(set_base_dir()),
-        mustexist=False,
-        initialfile=None, typevariable=None,
+        master=None, title='', initialdir=str(set_base_dir()),
+        mustexist=False, initialfile=None, typevariable=None,
         confirmoverwrite=False, defaultextension=None)
     action_options = ('save', 'open', 'dir')
 
-    def __init__(self, **kwargs):
+    def __init__(self, **file_params):
         '''
         '''
         # Set defaults
         for attr, value in self.default_attributes.items():
             self.__setattr__(attr, value)
-        reduced_kwargs = self.set_dialogue(**kwargs)
-        reduced_kwargs = self.set_starting_path(reduced_kwargs)
-        self.set_attributes(reduced_kwargs)
-        self.set_options_list()
+        self.configure(**file_params)
 
     def set_dialogue(self, type_selection: FileTypeSelection = None,
-                     action='', **kwargs):
+                     action='', **reduced_file_params):
         '''Set the file dialog method to use.
         Select between:
             "asksaveasfilename",
@@ -147,12 +144,12 @@ class SelectFile():
             self.dialog = tkf.askopenfilename
         elif 'save' in self.action:
             self.dialog = tkf.asksaveasfilename
-        return kwargs
+        return reduced_file_params
 
     def set_starting_path(self, starting_path: PathInput = None,
                           initialfile: str = None,
                           defaultextension: str = None,
-                          **kwargs)->Dict[str, Any]:
+                          **attr_dict)->Dict[str, Any]:
         '''Set the starting selection path and file name.
         Arguments:
             starting_path: {optional, PathInput} -- The initial path, possibly
@@ -162,9 +159,8 @@ class SelectFile():
                 the file selection. Default = None.  Ignored if starting_path
                 includes a file name.
             defaultextension: {optional, str} -- The initial file type to
-                prompt for. Must reference a key in the FileTypes class.
-                Ignored when selecting a directory. Default is first type in
-                file_types.
+                prompt for. Must reference an extension in filetypes. Default
+                is first type in filetypes.
             **kwargs: {Dict[str, Any]}: -- Additional keyword arguments to
                 pass back.
         '''
@@ -173,7 +169,7 @@ class SelectFile():
         else:
             initial_path = Path(self.initialdir)
         if initial_path.is_file():
-            self.initialdir = str(initial_path.parent)
+            self.initialdir = str(initial_path.master)
             self.initialfile = initial_path.name
         elif initialfile is not None:
             self.initialfile = initialfile
@@ -184,18 +180,25 @@ class SelectFile():
         if defaultextension:
             if self.filetypes.valid_extension(defaultextension):
                 self.defaultextension = defaultextension
-        return kwargs
+        return attr_dict
 
-    def set_attributes(self, kwargs: Dict[str, Any]):
+    def set_attributes(self, attr_dict: Dict[str, Any])->Dict[str, Any]:
         '''Set passed attributes using defined methods.
+        Searches through attr_dict for keys that have corresponding methods
+        named set_keyname or attributes called keyname.
+        Returns a dictionary containing all items that did not match a method
+        or attribute.
         '''
-        for item in kwargs:
+        unused_parameters = dict()
+        for item, value in attr_dict.items():
             if hasattr(self, 'set_' + item):
                 set_method = getattr(self, 'set_' + item)
-                set_method(kwargs[item])
+                set_method(value)
             elif hasattr(self, item):
-                self.__setattr__(item, kwargs[item])
-        pass
+                self.__setattr__(item, value)
+            else:
+                unused_parameters[item] = value
+        return unused_parameters
 
     def get_options(self, option_list: Tuple[str])->Dict[str, Any]:
         '''Create a dictionary of options arguments.
@@ -206,7 +209,11 @@ class SelectFile():
         '''
         options_set = {option: self.__getattribute__(option)
                        for option in option_list
-                       if self.__getattribute__(option) is not None}
+                       if hasattr(self, option)}
+        # Convert master to parent for dialog options
+        master = options_set.pop('master', None)
+        if master:
+            options_set['parent'] = master
         return options_set
 
     def set_options_list(self):
@@ -220,18 +227,47 @@ class SelectFile():
             self.options_set = self.get_options(self.open_dialogue_options)
         pass
 
-    def call_dialog(self, parent: tk.Tk = None):
+    def configure(self, **file_params)->Dict[str, Any]:
+        '''Set the definition of the dialog window.
+        Extract all supplied attributes and combine with defaults for
+        attributes not supplied to define the dialog window functionality.
+        Returns all supplied keyword arguments not used in defining the
+        dialog window.
+        '''
+        reduced_file_params = self.set_dialogue(**file_params)
+        attr_dict = self.set_starting_path(**reduced_file_params)
+        unused_parameters = self.set_attributes(attr_dict)
+        self.set_options_list()
+        return unused_parameters
+
+    def call_dialog(self, master: tk.Tk = None)->str:
         '''Open the appropriate dialog window and return the selected path.
         Arguments:
-            parent: {tk.Tk} -- The logical parent of the file dialog.
+            master: {tk.Tk} -- The logical master of the file dialog.
         '''
-        if parent:
-            self.options_set['parent'] = parent
+        if master:
+            self.options_set['parent'] = master
         if not self.options_set.get('parent'):
             root = tk.Tk()
-            root.overrideredirect(1)            root.withdraw()
+            root.overrideredirect(1)
+            root.withdraw()
             self.options_set['parent'] = root
-        selected_path = self.dialog(**self.options_set)        return selected_pathdef main():
+        selected_path = self.dialog(**self.options_set)
+        return selected_path
+
+    def get_path(self, master: tk.Tk = None)->Path:
+        '''Open the appropriate dialog window and return the selected path.
+        Arguments:
+            master: {tk.Tk} -- The logical parent of the file dialog.
+        Returns: (Path}
+            The selected path as type Path, with the requested checking
+        '''
+        # TODO add existence checking
+        path_str = self.call_dialog(master)
+        return make_full_path(path_str, self.filetypes)
+
+
+def main():
     '''open test selection window.
     '''
     file_str = SelectFile().call_dialog()
