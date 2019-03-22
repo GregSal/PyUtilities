@@ -5,13 +5,14 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{167f98ff-f940-4216-a4b3-0ed2df5e40cd}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>GUI_Construction.py</StartupFile>
+    <StartupFile>templates.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <InterpreterId>Global|PythonCore|3.7</InterpreterId>
+    <IsWindowsApplication>True</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
@@ -33,6 +34,9 @@
     <Compile Include="ql_fit.py" />
     <Compile Include="resizable_top.py" />
     <Compile Include="spreadsheet_tools.py" />
+    <Compile Include="templates.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Testing\file_utilities_tests.py" />
     <Compile Include="Testing\IntegerV_tests.py" />
     <Compile Include="Testing\one_string_parameter_set_tests.py" />
@@ -57,6 +61,13 @@
     <Content Include="Testing\Test Data\Date formats.xlsx" />
     <Content Include="Testing\Test Data\test column.xlsx" />
     <Content Include="Testing\Test Data\Test table.xlsx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EclipseRelated\EclipseTemplates\ManageStructuresTemplates\ManageStructuresTemplates.pyproj">
+      <Name>ManageStructuresTemplates</Name>
+      <Project>{e332936f-0e17-4f36-944d-fb377ee415a9}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

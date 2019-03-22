@@ -2,7 +2,7 @@ import tkinter as tk
 import tkinter.font as tkFont
 import tkinter.ttk as ttk
 
-class Application(tk.Frame):              
+class Application(tk.Frame):
     def __init__(self, master=None):
            tk.Frame.__init__(self, master)
            self.grid(sticky=tk.N+tk.S+tk.E+tk.W)
@@ -20,9 +20,9 @@ class Application(tk.Frame):
         self.quit = ttk.Button(self, text='Quit', command=self.quit)
         self.quit.grid(row=0, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
 
-app = Application()                       
-app.master.title('Sample application')    
-app.mainloop()                            
+app = Application()
+app.master.title('Sample application')
+app.mainloop()
 
 
 

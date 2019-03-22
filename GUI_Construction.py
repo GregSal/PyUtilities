@@ -14,12 +14,19 @@ import tkinter.font as tkFont
 import tkinter.ttk as ttk
 from tkinter import messagebox
 
+import sys
+# utilities_path = r"C:\Users\Greg\OneDrive - Queen's University\Python\Projects\Utilities"
+templates_path = Path.cwd() / r'..\EclipseRelated\EclipseTemplates\ManageStructuresTemplates'
+templates_path_str = str(templates_path.resolve())
+sys.path.append(templates_path_str)
+
 
 from file_select_window import SelectFile
 from file_utilities import set_base_dir, FileTypes, PathInput
 from data_utilities import select_data
 from spreadsheet_tools import load_reference_table
 from custom_variable_sets import StrPathV, CustomVariableSet
+from manage_template_lists import load_template_references
 
 
 VariableDef = namedtuple('VariableDef', ['name', 'variable_type', 'data_ref'])
@@ -286,7 +293,7 @@ def show_message(button_parent: tk.Widget, parent_window: tk.Widget = None,
 
 def message_window(parent_window: tk.Widget, window_text: StringValue = '',
                    variable: StringValue = 'Nothing to say'):
-    '''DIsplay the sting message or variable content.'''
+    '''Display the sting message or variable content.'''
     if isinstance(variable, tk.StringVar):
         str_message = variable.get()
     else:
@@ -343,13 +350,13 @@ class TemplateData():
                            'TreatmentSite', 'modification_date',
                            'Description', 'Status']
 
-    file_info_args = ('file_name', 'sub_dir', 'sheet_name')
+    file_info_args = ('pickle_file_name', 'sub_dir')
     table_info_args = ('starting_cell', 'header')
     selections_args = ('unique_scans', 'select_columns', 'criteria_selection')
 
     default_references = dict(
         file_name='Template List.xlsx',
-        pickle_file_name='Template List.pkl',
+        pickle_file_name='TemplateData.pkl',
         sub_dir=r'Work\Structure Dictionary\Template Spreadsheets',
         sheet_name='templates',
         starting_cell='A1',
@@ -362,7 +369,6 @@ class TemplateData():
             }
         )
     def __init__(self, **kwargs):
-        self.pickle_file_name = self.set_arg('pickle_file_name', kwargs)
         self.template_file_info = self.set_args(self.file_info_args, kwargs)
         self.template_table_info = self.set_args(self.table_info_args, kwargs)
         self.template_selections = self.set_args(self.selections_args, kwargs)
@@ -381,7 +387,7 @@ class TemplateData():
         return args_dict
 
     def get_template_data(self):
-        template_data = load_template_references(self.pickle_file_name)
+        template_data = load_template_references(**self.template_file_info)
         template_data = select_data(template_data, **self.template_selections)
         return template_data
 
@@ -393,6 +399,12 @@ def print_selection():
         select_list = [str(item) for item in template_selector.selection()]
         select_str = '\n'.join(select_list)
         messagebox.showinfo('Selected Templates', select_str)
+
+
+def update_selection(event, variable: StringValue):
+        select_list = [str(item) for item in event.widget.selection()]
+        select_str = '\n'.join(select_list)
+        variable.set(select_str)
 
 
 def print_select(event):
@@ -595,7 +607,8 @@ def template_select_test():
         ]
     variable_set = [
         VariableDef('template_filename', tk.StringVar, None),
-        VariableDef('template_dir', tk.StringVar, None)
+        VariableDef('template_dir', tk.StringVar, None),
+        VariableDef('template_selection', tk.StringVar, None)
         ]
     command_set = [
         CommandDef('Exit',  tk.Tk.destroy, ('W::top',),{}),
@@ -607,11 +620,18 @@ def template_select_test():
                    ('W::selector_scrollbar_h',), {}),
         CommandDef('Template V Scroll', ttk.Scrollbar.set,
                    ('W::selector_scrollbar_v',), {}),
-        CommandDef('Show_File', message_window, (), {
-            'window_text': 'File String',
-            'variable': 'V::template_filename',
-            'parent_window': 'W::template_selector_group'
-            })
+        CommandDef('Show_File', message_window, (),
+                   {'window_text': 'File String',
+                    'variable': 'V::template_filename',
+                    'parent_window': 'W::template_selector_group'
+                    }),
+        CommandDef('Show_Selected', message_window, (),
+                   {'window_text': 'Selected Templates',
+                    'variable': 'V::template_selection',
+                    'parent_window': 'W::template_selector_group'
+                    }),
+        CommandDef('UpdateSelected', update_selection, (),
+                   {'variable': 'V::template_selection'})
         ]
     widget_definitions = {
         'selector_scrollbar_h': dict(
@@ -628,7 +648,7 @@ def template_select_test():
             ),
         'selection_button': dict(
             text='Show Selected',
-            command='C::Show_File'
+            command='C::Show_Selected'
             )
         }
 
@@ -666,7 +686,7 @@ def template_select_test():
         'selection_button': dict(
             layout_method='grid',
             padx=10, pady=10,
-            column=1, row=2
+            column=0, row=2
             )
         }
 
@@ -709,7 +729,7 @@ def template_select_test():
             'template_file_name', 'Status']
 
     columns = ['TemplateID', 'TemplateCategory', 'TreatmentSite', 'Diagnosis',
-               'Modification Date', 'Author', 'Status',
+               'modification_date', 'Author', 'Status',
                'Number_of_Structures', 'sheet_name', 'Description',
                'TemplateType', 'ApprovalStatus', 'Columns',
                'template_file_name']
@@ -717,38 +737,38 @@ def template_select_test():
                       'Diagnosis', 'modification_date', 'Status']
 
     column_def = dict(
-        workbook_name = {'anchor': 'Left', 'minwidth': 95.4, 'stretch':'TRUE', 'width': 234},
-        TemplateID = {'anchor': 'Left', 'minwidth': 10.6, 'stretch':'TRUE', 'width': 102},
-        TemplateCategory = {'anchor': 'center', 'minwidth': 15.9, 'stretch':'TRUE', 'width': 42},
-        TreatmentSite = {'anchor': 'Left', 'minwidth': 21.2, 'stretch':'TRUE', 'width': 102},
-        Diagnosis = {'anchor': 'Left', 'minwidth': 74.2, 'stretch':'TRUE', 'width': 150},
-        modification_date = {'anchor': 'Left', 'minwidth': 68.9, 'stretch':'TRUE', 'width': 96},
-        Author = {'anchor': 'center', 'minwidth': 21.2, 'stretch':'TRUE', 'width': 24},
-        Status = {'anchor': 'center', 'minwidth': 31.8, 'stretch':'TRUE', 'width': 48},
-        Number_of_Structures = {'anchor': 'center', 'minwidth': 5.3, 'stretch':'TRUE', 'width': 12},
-        sheet_name = {'anchor': 'Left', 'minwidth': 10.6, 'stretch':'TRUE', 'width': 132},
-        Description = {'anchor': 'Left', 'minwidth': 15.9, 'stretch':'TRUE', 'width': 1308},
-        TemplateType = {'anchor': 'center', 'minwidth': 47.7, 'stretch':'TRUE', 'width': 54},
-        ApprovalStatus = {'anchor': 'center', 'minwidth': 42.4, 'stretch':'TRUE', 'width': 60},
-        Columns = {'anchor': 'center', 'minwidth': 5.3, 'stretch':'TRUE', 'width': 6},
-        template_file_name = {'anchor': 'Left', 'minwidth': 0, 'stretch':'TRUE', 'width': 156}
+        workbook_name = {'anchor': 'w', 'minwidth': 95, 'stretch':'TRUE', 'width': 234},
+        TemplateID = {'anchor': 'w', 'minwidth': 11, 'stretch':'TRUE', 'width': 102},
+        TemplateCategory = {'minwidth': 16, 'stretch':'TRUE', 'width': 42},
+        TreatmentSite = {'anchor': 'w', 'minwidth': 21, 'stretch':'TRUE', 'width': 102},
+        Diagnosis = {'anchor': 'w', 'minwidth': 74, 'stretch':'TRUE', 'width': 150},
+        modification_date = {'anchor': 'w', 'minwidth': 69, 'stretch':'TRUE', 'width': 96},
+        Author = {'minwidth': 21, 'stretch':'TRUE', 'width': 24},
+        Status = {'minwidth': 32, 'stretch':'TRUE', 'width': 48},
+        Number_of_Structures = {'minwidth': 5, 'stretch':'TRUE', 'width': 12},
+        sheet_name = {'anchor': 'w', 'minwidth': 11, 'stretch':'TRUE', 'width': 132},
+        Description = {'anchor': 'w', 'minwidth': 16, 'stretch':'TRUE', 'width': 1308},
+        TemplateType = {'minwidth': 28, 'stretch':'TRUE', 'width': 54},
+        ApprovalStatus = {'minwidth': 42, 'stretch':'TRUE', 'width': 60},
+        Columns = {'minwidth': 5, 'stretch':'TRUE', 'width': 6},
+        template_file_name = {'anchor': 'w', 'minwidth': 0, 'stretch':'TRUE', 'width': 156}
         )
     heading_def = dict(
-        workbook_name = { 'text': 'Structure Templates ',  'anchor': 'center '},
-        sheet_name = { 'text': 'Worksheet ',  'anchor': 'center '},
-        TemplateID = { 'text': 'Template ',  'anchor': 'center '},
-        TemplateCategory = { 'text': 'Category ',  'anchor': 'center '},
-        TreatmentSite = { 'text': 'Site ',  'anchor': 'center '},
-        modification_date = { 'text': 'Modification Date ',  'anchor': 'center '},
-        Diagnosis = { 'text': 'Diagnosis ',  'anchor': 'center '},
-        Author = { 'text': 'Author ',  'anchor': 'center '},
-        template_file_name = { 'text': 'Template file name ',  'anchor': 'center '},
-        Status = { 'text': 'Status ',  'anchor': 'center '},
-        Number_of_Structures = { 'text': '# Structures ',  'anchor': 'center '},
-        Description = { 'text': 'Description ',  'anchor': 'center '},
-        TemplateType = { 'text': 'Template Type ',  'anchor': 'center '},
-        ApprovalStatus = { 'text': 'Approval Status ',  'anchor': 'center '},
-        Columns = { 'text': 'Columns ',  'anchor': 'center '}
+        workbook_name = { 'text': 'Structure Templates '},
+        sheet_name = { 'text': 'Worksheet '},
+        TemplateID = { 'text': 'Template '},
+        TemplateCategory = { 'text': 'Category '},
+        TreatmentSite = { 'text': 'Site '},
+        modification_date = { 'text': 'Modification Date '},
+        Diagnosis = { 'text': 'Diagnosis '},
+        Author = { 'text': 'Author '},
+        template_file_name = { 'text': 'Template file name '},
+        Status = { 'text': 'Status '},
+        Number_of_Structures = { 'text': '# Structures '},
+        Description = { 'text': 'Description '},
+        TemplateType = { 'text': 'Template Type '},
+        ApprovalStatus = { 'text': 'Approval Status '},
+        Columns = { 'text': 'Columns '}
         )
 
 
@@ -770,6 +790,8 @@ def template_select_test():
                                     background='light grey', image=file_image)
     template_selector.tag_configure('Template', image=template_image)
     template_selector.tag_bind('File', '<Double-ButtonRelease-1>', callback=file_select)  # the item clicked can be found via tree.focus()
+    template_update = test_window.command_lookup['UpdateSelected']
+    template_selector.bind('<<TreeviewSelect>>', template_update, add='+')
 
     test_window.construct_gui(widget_placement)
 
@@ -788,6 +810,7 @@ def main():
     #button_font = tkFont.Font(family='Calibri', size=12, weight='bold')
     #title_font = tkFont.Font(family='Tacoma', size=36, weight='bold')
 #    file_select_test()
+    print('hi')
     template_select_test()
 
 if __name__ == '__main__':
