@@ -21,7 +21,7 @@ templates_path_str = str(templates_path.resolve())
 sys.path.append(templates_path_str)
 
 
-from file_select_window import SelectFile
+from file_select_window import SelectFile, FileSelectGUI
 from file_utilities import set_base_dir, FileTypes, PathInput
 from data_utilities import select_data
 from spreadsheet_tools import load_reference_table
@@ -35,108 +35,6 @@ WidgetDef = namedtuple('WidgetDef', ['name', 'widget_type', 'parent'])
 StringValue = Union[tk.StringVar, str]
 Definition = Dict[str, Dict[str, Any]]
 Widgets = Union[List[WidgetDef], tk.Toplevel]
-
-class FileSelectGUI(ttk.LabelFrame):
-    entry_layout=dict(layout_method='grid', padx=10, pady=10, row=0, column=0)
-    button_layout=dict(layout_method='grid', padx=10, pady=10, row=0, column=1)
-
-    def __init__(self, master: tk.Tk, **options):
-        super().__init__(master=master)
-        self.browse_window = SelectFile(master=master)
-        self.file_entry = ttk.Entry(master=self)
-        self.browse_button = ttk.Button(text='Browse', master=self)
-
-    def config(self, **options):
-        reduced_options = self.entry_config(**options)
-        reduced_options = self.browse_window.configure(**reduced_options)
-        reduced_options = self.button_config(**reduced_options)
-        super().config(**reduced_options)
-
-    def entry_config(self, path_variable: tk.StringVar = None,
-                     **options)->Dict[str, Any]:
-        option_prefix = 'entry_'
-        if not path_variable:
-            path_variable = tk.StringVar()
-        self.path_variable = path_variable
-        entry_options = dict(textvariable=path_variable)
-        unused_parameters = dict()
-        for option_name, value in options.items():
-            if option_name.startswith(option_prefix):
-                option = option_name[len(option_prefix):]
-                entry_options[option] = value
-            else:
-                unused_parameters[option_name] = value
-        self.file_entry.configure(**entry_options)
-        return unused_parameters
-
-    def browse_command(self):
-        '''Command for Browse Buttons.'''
-        self.path_variable.set(self.browse_window.call_dialog())
-
-    def button_config(self, **options)->Dict[str, Any]:
-        option_prefix = 'button_'
-        browse_command = self.browse_command
-        browse_options = dict(text='Browse', width=10, command=browse_command)
-        unused_parameters = dict()
-        for option_name, value in options.items():
-            if option_name.startswith(option_prefix):
-                option = option_name[len(option_prefix):]
-                browse_options[option] = value
-            else:
-                unused_parameters[option_name] = value
-        self.browse_button.configure(**browse_options)
-        return unused_parameters
-
-    def build(self, **build_instructions):
-        reduced_instructions = self.build_entry(**build_instructions)
-        unused_parameters = self.build_button(**reduced_instructions)
-        self.columnconfigure(0, weight=1)
-        layout_method = unused_parameters.pop('layout_method', None)
-        if 'pack' in layout_method:
-            self.pack(**unused_parameters)
-        else:
-            self.grid(**unused_parameters)
-
-    def build_entry(self, **build_instructions):
-        option_prefix = 'entry_'
-        entry_layout = self.entry_layout.copy()
-        unused_parameters = dict()
-        for option_name, value in build_instructions.items():
-            if option_name.startswith(option_prefix):
-                option = option_name[len(option_prefix):]
-                entry_layout[option] = value
-            else:
-                unused_parameters[option_name] = value
-        layout_method = entry_layout.pop('layout_method', None)
-        if 'pack' in layout_method:
-            self.file_entry.pack(**entry_layout)
-        else:
-            self.file_entry.grid(**entry_layout)
-        return unused_parameters
-
-    def build_button(self, **build_instructions):
-        option_prefix = 'button_'
-        button_layout = self.button_layout.copy()
-        unused_parameters = dict()
-        for option_name, value in build_instructions.items():
-            if option_name.startswith(option_prefix):
-                option = option_name[len(option_prefix):]
-                button_layout[option] = value
-            else:
-                unused_parameters[option_name] = value
-        layout_method = button_layout.pop('layout_method', None)
-        if 'pack' in layout_method:
-            self.browse_button.pack(**button_layout)
-        else:
-            self.browse_button.grid(**button_layout)
-        return unused_parameters
-
-    def get(self):
-        return self.path_variable.get()
-
-    def set(self, file_path: PathInput):
-        return self.path_variable.set(str(file_path))
-
 
 class GuiManager():
     def __init__(self, top_window: tk.Toplevel, top_name='top',
@@ -339,62 +237,6 @@ def build_top(root: tk.Tk)->tk.Tk:
     return main_gui
 
 
-class TemplateData():
-    data_fields = ['TemplateID', 'TemplateCategory', 'TreatmentSite',
-                   'workbook_name', 'sheet_name', 'modification_date',
-                   'Number_of_Structures', 'Description', 'Diagnosis',
-                   'Author', 'Columns', 'template_file_name', 'Status',
-                   'TemplateType', 'ApprovalStatus']
-
-    default_show_fields = ['workbook_name', 'TemplateID', 'TemplateCategory',
-                           'TreatmentSite', 'modification_date',
-                           'Description', 'Status']
-
-    file_info_args = ('pickle_file_name', 'sub_dir')
-    table_info_args = ('starting_cell', 'header')
-    selections_args = ('unique_scans', 'select_columns', 'criteria_selection')
-
-    default_references = dict(
-        file_name='Template List.xlsx',
-        pickle_file_name='TemplateData.pkl',
-        sub_dir=r'Work\Structure Dictionary\Template Spreadsheets',
-        sheet_name='templates',
-        starting_cell='A1',
-        header=1,
-        unique_scans=['TemplateID'],
-        select_columns=data_fields,
-        criteria_selection={
-#            'workbook_name': 'Basic Templates.xlsx',
-            'Status': 'Active'
-            }
-        )
-    def __init__(self, **kwargs):
-        self.template_file_info = self.set_args(self.file_info_args, kwargs)
-        self.template_table_info = self.set_args(self.table_info_args, kwargs)
-        self.template_selections = self.set_args(self.selections_args, kwargs)
-        self.template_data = self.get_template_data()
-
-    def set_arg(self, arg: str, arguments: Dict[str, Any])->Any:
-        '''Return the passed argument value or the default value.
-        '''
-        return arguments.get(arg, self.default_references[arg])
-
-    def set_args(self, arg_list: Tuple[str],
-                 arguments: Dict[str, Any])->Dict[str, Any]:
-        args_dict = dict()
-        for arg in arg_list:
-            args_dict[arg] = self.set_arg(arg, arguments)
-        return args_dict
-
-    def get_template_data(self):
-        template_data = load_template_references(**self.template_file_info)
-        template_data = select_data(template_data, **self.template_selections)
-        return template_data
-
-    def get_workbook_data(self):
-        return self.template_data.groupby('workbook_name')
-
-
 def print_selection():
         select_list = [str(item) for item in template_selector.selection()]
         select_str = '\n'.join(select_list)
@@ -451,28 +293,6 @@ def insert_template_items(template_selector, workbooks, show_vars):
                                           values=template_values,
                                           tags=('Template',))
             template_ref[name] = id
-
-
-class FileSelectionSet(CustomVariableSet):
-    '''A CustomVariable set with two path variables:
-            "test_string1"
-            "test_integer"
-    '''
-    variable_definitions = [
-        {
-            'name': 'spreadsheet_directory',
-            'variable_type': StrPathV,
-            'file_types':'directory',
-            'default': Path.cwd(),
-            'required': False
-            },
-            {
-            'name': 'template_file',
-            'variable_type': StrPathV,
-            'file_types':'Excel Files',
-            'required': False
-            }
-         ]
 
 
 def file_select_test():

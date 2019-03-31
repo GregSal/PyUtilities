@@ -17,6 +17,7 @@ from functools import partial
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as tkf
+from tkinter import messagebox
 from file_utilities import FileTypes, get_file_path
 from file_utilities import set_base_dir, PathInput
 
@@ -265,6 +266,108 @@ class SelectFile():
         # TODO add existence checking
         path_str = self.call_dialog(master)
         return make_full_path(path_str, self.filetypes)
+
+
+class FileSelectGUI(ttk.LabelFrame):
+    entry_layout=dict(layout_method='grid', padx=10, pady=10, row=0, column=0)
+    button_layout=dict(layout_method='grid', padx=10, pady=10, row=0, column=1)
+
+    def __init__(self, master: tk.Tk, **options):
+        super().__init__(master=master)
+        self.browse_window = SelectFile(master=master)
+        self.file_entry = ttk.Entry(master=self)
+        self.browse_button = ttk.Button(text='Browse', master=self)
+
+    def config(self, **options):
+        reduced_options = self.entry_config(**options)
+        reduced_options = self.browse_window.configure(**reduced_options)
+        reduced_options = self.button_config(**reduced_options)
+        super().config(**reduced_options)
+
+    def entry_config(self, path_variable: tk.StringVar = None,
+                     **options)->Dict[str, Any]:
+        option_prefix = 'entry_'
+        if not path_variable:
+            path_variable = tk.StringVar()
+        self.path_variable = path_variable
+        entry_options = dict(textvariable=path_variable)
+        unused_parameters = dict()
+        for option_name, value in options.items():
+            if option_name.startswith(option_prefix):
+                option = option_name[len(option_prefix):]
+                entry_options[option] = value
+            else:
+                unused_parameters[option_name] = value
+        self.file_entry.configure(**entry_options)
+        return unused_parameters
+
+    def browse_command(self):
+        '''Command for Browse Buttons.'''
+        self.path_variable.set(self.browse_window.call_dialog())
+
+    def button_config(self, **options)->Dict[str, Any]:
+        option_prefix = 'button_'
+        browse_command = self.browse_command
+        browse_options = dict(text='Browse', width=10, command=browse_command)
+        unused_parameters = dict()
+        for option_name, value in options.items():
+            if option_name.startswith(option_prefix):
+                option = option_name[len(option_prefix):]
+                browse_options[option] = value
+            else:
+                unused_parameters[option_name] = value
+        self.browse_button.configure(**browse_options)
+        return unused_parameters
+
+    def build(self, **build_instructions):
+        reduced_instructions = self.build_entry(**build_instructions)
+        unused_parameters = self.build_button(**reduced_instructions)
+        self.columnconfigure(0, weight=1)
+        layout_method = unused_parameters.pop('layout_method', None)
+        if 'pack' in layout_method:
+            self.pack(**unused_parameters)
+        else:
+            self.grid(**unused_parameters)
+
+    def build_entry(self, **build_instructions):
+        option_prefix = 'entry_'
+        entry_layout = self.entry_layout.copy()
+        unused_parameters = dict()
+        for option_name, value in build_instructions.items():
+            if option_name.startswith(option_prefix):
+                option = option_name[len(option_prefix):]
+                entry_layout[option] = value
+            else:
+                unused_parameters[option_name] = value
+        layout_method = entry_layout.pop('layout_method', None)
+        if 'pack' in layout_method:
+            self.file_entry.pack(**entry_layout)
+        else:
+            self.file_entry.grid(**entry_layout)
+        return unused_parameters
+
+    def build_button(self, **build_instructions):
+        option_prefix = 'button_'
+        button_layout = self.button_layout.copy()
+        unused_parameters = dict()
+        for option_name, value in build_instructions.items():
+            if option_name.startswith(option_prefix):
+                option = option_name[len(option_prefix):]
+                button_layout[option] = value
+            else:
+                unused_parameters[option_name] = value
+        layout_method = button_layout.pop('layout_method', None)
+        if 'pack' in layout_method:
+            self.browse_button.pack(**button_layout)
+        else:
+            self.browse_button.grid(**button_layout)
+        return unused_parameters
+
+    def get(self):
+        return self.path_variable.get()
+
+    def set(self, file_path: PathInput):
+        return self.path_variable.set(str(file_path))
 
 
 def main():

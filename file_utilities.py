@@ -86,6 +86,7 @@ class FileTypes(list):
                                       '*.tif', '*.tiff', '*.psd'),
                        'Comma Separated Variable File':('*.csv', ),
                        'Text File':('*.txt', ),
+                       'Pickle File':('*.pkl', ),
                        'Excel 2003 File':('*.xls', ),
                        'Excel 2010 File':('*.xlsx', '*.xlsm'),
                        'Word 2003 File':('*.doc', ),

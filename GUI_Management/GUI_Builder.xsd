@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="GuiDefinition">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="VariableSet">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element maxOccurs="unbounded" name="Variable">
+                <xs:complexType>
+                  <xs:attribute name="name" type="xs:string" use="required" />
+                  <xs:attribute name="variable_type" type="xs:string" use="required" />
+                  <xs:attribute name="data_reference" type="xs:string" use="required" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="CommandSet">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element maxOccurs="unbounded" name="Command">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="PositionalArgs">
+                      <xs:complexType>
+                        <xs:sequence minOccurs="0">
+                          <xs:element name="Arg" type="xs:string" />
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element name="KeywordArgs">
+                      <xs:complexType>
+                        <xs:attribute name="variable" type="xs:string" use="optional" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                  <xs:attribute name="name" type="xs:string" use="required" />
+                  <xs:attribute name="function" type="xs:string" use="required" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Window">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="WidgetSet">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element maxOccurs="unbounded" name="Widget">
+                      <xs:complexType mixed="true">
+                        <xs:sequence>
+                          <xs:element name="GridPlacement">
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:string">
+                                  <xs:attribute name="name" type="xs:string" use="optional" />
+                                  <xs:attribute name="Column" type="xs:unsignedByte" use="required" />
+                                  <xs:attribute name="Row" type="xs:unsignedByte" use="required" />
+                                  <xs:attribute name="ColumnSpan" type="xs:unsignedByte" use="optional" />
+                                  <xs:attribute name="rowspan" type="xs:unsignedByte" use="optional" />
+                                  <xs:attribute name="sticky" type="xs:string" use="required" />
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="Padding">
+                            <xs:complexType>
+                              <xs:attribute name="name" type="xs:string" use="optional" />
+                              <xs:attribute name="ipadx" type="xs:unsignedByte" use="required" />
+                              <xs:attribute name="ipady" type="xs:unsignedByte" use="required" />
+                              <xs:attribute name="padx" type="xs:unsignedByte" use="required" />
+                              <xs:attribute name="pady" type="xs:unsignedByte" use="required" />
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element minOccurs="0" name="WidgetConfiguration">
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:string">
+                                  <xs:attribute name="xscrollcommand" type="xs:string" use="optional" />
+                                  <xs:attribute name="yscrollcommand" type="xs:string" use="optional" />
+                                  <xs:attribute name="orient" type="xs:string" use="optional" />
+                                  <xs:attribute name="command" type="xs:string" use="optional" />
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element minOccurs="0" name="WidgetBind">
+                            <xs:complexType>
+                              <xs:attribute name="name" type="xs:string" use="required" />
+                              <xs:attribute name="event" type="xs:string" use="required" />
+                              <xs:attribute name="callback" type="xs:string" use="required" />
+                              <xs:attribute name="add" type="xs:string" use="required" />
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element minOccurs="0" name="WidgetAppearance">
+                            <xs:complexType>
+                              <xs:simpleContent>
+                                <xs:extension base="xs:string">
+                                  <xs:attribute name="name" type="xs:string" use="required" />
+                                  <xs:attribute name="borderwidth" type="xs:unsignedByte" use="required" />
+                                  <xs:attribute name="relief" type="xs:string" use="required" />
+                                </xs:extension>
+                              </xs:simpleContent>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element minOccurs="0" name="GridConfigure">
+                            <xs:complexType>
+                              <xs:sequence>
+                                <xs:element name="ColumnConfigure">
+                                  <xs:complexType>
+                                    <xs:simpleContent>
+                                      <xs:extension base="xs:unsignedByte">
+                                        <xs:attribute name="weight" type="xs:unsignedByte" use="required" />
+                                      </xs:extension>
+                                    </xs:simpleContent>
+                                  </xs:complexType>
+                                </xs:element>
+                                <xs:element name="RowConfigure">
+                                  <xs:complexType>
+                                    <xs:simpleContent>
+                                      <xs:extension base="xs:unsignedByte">
+                                        <xs:attribute name="weight" type="xs:unsignedByte" use="required" />
+                                      </xs:extension>
+                                    </xs:simpleContent>
+                                  </xs:complexType>
+                                </xs:element>
+                              </xs:sequence>
+                              <xs:attribute name="name" type="xs:string" use="required" />
+                            </xs:complexType>
+                          </xs:element>
+                        </xs:sequence>
+                        <xs:attribute name="name" type="xs:string" use="required" />
+                        <xs:attribute name="Type" type="xs:string" use="required" />
+                        <xs:attribute name="Parent" type="xs:string" use="required" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="ColumnSet">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element maxOccurs="unbounded" name="ColumnDef">
+                      <xs:complexType>
+                        <xs:attribute name="data_column" type="xs:string" use="required" />
+                        <xs:attribute name="tree_column_id" type="xs:string" use="required" />
+                        <xs:attribute name="show" type="xs:string" use="required" />
+                        <xs:attribute name="minwidth" type="xs:unsignedByte" use="required" />
+                        <xs:attribute name="anchor" type="xs:string" use="optional" />
+                        <xs:attribute name="stretch" type="xs:string" use="required" />
+                        <xs:attribute name="width" type="xs:unsignedShort" use="required" />
+                        <xs:attribute name="header_text" type="xs:string" use="optional" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                  <xs:attribute name="name" type="xs:string" use="required" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="TagConfigure">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element maxOccurs="unbounded" name="tag">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="TagOptions">
+                      <xs:complexType>
+                        <xs:attribute name="foreground" type="xs:string" use="optional" />
+                        <xs:attribute name="background" type="xs:string" use="optional" />
+                        <xs:attribute name="image" type="xs:string" use="required" />
+                      </xs:complexType>
+                    </xs:element>
+                    <xs:element minOccurs="0" name="TagBind">
+                      <xs:complexType>
+                        <xs:attribute name="ID" type="xs:string" use="required" />
+                        <xs:attribute name="event" type="xs:string" use="required" />
+                        <xs:attribute name="callback" type="xs:string" use="required" />
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                  <xs:attribute name="ID" type="xs:string" use="required" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="name" type="xs:string" use="required" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

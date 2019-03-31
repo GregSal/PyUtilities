@@ -801,7 +801,7 @@ class StrPathV(PathV):
         '''Set a new value for CustomVariable.
         '''
         return super().set_value(value)
-    
+
     value = property(get_value, set_value)
 
 

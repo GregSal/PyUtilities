@@ -1,0 +1,132 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- Created with Liquid Studio 2019 (https://www.liquid-technologies.com) -->
+<!--GUI for Selecting and generating structure set templates-->
+<GuiDefinition name="Structure Templates">
+    <!--
+  D:: references a data item
+  V:: references a Variable Item
+  C:: references a command item
+  W:: references a widget item
+  -->
+    <VariableSet>
+        <Variable name="TemplateListFilename" variable_type="tk.StringVar" data_reference="template_list_file" />
+        <Variable name="TemplateExcelDirectory" variable_type="tk.StringVar" data_reference="spreadsheet_directory" />
+        <Variable name="XmlOutputDirectory" variable_type="tk.StringVar" data_reference="output_directory" />
+        <Variable name="SelectedTemplates" variable_type="tk.StringVar" data_reference="selected_templates" />
+    </VariableSet>
+    <CommandSet>
+        <Command name="Template xview" function="ttk.Treeview.xview">
+            <PositionalArgs>
+                <Arg>W::template_selector</Arg>
+            </PositionalArgs>
+            <KeywordArgs />
+        </Command>
+        <Command name="Template yview" function="ttk.Treeview.yview">
+            <PositionalArgs>
+                <Arg>W::template_selector</Arg>
+            </PositionalArgs>
+            <KeywordArgs />
+        </Command>
+        <Command name="Template H Scroll" function="ttk.Scrollbar.set">
+            <PositionalArgs>
+                <Arg>W::selector_scrollbar_h</Arg>
+            </PositionalArgs>
+            <KeywordArgs />
+        </Command>
+        <Command name="Template V Scroll" function="ttk.Scrollbar.set">
+            <PositionalArgs>
+                <Arg>W::selector_scrollbar_v</Arg>
+            </PositionalArgs>
+            <KeywordArgs />
+        </Command>
+        <Command name="UpdateSelected" function="update_selection">
+            <PositionalArgs />
+            <KeywordArgs variable="V::SelectedTemplates" />
+        </Command>
+    </CommandSet>
+    <RootGUI>
+        <Appearance background='white' fullscreen='True'/>
+        <Status>iconify</Status>
+        <!--Status alternatives withdraw deiconify? Normal? raise? Lower?-->
+        <Widget name="exit_button" Type="ttk.Button">
+            <GridPlacement/>
+            <Configure text="Egress" command="C::parent_window.destroy" />
+        </Widget>
+        <Window name="main" Type="tk.Toplevel">
+            <Appearance background='light blue' />
+            <Configure title='Structure Template Selector' />
+            <Status>lift</Status>
+            <ColumnConfigure  Column="0" weight="1"/>
+            <RowConfigure Row="0" weight="1"/>
+            <Widget name="size_grip" Type="ttk.Sizegrip">
+                <GridPlacement Row="3" Column="3"/>
+                <Configure text="Egress" command="C::parent_window.destroy" />
+            </Widget>
+            <mainWindow>
+                scr_w = root.winfo_screenwidth()
+                scr_h = root.winfo_screenheight()
+                workwindow = ('1024x768' +
+                "+" + str(int((scr_w-1024)/2)) +
+                "+" + str(int((scr_h-768)/2)))
+                main_gui.geometry(workwindow)
+            </mainWindow>
+            <WidgetSet>
+                <Widget name="Title" Type="ttk.Label">
+                    <GridPlacement Column="0" Row="0" ColumnSpan="2" rowspan="1" sticky="nsew" />
+                    <Padding ipadx="0" ipady="0" padx="0" pady="0" />
+                </Widget>
+                <Widget name="template_selector_group" Type="ttk.Frame">
+                    <GridPlacement Column="0" Row="1" sticky="nsew" />
+                    <Padding ipadx="0" ipady="0" padx="0" pady="0" />
+                    <Appearance borderwidth="10" relief="groove" />,
+                    <GridConfigure name="template_selector_group">
+                        <ColumnConfigure Column="0" weight="1"/>
+                        <RowConfigure Row="0" weight="1"/>
+                    </GridConfigure>
+                </Widget>
+                <Widget name="template_selector" Type="ttk.Treeview" Parent="template_selector_group">
+                    <GridPlacement Column="0" Row="0" sticky="nsew" />
+                    <Padding ipadx="0" ipady="0" padx="5" pady="5" />
+                    <Configure xscrollcommand="C::Template H Scroll" yscrollcommand="C::Template V Scroll" />
+                    <Bind event="&lt;&lt;TreeviewSelect&gt;&gt;" callback="C::UpdateSelected" add="+" />
+                    <ColumnSet name="template_selector">
+                        <ColumnDef data_column="workbook_name" tree_column_id="Structure Templates" show="tree" minwidth="95" anchor="w" stretch="TRUE" width="234" />
+                        <ColumnDef data_column="TemplateID" tree_column_id="TemplateID" header_text="Template" show="y" minwidth="11" anchor="w" stretch="TRUE" width="102" />
+                        <ColumnDef data_column="TemplateCategory" tree_column_id="TemplateCategory" header_text="Category" show="y" minwidth="16" stretch="TRUE" width="42" />
+                        <ColumnDef data_column="TreatmentSite" tree_column_id="TreatmentSite" header_text="Site " show="y" minwidth="21" anchor="w" stretch="TRUE" width="102" />
+                        <ColumnDef data_column="Diagnosis" tree_column_id="Diagnosis" header_text="Diagnosis" show="y" minwidth="74" anchor="w" stretch="TRUE" width="150" />
+                        <ColumnDef data_column="modification_date" tree_column_id="modification_date" header_text="Modification Date" show="y" minwidth="69" anchor="w" stretch="TRUE" width="96" />
+                        <ColumnDef data_column="Author" tree_column_id="Author" header_text="Author" show="n" minwidth="21" stretch="TRUE" width="24" />
+                        <ColumnDef data_column="Status" tree_column_id="Status" header_text="Status" show="y" minwidth="32" stretch="TRUE" width="48" />
+                        <ColumnDef data_column="Number_of_Structures" tree_column_id="Number_of_Structures" header_text="# Structures" show="n" minwidth="5" stretch="TRUE" width="12" />
+                        <ColumnDef data_column="sheet_name" tree_column_id="sheet_name" header_text="Worksheet" show="n" minwidth="11" anchor="w" stretch="TRUE" width="132" />
+                        <ColumnDef data_column="Description" tree_column_id="Description" header_text="Description" show="n" minwidth="16" anchor="w" stretch="TRUE" width="1308" />
+                        <ColumnDef data_column="TemplateType" tree_column_id="TemplateType" header_text="Template Type" show="n" minwidth="28" stretch="TRUE" width="54" />
+                        <ColumnDef data_column="ApprovalStatus" tree_column_id="ApprovalStatus" header_text="Approval Status" show="n" minwidth="42" stretch="TRUE" width="60" />
+                        <ColumnDef data_column="Columns" tree_column_id="Columns" header_text="Columns" show="n" minwidth="5" stretch="TRUE" width="6" />
+                        <ColumnDef data_column="TemplateFileName" tree_column_id="TemplateFileName" header_text="Template file name" show="n" minwidth="0" anchor="w" stretch="TRUE" width="156" />
+                    </ColumnSet>
+                    <TagSet>
+                        <tag name="File">
+                            <Appearance foreground="blue" background="light grey" image="Box2.png" />
+                            <Bind event="&lt;Double-ButtonRelease-1&gt;" callback="file_select" />
+                        </tag>
+                        <tag name="Template">
+                            <Appearance image="Blueprint2.png" />
+                        </tag>
+                    </TagSet>
+                    <Widget name="selector_scrollbar_h" Type="ttk.Scrollbar" Parent="template_selector_group">
+                        <GridPlacement Column="0" Row="1" sticky="ew" />
+                        <Padding ipadx="0" ipady="0" padx="0" pady="0" />
+                        <Configure orient="horizontal" command="C::Template xview" />
+                    </Widget>
+                    <Widget name="selector_scrollbar_v" Type="ttk.Scrollbar" Parent="template_selector_group">
+                        <GridPlacement Column="1" Row="0" sticky="ns" />
+                        <Padding ipadx="0" ipady="0" padx="0" pady="0" />
+                        <Configure orient="vertical" command="C::Template yview" />
+                    </Widget>
+                </Widget>
+            </WidgetSet>
+        </Window>
+    </RootGUI>
+</GuiDefinition>
