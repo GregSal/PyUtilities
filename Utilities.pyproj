@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{167f98ff-f940-4216-a4b3-0ed2df5e40cd}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>templates.py</StartupFile>
+    <StartupFile>GUI_Management\gui_xml_builder.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -21,22 +21,26 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="data_utilities.py" />
-    <Compile Include="file_select_window.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="file_utilities.py" />
-    <Compile Include="custom_variable_sets.py" />
-    <Compile Include="GUI_Construction.py" />
-    <Compile Include="gui_manager.py">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="GUI_Management\dir_gui_trial.py" />
+    <Compile Include="GUI_Management\extract_structures.py" />
+    <Compile Include="GUI_Management\file_select_window.py" />
+    <Compile Include="GUI_Management\GUI_Construction.py" />
+    <Compile Include="GUI_Management\GUI_Definitions.py" />
+    <Compile Include="GUI_Management\gui_manager.py" />
+    <Compile Include="GUI_Management\GUI_Templates.py" />
+    <Compile Include="GUI_Management\gui_xml_builder.py" />
+    <Compile Include="GUI_Management\ReportGUI.py" />
+    <Compile Include="GUI_Management\resizable_top.py" />
+    <Compile Include="GUI_Management\structure_set_gui.py" />
+    <Compile Include="GUI_Management\templates.py" />
+    <Compile Include="GUI_Management\templates_selector.py" />
+    <Compile Include="GUI_Management\template_select_gui.py" />
+    <Compile Include="GUI_Management\tree_view.py" />
+    <Compile Include="GUI_Management\__init__.py" />
     <Compile Include="logging_tools.py" />
     <Compile Include="ql_fit.py" />
-    <Compile Include="resizable_top.py" />
     <Compile Include="spreadsheet_tools.py" />
-    <Compile Include="templates.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Testing\file_utilities_tests.py" />
     <Compile Include="Testing\IntegerV_tests.py" />
     <Compile Include="Testing\one_string_parameter_set_tests.py" />
@@ -46,11 +50,11 @@
     <Compile Include="Testing\two_variable_set_tests.py" />
     <Compile Include="Testing\variable_set_initial_tests.py" />
     <Compile Include="Testing\__init__.py" />
-    <Compile Include="two_var_try.py" />
-    <Compile Include="xllm_to_csv.py" />
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="GUI_Management\" />
+    <Folder Include="CustomVariableSet\" />
     <Folder Include="Testing" />
     <Folder Include="Testing\Test Data\" />
   </ItemGroup>
@@ -58,6 +62,11 @@
     <InterpreterReference Include="Global|PythonCore|3.7" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="GUI_Management\GUI Layout settings.txt" />
+    <Content Include="GUI_Management\GUI Layout.xlsx" />
+    <Content Include="GUI_Management\GUI_Builder.xsd" />
+    <Content Include="GUI_Management\Options and Functions.xlsx" />
+    <Content Include="GUI_Management\StructuresGUI.xml" />
     <Content Include="Testing\Test Data\Date formats.xlsx" />
     <Content Include="Testing\Test Data\test column.xlsx" />
     <Content Include="Testing\Test Data\Test table.xlsx" />

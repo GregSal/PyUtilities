@@ -2,7 +2,6 @@
 <!-- Created with Liquid Studio 2019 (https://www.liquid-technologies.com) -->
 <!--GUI for Selecting and generating structure set templates-->
 <GuiDefinition name="Structure Templates">
-    <!--
   D:: references a data item
   V:: references a Variable Item
   C:: references a command item
@@ -45,31 +44,47 @@
         </Command>
     </CommandSet>
     <RootGUI>
-        <Appearance background='white' fullscreen='True'/>
-        <Status>iconify</Status>
-        <!--Status alternatives withdraw deiconify? Normal? raise? Lower?-->
+        <WindowSettings>
+            <Configure background='white'/>
+            <fullscreen>True</fullscreen>
+            <state>iconify</state>
+            <!--state alternatives 
+            'normal': Displayed normally. 
+            'iconic': Iconified with the .iconify() method. 
+            'withdrawn': Hidden; with the .withdraw() method-->
+        </WindowSettings>
         <Widget name="exit_button" Type="ttk.Button">
             <GridPlacement/>
             <Configure text="Egress" command="C::parent_window.destroy" />
         </Widget>
         <Window name="main" Type="tk.Toplevel">
-            <Appearance background='light blue' />
-            <Configure title='Structure Template Selector' />
-            <Status>lift</Status>
-            <ColumnConfigure  Column="0" weight="1"/>
-            <RowConfigure Row="0" weight="1"/>
+            <Settings>
+                <Configure background='light blue'
+                           title='Structure Template Selector'>
+                </Configure>
+                <Stacking>
+                    <lift></lift>
+                </Stacking>
+                <mainWindow><!-- Need to fix the widow settings below -->
+                    scr_w = root.winfo_screenwidth()
+                    scr_h = root.winfo_screenheight()
+                    workwindow = ('1024x768' +
+                    "+" + str(int((scr_w-1024)/2)) +
+                    "+" + str(int((scr_h-768)/2)))
+                    main_gui.geometry(workwindow)
+                </mainWindow>
+            </Settings>
+            <GridManager>
+                <ColumnConfigure Column="0"
+                                 weight="1"/>
+                <RowConfigure Row="0"
+                              weight="1"/>
+            </GridManager>
             <Widget name="size_grip" Type="ttk.Sizegrip">
                 <GridPlacement Row="3" Column="3"/>
-                <Configure text="Egress" command="C::parent_window.destroy" />
+                <Configure text="Egress" 
+                           command="C::parent_window.destroy" />
             </Widget>
-            <mainWindow>
-                scr_w = root.winfo_screenwidth()
-                scr_h = root.winfo_screenheight()
-                workwindow = ('1024x768' +
-                "+" + str(int((scr_w-1024)/2)) +
-                "+" + str(int((scr_h-768)/2)))
-                main_gui.geometry(workwindow)
-            </mainWindow>
             <WidgetSet>
                 <Widget name="Title" Type="ttk.Label">
                     <GridPlacement Column="0" Row="0" ColumnSpan="2" rowspan="1" sticky="nsew" />
