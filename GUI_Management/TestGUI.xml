@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Created with Liquid Studio 2019 (https://www.liquid-technologies.com) -->
+<GuiDefinition xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+               xsi:noNamespaceSchemaLocation="file:./GUI_Builder.xsd">
+    <VariableSet>
+        <Variable name="Output"
+                  variable_type="tk.StringVar"/>
+    </VariableSet>
+    <CommandSet>
+        <Command name="Exit"
+                 function="Tk.destroy">
+            <PositionalArgs>
+                <Arg>W::root</Arg>
+            </PositionalArgs>
+            <KeywordArgs />
+        </Command>
+    </CommandSet>
+    <RootWindow name="root">
+        <Settings>
+            <State>withdrawn</State>
+        </Settings>
+        <WidgetSet>
+            <FunctionalWidget name="exit_button">
+                <widget_class>ttk.Button</widget_class>
+                <WidgetConfiguration text="Egress"
+                           command="C::Exit"/>
+                <WidgetGeometry>
+                    <Placement>
+                        <GridPlacement column="0" row="3"/>
+                    </Placement>
+                </WidgetGeometry>
+            </FunctionalWidget>
+            <FunctionalWidget name="Entry">
+                <widget_class>ttk.Entry</widget_class>
+                <WidgetGeometry>
+                    <Placement>
+                        <GridPlacement column="0" row="0"/>
+                    </Placement>
+                </WidgetGeometry>
+            </FunctionalWidget>
+            <FunctionalWidget name="Label">
+                <widget_class>ttk.Label</widget_class>
+                <WidgetGeometry>
+                    <Placement>
+                        <GridPlacement column="0" row="1"/>
+                    </Placement>
+                </WidgetGeometry>
+            </FunctionalWidget>
+
+        </WidgetSet>
+ 
+    </RootWindow>
+
+</GuiDefinition>

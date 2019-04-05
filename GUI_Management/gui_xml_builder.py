@@ -8,6 +8,7 @@ from typing import Union, List, Dict, Tuple, Any
 from pathlib import Path
 from collections import OrderedDict, namedtuple
 from functools import partial
+import xml.etree.ElementTree as ET
 
 import tkinter as tk
 import tkinter.font as tkFont
@@ -43,34 +44,102 @@ class GuiManager():
         self.command_lookup = OrderedDict()
         self.update_list = OrderedDict()
         xml_tree = ET.parse(str(gui_definition))
-        self.gui_definition = tree.getroot()
+        self.gui_definition = xml_tree.getroot()
+
+    def value_lookup(self, value):
+        value_str = str(value)
+        value_name = value_str[3:]
+        if value_str.startswith('W::'):
+            use_value = self.widget_lookup[value_name]
+        elif value_str.startswith('V::'):
+            use_value = self.variable_lookup[value_name]
+        elif value_str.startswith('D::'):
+            use_value = self.data_set[value_name]
+        elif value_str.startswith('C::'):
+            use_value = self.command_lookup[value_name]
+        else:
+            use_value = value
+        return use_value
+
+    def update_kwargs(self, kwarg_set: Dict[str, Any])->Dict[str, Any]:
+        updated_kwargs = dict()
+        if kwarg_set:
+            for key_word, value in kwarg_set.items():
+                use_value = self.value_lookup(value)
+                updated_kwargs[key_word] = use_value
+        return updated_kwargs
+
+    def update_args(self, arg_set: tuple):
+        updated_args = list()
+        if arg_set:
+            for value in arg_set:
+                use_value = self.value_lookup(value)
+                updated_args.append(use_value)
+        return updated_args
+
+    def configure_widget(self,widget_def):
+        widget_name = widget_def.get('name')
+        widget = self.widget_lookup[widget_name]
+        widget_configure = widget_def.find('Configure')
+        if widget_configure:
+            options = self.update_kwargs(**widget_configure.attrib)
+            widget.configure(**options)
+        pass
+
+    def configure_window(self, window_def):
+
+        def stacking_adjustment():
+            stacking_group = window_def.find(Stacking)
+            for stacking_element in stacking_group.iter():
+                stacking_name = stacking_element.tag
+                if hasattr(tk.Tk, stacking_name):
+                    stack_method = getattr(tk.Tk, stacking_name)
+                    stack_window = self.value_lookup(str(stack_type.text))
+                    widget.stack_method(stack_window)
+            pass
+
+        def set_fullscreen():
+            root_fullscreen = window_def.find('Fullscreen')
+            if root_fullscreen:
+                if 'true' in str(root_fullscreen.text):
+                    widget.attributes('-fullscreen', True)
+            pass
+
+        def window_geometry():
+            geometry = dict()
+            geometry_template = ('{width:d}x{height:d}'
+                                 '{x_pos:+d}{x_pos:+d}')
+            geometry_group = window_def.find(Geometry)
+            if geometry_group:
+                geometry['height'] = geometry_group.findtext('.//Height')
+                geometry['width'] = geometry_group.findtext('.//Width')
+                geometry['x_pos'] = geometry_group.findtext('.//Xposition')
+                geometry['y_pos'] = geometry_group.findtext('.//Yposition')
+                if all(geometry.values()):
+                    geometry_str = geometry_template.format(geometry)
+                    widget.geometry(geometry_str)
+                else:
+                    widget.configure(height=geometry['height'],
+                                     width=geometry['width'])
+            pass
+
+        def set_icon_state():
+            newstate = window_def.findtext(r'.//state')
+            if newstate:
+                widget.state(newstate)
+            pass
+
+        main_gui.title('Test GUI') # FIXME Make title into generic window method
+
+
+
 
     def make_root():
         root = tk.Tk()
-        root_widget = self.gui_definition.find('RootGUI')
-        root_configure = root_widget.find('Configure')
-        if root_configure:
-            options = root_configure.attrib
-            root.configure(**options)
-        root_fullscreen = root_widget.find('fullscreen')
-        if root_fullscreen:
-            if 'true' in str(root_fullscreen.text):
-                root.attributes('-fullscreen', True)
-        root_state = root_widget.find('state')
-        if root_state:
-            newstate = str(root_state.text)
-            root.state(newstate)
-        root_stacking = root_widget.find('Stacking')
-        if root_stacking:
-            lift = root_widget.find('lift')
-            if lift:
-                lift_level = str(lift.text)  # TODO  Need to convert references
-                root.lift(lift_level)
-            lower = root_widget.find('lower')
-            if lower:
-                lower_level = str(lower.text)  # TODO  Need to convert references
-                root.lower(lower_level)
         self.widget_lookup['root'] = root
+        root_widget = self.gui_definition.find('RootGUI')
+        configure_window(root, root_widget)  #Should root have a window element under it?
+
         make_exit_button(root)
         # root.update()
         return root
@@ -662,12 +731,11 @@ def template_select_test():
 def main():
     '''run current GUI test.
     '''
-    #normal_font = tkFont.Font(family='Calibri', size=11, weight='normal')
-    #button_font = tkFont.Font(family='Calibri', size=12, weight='bold')
-    #title_font = tkFont.Font(family='Tacoma', size=36, weight='bold')
-#    file_select_test()
-    print('hi')
-    template_select_test()
-
+    xml_file = Path(r'.\GUI_Management\StructuresGUI.xml')
+    xml_tree = ET.parse(str(xml_file))
+    gui_definition = xml_tree.getroot()
+    root_element = gui_definition.find('RootGUI')
+    root_element.findtext(r'./Window/Settings/state')
+    gui_definition.findtext('.//Height')
 if __name__ == '__main__':
     main()
