@@ -67,6 +67,7 @@
     <Content Include="GUI_Management\GUI_Builder.xsd" />
     <Content Include="GUI_Management\Options and Functions.xlsx" />
     <Content Include="GUI_Management\StructuresGUI.xml" />
+    <Content Include="GUI_Management\TestGUI.xml" />
     <Content Include="Testing\Test Data\Date formats.xlsx" />
     <Content Include="Testing\Test Data\test column.xlsx" />
     <Content Include="Testing\Test Data\Test table.xlsx" />

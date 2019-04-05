@@ -138,7 +138,7 @@ class GuiManager():
         root = tk.Tk()
         self.widget_lookup['root'] = root
         root_widget = self.gui_definition.find('RootGUI')
-        configure_window(root, root_widget)  #Should root have a window element under it?
+        configure_window(root, root_widget)
 
         make_exit_button(root)
         # root.update()
@@ -731,11 +731,27 @@ def template_select_test():
 def main():
     '''run current GUI test.
     '''
-    xml_file = Path(r'.\GUI_Management\StructuresGUI.xml')
+    xml_file = Path(r'.\GUI_Management\TestGUI.xml')
     xml_tree = ET.parse(str(xml_file))
     gui_definition = xml_tree.getroot()
-    root_element = gui_definition.find('RootGUI')
-    root_element.findtext(r'./Window/Settings/state')
-    gui_definition.findtext('.//Height')
+    root_element = gui_definition.find('RootWindow')
+    widget_lookup = OrderedDict()
+    root = tk.Tk()
+    widget_lookup['root'] = root
+    widget = gui_definition.find('.//FunctionalWidget')
+    for widget in gui_definition.findall('.//FunctionalWidget'):
+        name = widget.attrib['name']
+        parent_search = './/*[@name="{}"]../..'.format(name)
+        parent_name = gui_definition.find(parent_search).attrib['name']
+        parent = widget_lookup[parent_name]
+        widget_type = widget.find('widget_class').text
+        module_name, class_name = widget_type.split('.')
+        module_lookup = {'tk':tk, 'ttk':ttk}
+        if 'tk' in module_name:
+            widget_class = getattr(tk, class_name)
+        elif 'ttk' in module_name:
+            widget_class = getattr(ttk, class_name)
+        new_widget = widget_class(name=name, master=parent)
+        widget_lookup[name] = new_widget
 if __name__ == '__main__':
     main()

@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Created with Liquid Studio 2019 (https://www.liquid-technologies.com) -->
-<GuiDefinition xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+<GuiDefinition xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                xsi:noNamespaceSchemaLocation="file:./GUI_Builder.xsd">
     <VariableSet>
         <Variable name="Output"
@@ -30,7 +30,7 @@
                     </Placement>
                 </WidgetGeometry>
             </FunctionalWidget>
-            <FunctionalWidget name="Entry">
+            <FunctionalWidget name="test_entry">
                 <widget_class>ttk.Entry</widget_class>
                 <WidgetGeometry>
                     <Placement>
@@ -38,7 +38,7 @@
                     </Placement>
                 </WidgetGeometry>
             </FunctionalWidget>
-            <FunctionalWidget name="Label">
+            <FunctionalWidget name="test_abel">
                 <widget_class>ttk.Label</widget_class>
                 <WidgetGeometry>
                     <Placement>
@@ -48,7 +48,7 @@
             </FunctionalWidget>
 
         </WidgetSet>
- 
+
     </RootWindow>
 
 </GuiDefinition>
