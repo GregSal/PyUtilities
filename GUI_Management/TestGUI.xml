@@ -3,21 +3,21 @@
 <GuiDefinition xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                xsi:noNamespaceSchemaLocation="file:./GUI_Builder.xsd">
     <VariableSet>
-        <Variable name="Output"
-                  variable_type="tk.StringVar"/>
+      <Variable name="Output">
+        <variable_class>tk.StringVar</variable_class>
+      <data_reference>test_string</data_reference>
+      </Variable>
     </VariableSet>
     <CommandSet>
         <Command name="Exit"
-                 function="Tk.destroy">
-            <PositionalArgs>
-                <Arg>W::root</Arg>
-            </PositionalArgs>
+                 function="W::root.destroy">
+            <PositionalArgs />
             <KeywordArgs />
         </Command>
     </CommandSet>
     <RootWindow name="root">
         <Settings>
-            <State>withdrawn</State>
+            <State>normal</State>
         </Settings>
         <WidgetSet>
             <FunctionalWidget name="exit_button">
@@ -32,23 +32,22 @@
             </FunctionalWidget>
             <FunctionalWidget name="test_entry">
                 <widget_class>ttk.Entry</widget_class>
-                <WidgetGeometry>
+              <WidgetConfiguration textvariable="V::Output"/>
+              <WidgetGeometry>
                     <Placement>
                         <GridPlacement column="0" row="0"/>
                     </Placement>
                 </WidgetGeometry>
             </FunctionalWidget>
-            <FunctionalWidget name="test_abel">
+            <FunctionalWidget name="test_label">
                 <widget_class>ttk.Label</widget_class>
-                <WidgetGeometry>
+              <WidgetConfiguration text="Test Label"/>
+              <WidgetGeometry>
                     <Placement>
                         <GridPlacement column="0" row="1"/>
                     </Placement>
                 </WidgetGeometry>
             </FunctionalWidget>
-
         </WidgetSet>
-
     </RootWindow>
-
 </GuiDefinition>

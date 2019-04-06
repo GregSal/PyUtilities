@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{56be436a-57e4-4c95-a047-13875f1ad6fd}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>gui_xml_builder.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="GUI Layout settings.txt" />
+    <Content Include="GUI Layout.xlsx" />
+    <Content Include="GUI_Builder.xsd" />
+    <Content Include="Options and Functions.xlsx" />
+    <Content Include="StructuresGUI.xml" />
+    <Content Include="TestGUI.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="dir_gui_trial.py" />
+    <Compile Include="extract_structures.py" />
+    <Compile Include="file_select_window.py" />
+    <Compile Include="GUI_Construction.py" />
+    <Compile Include="GUI_Definitions.py" />
+    <Compile Include="gui_manager.py" />
+    <Compile Include="GUI_Templates.py" />
+    <Compile Include="gui_xml_builder.py" />
+    <Compile Include="ModifyTemplate.py" />
+    <Compile Include="ReportGUI.py" />
+    <Compile Include="resizable_top.py" />
+    <Compile Include="structure_set_gui.py" />
+    <Compile Include="structure_set_parameters.py" />
+    <Compile Include="templates.py" />
+    <Compile Include="templates_selector.py" />
+    <Compile Include="template_select_gui.py" />
+    <Compile Include="tree_view.py" />
+    <Compile Include="__init__.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CustomVariableSet\CustomVariableSet.pyproj">
+      <Name>CustomVariableSet</Name>
+      <Project>{7fd5d963-2e83-4ae8-a878-b831529ce827}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Utilities.pyproj">
+      <Name>Utilities</Name>
+      <Project>{167f98ff-f940-4216-a4b3-0ed2df5e40cd}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
+</Project>

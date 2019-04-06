@@ -15,18 +15,22 @@ import tkinter.font as tkFont
 import tkinter.ttk as ttk
 from tkinter import messagebox
 
-import sys
-# utilities_path = r"C:\Users\Greg\OneDrive - Queen's University\Python\Projects\Utilities"
-templates_path = Path.cwd() / r'..\EclipseRelated\EclipseTemplates\ManageStructuresTemplates'
-templates_path_str = str(templates_path.resolve())
-sys.path.append(templates_path_str)
+# Set the path to the Utilities Package.
+from __init__ import add_path
+utilities_path = '..'
+variable_path = r'..\CustomVariableSet'
+templates_path = r'..\..\EclipseRelated\EclipseTemplates\ManageStructuresTemplates'
+
+add_path(utilities_path)
+add_path(variable_path)
+add_path(templates_path)
 
 
-from file_select_window import SelectFile, FileSelectGUI
+import file_select_window as fg
 from file_utilities import set_base_dir, FileTypes, PathInput
 from data_utilities import select_data
 from spreadsheet_tools import load_reference_table
-from custom_variable_sets import StrPathV, CustomVariableSet
+from custom_variable_sets import StringV, CustomVariableSet
 from manage_template_lists import load_template_references
 
 
@@ -37,8 +41,128 @@ StringValue = Union[tk.StringVar, str]
 Definition = Dict[str, Dict[str, Any]]
 Widgets = Union[List[WidgetDef], tk.Toplevel]
 
+class TestVariables(CustomVariableSet):
+    '''A CustomVariable set
+    '''
+    variable_definitions = [{'name': 'test_string',
+                             'variable_type': StringV,
+                             'default': 'Hi There!'}
+                            ]
+
+module_lookup = {'tk':tk, 'ttk':ttk, 'fg':fg}
+widget_lookup = OrderedDict()
+variable_lookup = OrderedDict()
+command_lookup = OrderedDict()
+data_set = TestVariables()
+
+def value_lookup(value):
+    value_str = str(value)
+    value_name = value_str[3:]
+    if value_str.startswith('W::'):
+        use_value = widget_lookup[value_name]
+    elif value_str.startswith('V::'):
+        use_value = variable_lookup[value_name]
+    elif value_str.startswith('D::'):
+        use_value = data_set[value_name]
+    elif value_str.startswith('C::'):
+        use_value = command_lookup[value_name]
+    else:
+        use_value = value
+    final_value = module_lookup.get(str(use_value), use_value)
+    return final_value
+
+
+def update_defs(*arg_set, **kwarg_set):
+    if arg_set:
+        updated_args = list()
+        for value in arg_set:
+            use_value = value_lookup(value)
+            updated_args.append(use_value)
+        return updated_args
+    if kwarg_set:
+        updated_kwargs = dict()
+        for key_word, value in kwarg_set.items():
+            use_value = value_lookup(value)
+            updated_kwargs[key_word] = use_value
+        return updated_kwargs
+
+
+xml_file = Path(r'.\TestGUI.xml')
+xml_tree = ET.parse(str(xml_file))
+gui_definition = xml_tree.getroot()
+root_element = gui_definition.find('RootWindow')
+widget_lookup = OrderedDict()
+root = tk.Tk()
+widget_lookup['root'] = root
+for widget in gui_definition.findall(r'.//WidgetSet/*'):
+    name = widget.attrib['name']
+    parent_search = './/*[@name="{}"]../..'.format(name)
+    parent_name = gui_definition.find(parent_search).attrib['name']
+    parent = widget_lookup[parent_name]
+    widget_type = widget.find('widget_class').text
+    module, class_name = update_defs(*widget_type.split('.',1))
+    widget_class = getattr(module, class_name)
+    new_widget = widget_class(name=name, master=parent)
+    widget_lookup[name] = new_widget
+
+for variable in gui_definition.findall('VariableSet/*'):
+    name = variable.attrib['name']
+    variable_type = variable.find('variable_class').text
+    module, class_name = update_defs(*variable_type.split('.',1))
+    variable_class = getattr(module, class_name)
+    new_variable = variable_class(name=name)
+    variable_lookup[name] = new_variable
+    data_name = variable.findtext('data_reference')
+    if data_name is not None:
+        try:
+            initial_value = data_set[data_name].value
+        except AttributeError:
+            initial_value = data_set[data_name]
+        new_variable.set(initial_value)
+pass
+
+command = gui_definition.find('CommandSet/*')
+for command in gui_definition.findall('CommandSet/*'):
+    name = command.attrib['name']
+    function_str = command.attrib['function']
+    module, function_name = update_defs(*function_str.split('.',1))
+    function = getattr(module, function_name)
+
+    arg_set = [arg.text for arg in command.findall('PositionalArgs/*')]
+    args = update_defs(*arg_set)
+    keyword_args = command.find('KeywordArgs/*')
+    if keyword_args is not None:
+        kwarg_set = keyword_args.attrib
+    else:
+        kwarg_set = dict()
+    kwargs = update_defs(**kwarg_set)
+    options = update_defs(**command.attrib)
+    command_callable = partial(function, *args, **kwargs)
+    command_lookup[name] = command_callable
+pass
+
+
+for widget_def in gui_definition.findall(r'.//WidgetSet/*'):
+    name = widget_def.attrib['name']
+    widget = widget_lookup[name]
+    configuration = widget_def.find('WidgetConfiguration')
+    if configuration is not None:
+        options = update_defs(**configuration.attrib)
+        widget.configure(**options)
+    geometry = widget_def.find('WidgetGeometry')
+    placement = geometry.find('Placement/*')
+    options = placement.attrib
+    if 'Grid' in placement.tag:
+        widget.grid(**options)
+    elif 'Pack' in placement.tag:
+        widget.pak(**options)
+
+root = widget_lookup['root']
+root.mainloop()
+
+
 class GuiManager():
-    def __init__(self, gui_definition: PathInput):
+    def __init_(self, gui_definition: PathInput):
         self.variable_lookup = OrderedDict()
         self.widget_lookup = OrderedDict()
         self.command_lookup = OrderedDict()
@@ -46,36 +170,9 @@ class GuiManager():
         xml_tree = ET.parse(str(gui_definition))
         self.gui_definition = xml_tree.getroot()
 
-    def value_lookup(self, value):
-        value_str = str(value)
-        value_name = value_str[3:]
-        if value_str.startswith('W::'):
-            use_value = self.widget_lookup[value_name]
-        elif value_str.startswith('V::'):
-            use_value = self.variable_lookup[value_name]
-        elif value_str.startswith('D::'):
-            use_value = self.data_set[value_name]
-        elif value_str.startswith('C::'):
-            use_value = self.command_lookup[value_name]
-        else:
-            use_value = value
-        return use_value
 
-    def update_kwargs(self, kwarg_set: Dict[str, Any])->Dict[str, Any]:
-        updated_kwargs = dict()
-        if kwarg_set:
-            for key_word, value in kwarg_set.items():
-                use_value = self.value_lookup(value)
-                updated_kwargs[key_word] = use_value
-        return updated_kwargs
 
-    def update_args(self, arg_set: tuple):
-        updated_args = list()
-        if arg_set:
-            for value in arg_set:
-                use_value = self.value_lookup(value)
-                updated_args.append(use_value)
-        return updated_args
+
 
     def configure_widget(self,widget_def):
         widget_name = widget_def.get('name')
@@ -219,13 +316,7 @@ class GuiManager():
                 updated_args.append(use_value)
         return updated_args
 
-    def initialize_commands(self, command_set: List[CommandDef]):
-        for command_def in command_set:
-            kwargs = self.update_kwargs(command_def.kwargs)
-            args = self.update_args(command_def.args)
-            command = partial(test_action, command_def.function, *args, **kwargs)
-            self.command_lookup[command_def.name] = command
-        pass
+
 
     def define_widgets(self, widget_definitions: Definition,
                        widget_appearance: Definition):
@@ -728,30 +819,5 @@ def template_select_test():
     root.mainloop()
 
 
-def main():
-    '''run current GUI test.
-    '''
-    xml_file = Path(r'.\GUI_Management\TestGUI.xml')
-    xml_tree = ET.parse(str(xml_file))
-    gui_definition = xml_tree.getroot()
-    root_element = gui_definition.find('RootWindow')
-    widget_lookup = OrderedDict()
-    root = tk.Tk()
-    widget_lookup['root'] = root
-    widget = gui_definition.find('.//FunctionalWidget')
-    for widget in gui_definition.findall('.//FunctionalWidget'):
-        name = widget.attrib['name']
-        parent_search = './/*[@name="{}"]../..'.format(name)
-        parent_name = gui_definition.find(parent_search).attrib['name']
-        parent = widget_lookup[parent_name]
-        widget_type = widget.find('widget_class').text
-        module_name, class_name = widget_type.split('.')
-        module_lookup = {'tk':tk, 'ttk':ttk}
-        if 'tk' in module_name:
-            widget_class = getattr(tk, class_name)
-        elif 'ttk' in module_name:
-            widget_class = getattr(ttk, class_name)
-        new_widget = widget_class(name=name, master=parent)
-        widget_lookup[name] = new_widget
 if __name__ == '__main__':
     main()
