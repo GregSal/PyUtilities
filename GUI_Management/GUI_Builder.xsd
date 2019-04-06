@@ -225,16 +225,9 @@ Examples are Frame, LabelFrame and Canvas</xs:documentation>
                                     minOccurs="0"
                                     maxOccurs="1" />
                         <xs:element name="State"
+                                    type="StateType"
                                     minOccurs="0"
-                                    maxOccurs="1">
-                            <xs:simpleType>
-                                <xs:restriction base="xs:string">
-                                    <xs:enumeration value="normal" />
-                                    <xs:enumeration value="iconic" />
-                                    <xs:enumeration value="withdrawn" />
-                                </xs:restriction>
-                            </xs:simpleType>
-                        </xs:element>
+                                    maxOccurs="1" />
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -473,4 +466,11 @@ Examples are Frame, LabelFrame and Canvas</xs:documentation>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
+    <xs:simpleType name="StateType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="normal" />
+            <xs:enumeration value="iconic" />
+            <xs:enumeration value="withdrawn" />
+        </xs:restriction>
+    </xs:simpleType>
 </xs:schema>

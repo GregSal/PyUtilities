@@ -9,6 +9,7 @@ from pathlib import Path
 from collections import OrderedDict, namedtuple
 from functools import partial
 import xml.etree.ElementTree as ET
+import re
 
 import tkinter as tk
 import tkinter.font as tkFont
@@ -55,24 +56,25 @@ variable_lookup = OrderedDict()
 command_lookup = OrderedDict()
 data_set = TestVariables()
 
-def value_lookup(value):
-    value_str = str(value)
-    value_name = value_str[3:]
-    if value_str.startswith('W::'):
-        use_value = widget_lookup[value_name]
-    elif value_str.startswith('V::'):
-        use_value = variable_lookup[value_name]
-    elif value_str.startswith('D::'):
-        use_value = data_set[value_name]
-    elif value_str.startswith('C::'):
-        use_value = command_lookup[value_name]
-    else:
-        use_value = value
-    final_value = module_lookup.get(str(use_value), use_value)
-    return final_value
-
 
 def update_defs(*arg_set, **kwarg_set):
+
+    def value_lookup(value):
+        value_str = str(value)
+        value_name = value_str[3:]
+        if value_str.startswith('W::'):
+            use_value = widget_lookup[value_name]
+        elif value_str.startswith('V::'):
+            use_value = variable_lookup[value_name]
+        elif value_str.startswith('D::'):
+            use_value = data_set[value_name]
+        elif value_str.startswith('C::'):
+            use_value = command_lookup[value_name]
+        else:
+            use_value = value
+        final_value = module_lookup.get(str(use_value), use_value)
+        return final_value
+
     if arg_set:
         updated_args = list()
         for value in arg_set:
@@ -85,6 +87,10 @@ def update_defs(*arg_set, **kwarg_set):
             use_value = value_lookup(value)
             updated_kwargs[key_word] = use_value
         return updated_kwargs
+    pass
+
+
+def parsegeometry(geometry):    m = re.match("(\d+)x(\d+)([-+]\d+)([-+]\d+)", geometry)    if not m:        raise ValueError("failed to parse geometry string")    return map(int, m.groups())
 
 
 xml_file = Path(r'.\TestGUI.xml')
@@ -130,24 +136,74 @@ for command in gui_definition.findall('CommandSet/*'):
 
     arg_set = [arg.text for arg in command.findall('PositionalArgs/*')]
     args = update_defs(*arg_set)
-    keyword_args = command.find('KeywordArgs/*')
+    if args is None:
+        args = []
+    keyword_args = command.find('KeywordArgs')
     if keyword_args is not None:
-        kwarg_set = keyword_args.attrib
+        kwargs = update_defs(**keyword_args.attrib)
     else:
-        kwarg_set = dict()
-    kwargs = update_defs(**kwarg_set)
-    options = update_defs(**command.attrib)
+        kwargs = dict()
     command_callable = partial(function, *args, **kwargs)
     command_lookup[name] = command_callable
-pass
+pass
+
+root = widget_lookup['root']
+window_settings = root_element.find('Settings')
+title_text = window_settings.findtext('Title')
+options = dict()
+appearance = widget_def.find('Appearance')
+if appearance is not None:
+    options.update(update_defs(**appearance.attrib))
+    root.configure(**options)
+geometry = root_element.find('Geometry')
+if geometry:
+    current_position = parsegeometry(root.geometry())
+height = update_defs(window_settings.findtext('Height'))
+width = update_defs(window_settings.findtext('Width'))
+x_position = update_defs(window_settings.findtext('Xposition'))
+y_position = update_defs(window_settings.findtext('Yposition'))
+if any(x_position, y_position):
+    if not width:
+        width = current_position[0]
+    if not height:
+        height = current_position[1]
+    if not x_position:
+        x_position = current_position[2]
+    if not y_position:
+        y_position = current_position[3]
+    geometry_str = '{:d}x{:d}{:+d}{:+d}'.format(width, height,
+                                                x_position, y_position)
+    root.geometry(geometry_str)
+else:
+    if height:
+        root.height(height)
+    if width:
+        root.width(width)
+
+grid_configure_def = root_element.find('GridConfigure')
+if grid_configure_def is not None:
+    for column_setting in grid_configure_def.findall('ColumnConfigure'):
+        column_options = update_defs(**column_setting.attrib)
+        column_index = column_options.pop('column')
+        root.columnconfigure(column_index, column_options)
+    for row_setting in grid_configure_def.findall('RowConfigure'):
+        row_options = update_defs(**row_setting.attrib)
+        row_index = column_options.pop('row')
+        root.rowconfigure(row_index, row_options)
 
 
 for widget_def in gui_definition.findall(r'.//WidgetSet/*'):
     name = widget_def.attrib['name']
     widget = widget_lookup[name]
+    options = dict()
     configuration = widget_def.find('WidgetConfiguration')
     if configuration is not None:
-        options = update_defs(**configuration.attrib)
+        options.update(update_defs(**configuration.attrib))
+    appearance = widget_def.find('Appearance')
+    if appearance is not None:
+        options.update(update_defs(**appearance.attrib))
+        root.configure(**options)
+    if options:
         widget.configure(**options)
     geometry = widget_def.find('WidgetGeometry')
     placement = geometry.find('Placement/*')
@@ -156,6 +212,7 @@ for widget_def in gui_definition.findall(r'.//WidgetSet/*'):
         widget.grid(**options)
     elif 'Pack' in placement.tag:
         widget.pak(**options)
+pass
 
 root = widget_lookup['root']
 root.mainloop()
@@ -351,53 +408,6 @@ class GuiManager():
                 widget.build(**build_instructions)
             else:
                 build_widget(widget, **build_instructions)
-
-
-def load_gui_definition():
-    tree = ET.parse(str(template_file))
-    root = tree.getroot()
-    template = template_root.find('Preview')
-    for element_item in element_tree.iter(search_string):
-        pass
-
-
-def test_action(action, *args, **kwargs):
-    action.__call__(*args, **kwargs)
-
-
-def make_exit_button(parent_window):
-    exit_button = tk.Button(parent_window, text="Egress",
-                            command=parent_window.destroy)
-    exit_button.grid()
-
-
-def show_message(button_parent: tk.Widget, parent_window: tk.Widget = None,
-                 button_text='HIT ME', window_text='',
-                 variable: StringValue = 'Nothing to say'):
-    if not parent_window:
-        parent_window = button_parent
-    def show_file():
-        '''An info widget that displays the selected file name.'''
-        messagebox.showinfo(window_text, variable.get(), parent=parent_window)
-
-    test_button = ttk.Button(master=button_parent, command=show_file,
-                             text=button_text)
-    test_button.grid()
-
-
-def message_window(parent_window: tk.Widget, window_text: StringValue = '',
-                   variable: StringValue = 'Nothing to say'):
-    '''Display the sting message or variable content.'''
-    if isinstance(variable, tk.StringVar):
-        str_message = variable.get()
-    else:
-        str_message = str(variable)
-    messagebox.showinfo(title=window_text, message=variable.get(),
-                        parent=parent_window)
-
-def exit(window: tk.Toplevel):
-    messagebox.showinfo(title='Time to go', message='Goodbye', parent=window)
-    tk.Tk.destroy, {'self': window}
 
 
 def make_root():
@@ -819,5 +829,5 @@ def template_select_test():
     root.mainloop()
 
 
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+#    main()

@@ -22,7 +22,7 @@ from file_utilities import FileTypes, get_file_path
 from file_utilities import set_base_dir, PathInput
 
 FileTypeSelection = Union[List[str], FileTypes]
-
+StringValue = Union[tk.StringVar, str]
 
 class SelectFile():
     '''Contains all parameters required for selecting a file or directory.
@@ -369,6 +369,16 @@ class FileSelectGUI(ttk.LabelFrame):
     def set(self, file_path: PathInput):
         return self.path_variable.set(str(file_path))
 
+
+def message_window(parent_window: tk.Widget, window_text: StringValue = '',
+                   variable: StringValue = 'Nothing to say'):
+    '''Display the sting message or variable content.'''
+    if isinstance(variable, tk.StringVar):
+        str_message = variable.get()
+    else:
+        str_message = str(variable)
+    messagebox.showinfo(title=window_text, message=variable.get(),
+                        parent=parent_window)
 
 def main():
     '''open test selection window.
