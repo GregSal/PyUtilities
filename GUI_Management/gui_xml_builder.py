@@ -4,7 +4,7 @@ Created on Feb 23 2019
 @author: Greg Salomons
 Test ground for constructing GUI
 '''
-from typing import Union, List, Dict, Tuple, Any
+from typing import Union, TypeVar, List, Dict, Tuple, Callable, Any
 from pathlib import Path
 from collections import OrderedDict, namedtuple
 from functools import partial
@@ -41,6 +41,9 @@ WidgetDef = namedtuple('WidgetDef', ['name', 'widget_type', 'parent'])
 StringValue = Union[tk.StringVar, str]
 Definition = Dict[str, Dict[str, Any]]
 Widgets = Union[List[WidgetDef], tk.Toplevel]
+ObjectDef = Union[Callable,type]
+ArgType = TypeVar('ArgType', List[Any], Dict[str, Any])
+
 
 class TestVariables(CustomVariableSet):
     '''A CustomVariable set
@@ -57,8 +60,7 @@ command_lookup = OrderedDict()
 data_set = TestVariables()
 
 
-def update_defs(*arg_set, **kwarg_set):
-
+def update_defs(*arg_set, **kwarg_set)->ArgType:
     def value_lookup(value):
         value_str = str(value)
         value_name = value_str[3:]
@@ -81,16 +83,196 @@ def update_defs(*arg_set, **kwarg_set):
             use_value = value_lookup(value)
             updated_args.append(use_value)
         return updated_args
+
     if kwarg_set:
         updated_kwargs = dict()
         for key_word, value in kwarg_set.items():
             use_value = value_lookup(value)
             updated_kwargs[key_word] = use_value
         return updated_kwargs
+
+    return None
+
+
+def get_class(object_def: ET.Element, class_lookup: str)->ObjectDef:
+    object_type = object_def.findtext(class_lookup)
+    module, class_name = update_defs(*object_type.split('.',1))
+    object_class = getattr(module, class_name)
+    return object_class
+
+
+def initialize_widgets(gui_definition: ET.Element):
+    def method_name(gui_definition: ET.Element, name: str)->tk.Widget:
+        parent_search = './/*[@name="{}"]../..'.format(name)
+        parent_name = gui_definition.find(parent_search).attrib['name']
+        parent = widget_lookup[parent_name]
+        return parent
+
+    for widget in gui_definition.findall(r'.//WidgetSet/*'):
+        name = widget.attrib['name']
+        parent = method_name(gui_definition, name)
+        widget_class = get_class(widget, 'widget_class')
+        new_widget = widget_class(name=name, master=parent)
+        widget_lookup[name] = new_widget
+
+
+def initialize_variables(gui_definition: ET.Element):
+    def set_initial_value(variable: ET.Element, new_variable: tk.Variable):
+        data_name = variable.findtext('data_reference')
+        if data_name is not None:
+            try:
+                initial_value = data_set[data_name].value
+            except AttributeError:
+                initial_value = data_set[data_name]
+            new_variable.set(initial_value)
+        pass
+
+    for variable in gui_definition.findall('VariableSet/*'):
+        name = variable.attrib['name']
+        variable_class = get_class(variable, 'variable_class')
+        new_variable = variable_class(name=name)
+        set_initial_value(variable, new_variable)
+        variable_lookup[name] = new_variable
+
+
+def initialize_commands(gui_definition: ET.Element):
+    def get_positional_arguments(command: ET.Element)->List[Any]:
+        arg_set = [arg.text for arg in command.findall('PositionalArgs/*')]
+        args = update_defs(*arg_set)
+        if args is None:
+            args = []
+        return args
+
+    def get_keyword_arguments(command)->Dict[str, Any]:
+        keyword_args = command.find('KeywordArgs')
+        if keyword_args is not None:
+            kwargs = update_defs(**keyword_args.attrib)
+            if kwargs is None:
+                 kwargs = dict()
+        else:
+            kwargs = dict()
+        return kwargs
+
+    for command in gui_definition.findall('CommandSet/*'):
+        name = command.attrib['name']
+        function = get_class(command, 'function')
+        args = get_positional_arguments(command)
+        kwargs = get_keyword_arguments(command)
+        command_callable = partial(function, *args, **kwargs)
+        command_lookup[name] = command_callable
     pass
 
 
-def parsegeometry(geometry):    m = re.match("(\d+)x(\d+)([-+]\d+)([-+]\d+)", geometry)    if not m:        raise ValueError("failed to parse geometry string")    return map(int, m.groups())
+def generic_configuration(widget: tk.Wm, widget_def: ET.Element):
+    configuration = widget_def.find('Configure')
+    if configuration is not None:
+        options = dict()
+        options.update(update_defs(**configuration.attrib))
+        widget.configure(**options)
+        for config_def in configuration.findall('Set'):
+            method_name = str(config_def.text)
+            method = getattr(widget, method_name)
+            options = dict()
+            options.update(update_defs(**config_def.attrib))
+            method(**options)
+    pass
+
+
+def set_appearance(widget, widget_def):
+    options = dict()
+    appearance = widget_def.find('Appearance')
+    if appearance is not None:
+        options.update(update_defs(**appearance.attrib))
+        widget.configure(**options)
+
+
+def grid_config(widget: tk.Widget, widget_def: ET.Element):
+    grid_configure_def = widget_def.find('GridConfigure')
+    if grid_configure_def is not None:
+        for column_setting in grid_configure_def.findall('ColumnConfigure'):
+            column_options = update_defs(**column_setting.attrib)
+            column_index = int(column_options.pop('column'))
+            widget.columnconfigure(column_index, column_options)
+        for row_setting in grid_configure_def.findall('RowConfigure'):
+            row_options = update_defs(**row_setting.attrib)
+            row_index = row_options.pop('row')
+            widget.rowconfigure(row_index, row_options)
+    pass
+
+
+def set_widget_geometry(widget: tk.Widget, widget_settings: ET.Element):
+    geometry = widget_settings.find('Geometry')
+    if geometry is not None:
+        options = dict()
+        padding = geometry.find('Padding')
+        if padding is not None:
+            options.update(update_defs(**padding.attrib))
+        placement = geometry.find('Placement/*')
+        if placement is not None:
+            options.update(update_defs(**placement.attrib))
+            if 'Grid' in placement.tag:
+                widget.grid(**options)
+            elif 'Pack' in placement.tag:
+                widget.pak(**options)
+    pass
+
+
+def set_window_geometry(window: tk.Wm, window_settings: ET.Element):
+    def parsegeometry(geometry: str)->Tuple[int]:
+        m = re.match("(\d+)x(\d+)([-+]\d+)([-+]\d+)", geometry)
+        if not m:
+            raise ValueError("failed to parse geometry string")
+        return map(int, m.groups())
+
+    def get_dimension(geometry, current_position, dimension_name):
+        dimension_index = {'Width':0, 'Height': 1,
+                           'Xposition': 2, 'Yposition': 3}
+        dimension = update_defs(geometry.findtext(dimension_name))[0]
+        if not dimension:
+            index = dimension_index[dimension_name]
+            dimension = current_position[index]
+        return int(dimension)
+
+    geometry = window_settings.find('Geometry')
+    if geometry is not None:
+        current_position = list(parsegeometry(window.geometry()))
+        width = get_dimension(geometry, current_position,
+                              'Width')
+        height = get_dimension(geometry, current_position,
+                               'Height')
+        x_position = get_dimension(geometry, current_position,
+                                   'Xposition')
+        y_position = get_dimension(geometry, current_position,
+                                   'Yposition')
+        geometry_str = '{:d}x{:d}{:+d}{:+d}'.format(width, height,
+                                                    x_position, y_position)
+        window.geometry(geometry_str)
+    pass
+
+
+def configure_window(window: tk.Wm, window_def: ET.Element):
+    window_settings = window_def.find('Settings')
+    if window_settings is not None:
+        title_text = window_settings.findtext('title')
+        if title_text:
+            window.title = title_text
+        set_appearance(window, window_settings)
+        set_window_geometry(window, window_settings)
+        grid_config(window, window_settings)
+    generic_configuration(window, window_def)
+
+
+def configure_widgets(gui_definition):
+    for widget_def in gui_definition.findall(r'.//WidgetSet/*'):
+        name = widget_def.attrib['name']
+        widget = widget_lookup[name]
+        widget_settings = widget_def.find('Settings')
+        if widget_settings is not None:
+            set_appearance(widget, widget_settings)
+            set_widget_geometry(widget, widget_settings)
+            grid_config(widget, widget_settings)
+        generic_configuration(widget, widget_def)
+
 
 
 xml_file = Path(r'.\TestGUI.xml')
@@ -100,119 +282,14 @@ root_element = gui_definition.find('RootWindow')
 widget_lookup = OrderedDict()
 root = tk.Tk()
 widget_lookup['root'] = root
-for widget in gui_definition.findall(r'.//WidgetSet/*'):
-    name = widget.attrib['name']
-    parent_search = './/*[@name="{}"]../..'.format(name)
-    parent_name = gui_definition.find(parent_search).attrib['name']
-    parent = widget_lookup[parent_name]
-    widget_type = widget.find('widget_class').text
-    module, class_name = update_defs(*widget_type.split('.',1))
-    widget_class = getattr(module, class_name)
-    new_widget = widget_class(name=name, master=parent)
-    widget_lookup[name] = new_widget
 
-for variable in gui_definition.findall('VariableSet/*'):
-    name = variable.attrib['name']
-    variable_type = variable.find('variable_class').text
-    module, class_name = update_defs(*variable_type.split('.',1))
-    variable_class = getattr(module, class_name)
-    new_variable = variable_class(name=name)
-    variable_lookup[name] = new_variable
-    data_name = variable.findtext('data_reference')
-    if data_name is not None:
-        try:
-            initial_value = data_set[data_name].value
-        except AttributeError:
-            initial_value = data_set[data_name]
-        new_variable.set(initial_value)
-pass
-
-command = gui_definition.find('CommandSet/*')
-for command in gui_definition.findall('CommandSet/*'):
-    name = command.attrib['name']
-    function_str = command.attrib['function']
-    module, function_name = update_defs(*function_str.split('.',1))
-    function = getattr(module, function_name)
-
-    arg_set = [arg.text for arg in command.findall('PositionalArgs/*')]
-    args = update_defs(*arg_set)
-    if args is None:
-        args = []
-    keyword_args = command.find('KeywordArgs')
-    if keyword_args is not None:
-        kwargs = update_defs(**keyword_args.attrib)
-    else:
-        kwargs = dict()
-    command_callable = partial(function, *args, **kwargs)
-    command_lookup[name] = command_callable
-pass
+initialize_widgets(gui_definition)
+initialize_variables(gui_definition)
+initialize_commands(gui_definition)
 
 root = widget_lookup['root']
-window_settings = root_element.find('Settings')
-title_text = window_settings.findtext('Title')
-options = dict()
-appearance = widget_def.find('Appearance')
-if appearance is not None:
-    options.update(update_defs(**appearance.attrib))
-    root.configure(**options)
-geometry = root_element.find('Geometry')
-if geometry:
-    current_position = parsegeometry(root.geometry())
-height = update_defs(window_settings.findtext('Height'))
-width = update_defs(window_settings.findtext('Width'))
-x_position = update_defs(window_settings.findtext('Xposition'))
-y_position = update_defs(window_settings.findtext('Yposition'))
-if any(x_position, y_position):
-    if not width:
-        width = current_position[0]
-    if not height:
-        height = current_position[1]
-    if not x_position:
-        x_position = current_position[2]
-    if not y_position:
-        y_position = current_position[3]
-    geometry_str = '{:d}x{:d}{:+d}{:+d}'.format(width, height,
-                                                x_position, y_position)
-    root.geometry(geometry_str)
-else:
-    if height:
-        root.height(height)
-    if width:
-        root.width(width)
-
-grid_configure_def = root_element.find('GridConfigure')
-if grid_configure_def is not None:
-    for column_setting in grid_configure_def.findall('ColumnConfigure'):
-        column_options = update_defs(**column_setting.attrib)
-        column_index = column_options.pop('column')
-        root.columnconfigure(column_index, column_options)
-    for row_setting in grid_configure_def.findall('RowConfigure'):
-        row_options = update_defs(**row_setting.attrib)
-        row_index = column_options.pop('row')
-        root.rowconfigure(row_index, row_options)
-
-
-for widget_def in gui_definition.findall(r'.//WidgetSet/*'):
-    name = widget_def.attrib['name']
-    widget = widget_lookup[name]
-    options = dict()
-    configuration = widget_def.find('WidgetConfiguration')
-    if configuration is not None:
-        options.update(update_defs(**configuration.attrib))
-    appearance = widget_def.find('Appearance')
-    if appearance is not None:
-        options.update(update_defs(**appearance.attrib))
-        root.configure(**options)
-    if options:
-        widget.configure(**options)
-    geometry = widget_def.find('WidgetGeometry')
-    placement = geometry.find('Placement/*')
-    options = placement.attrib
-    if 'Grid' in placement.tag:
-        widget.grid(**options)
-    elif 'Pack' in placement.tag:
-        widget.pak(**options)
-pass
+configure_window(root, root_element)
+configure_widgets(gui_definition)
 
 root = widget_lookup['root']
 root.mainloop()
