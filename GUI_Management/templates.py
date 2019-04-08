@@ -189,7 +189,7 @@ widget_set = [
     WidgetDef('build_templates', ttk.Button, 'file_selector_group'),
     WidgetDef('refresh_template_list', ttk.Button, 'file_selector_group')
     ]
-
+CommandDef = namedtuple('CommandDef', ['name', 'function', 'args', 'kwargs'])
 command_set = [
     CommandDef('Template xview', ttk.Treeview.xview,
                 ('W::template_selector',), {}),

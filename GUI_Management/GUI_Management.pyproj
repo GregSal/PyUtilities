@@ -42,6 +42,7 @@
     <Compile Include="structure_set_parameters.py" />
     <Compile Include="templates.py" />
     <Compile Include="templates_selector.py" />
+    <Compile Include="templates_xml_gui_builder.py" />
     <Compile Include="template_select_gui.py" />
     <Compile Include="tree_view.py" />
     <Compile Include="__init__.py" />

@@ -9,13 +9,13 @@
         </Variable>
     </VariableSet>
     <CommandSet>
-        <Command name="Exit" >
+        <Command name="Exit">
             <function>W::root.destroy</function>
             <PositionalArgs />
             <KeywordArgs />
         </Command>
-        <Command name="ShowText" >
-          <function>fg.message_window</function>
+        <Command name="ShowText">
+            <function>fg.message_window</function>
             <PositionalArgs>
                 <Arg>W::root</Arg>
             </PositionalArgs>
@@ -40,8 +40,10 @@
             </GridConfigure>
         </Settings>
         <WidgetSet>
-            <FunctionalWidget name="exit_button">
+            <Widget name="exit_button">
                 <widget_class>ttk.Button</widget_class>
+                <Configure text="Egress"
+                           command="C::Exit"/>
                 <Settings>
                     <Geometry>
                         <Placement>
@@ -50,11 +52,10 @@
                         </Placement>
                     </Geometry>
                 </Settings>
-                <Configure text="Egress"
-                           command="C::Exit"/>
-            </FunctionalWidget>
-            <FunctionalWidget name="test_entry">
+            </Widget>
+            <Widget name="test_entry">
                 <widget_class>ttk.Entry</widget_class>
+                <Configure textvariable="V::Output"/>
                 <Settings>
                     <Geometry>
                         <Placement>
@@ -63,10 +64,11 @@
                         </Placement>
                     </Geometry>
                 </Settings>
-                <Configure textvariable="V::Output"/>
-            </FunctionalWidget>
-            <FunctionalWidget name="text_button">
+            </Widget>
+            <Widget name="text_button">
                 <widget_class>ttk.Button</widget_class>
+                <Configure text="Display"
+                           command="C::ShowText"/>
                 <Settings>
                     <Geometry>
                         <Placement>
@@ -76,11 +78,10 @@
                         </Placement>
                     </Geometry>
                 </Settings>
-                <Configure text="Display"
-                           command="C::ShowText"/>
-            </FunctionalWidget>
-            <FunctionalWidget name="test_label">
+            </Widget>
+            <Widget name="test_label">
                 <widget_class>ttk.Label</widget_class>
+                <Configure textvariable="V::Output"/>
                 <Settings>
                     <Geometry>
                         <Placement>
@@ -89,8 +90,7 @@
                         </Placement>
                     </Geometry>
                 </Settings>
-                <Configure textvariable="V::Output"/>
-            </FunctionalWidget>
+            </Widget>
         </WidgetSet>
     </RootWindow>
 </GuiDefinition>

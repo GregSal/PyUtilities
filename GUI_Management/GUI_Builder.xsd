@@ -67,52 +67,6 @@
             </xs:sequence>
         </xs:complexType>
     </xs:element>
-    <xs:element name="WidgetSet">
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element name="FunctionalWidget"
-                            type="WidgetType"
-                            minOccurs="0"
-                            maxOccurs="unbounded">
-                    <xs:annotation>
-                        <xs:documentation>The Functional Widget is for interactive widgets.
-Examples are Button, Label, Entry.</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-                <xs:element name="Tree"
-                            type="TreeWidget"
-                            minOccurs="0"
-                            maxOccurs="unbounded" />
-                <xs:element name="ContainerWidget"
-                            type="ContainerWidgetType"
-                            minOccurs="0"
-                            maxOccurs="unbounded">
-                    <xs:annotation>
-                        <xs:documentation xml:lang="EN">The container Widget is for widgets used to store other widgets.
-Examples are Frame, LabelFrame and Canvas</xs:documentation>
-                    </xs:annotation>
-                </xs:element>
-            </xs:sequence>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="Configure">
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element name="Set"
-                            minOccurs="0"
-                            maxOccurs="unbounded">
-                    <xs:complexType>
-                        <xs:simpleContent>
-                            <xs:extension base="xs:string">
-                                <xs:anyAttribute processContents="skip" />
-                            </xs:extension>
-                        </xs:simpleContent>
-                    </xs:complexType>
-                </xs:element>
-            </xs:sequence>
-            <xs:anyAttribute processContents="skip" />
-        </xs:complexType>
-    </xs:element>
     <xs:complexType name="VariableType">
         <xs:sequence>
             <xs:element name="variable_class"
@@ -152,6 +106,24 @@ Examples are Frame, LabelFrame and Canvas</xs:documentation>
                       type="xs:string"
                       use="required" />
     </xs:complexType>
+    <xs:element name="Configure">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Set"
+                            minOccurs="0"
+                            maxOccurs="unbounded">
+                    <xs:complexType>
+                        <xs:simpleContent>
+                            <xs:extension base="xs:string">
+                                <xs:anyAttribute processContents="skip" />
+                            </xs:extension>
+                        </xs:simpleContent>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:anyAttribute processContents="skip" />
+        </xs:complexType>
+    </xs:element>
     <xs:complexType name="AppearanceType">
         <xs:attribute name="borderwidth"
                       type="xs:unsignedByte"
@@ -191,39 +163,30 @@ Examples are Frame, LabelFrame and Canvas</xs:documentation>
             </xs:element>
         </xs:sequence>
     </xs:complexType>
+    <xs:complexType name="BindingsType">
+        <xs:sequence>
+            <xs:element name="Bind"
+                        minOccurs="1"
+                        maxOccurs="unbounded">
+                <xs:complexType>
+                    <xs:attribute name="event"
+                                  type="xs:string"
+                                  use="required" />
+                    <xs:attribute name="callback"
+                                  type="xs:string"
+                                  use="required" />
+                    <xs:attribute name="add"
+                                  type="xs:string"
+                                  use="optional" />
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
     <xs:complexType name="WindowType">
         <xs:sequence>
             <xs:element name="Settings"
-                        minOccurs="0">
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element name="title"
-                                    type="xs:string"
-                                    minOccurs="0"
-                                    maxOccurs="1" />
-                        <xs:choice minOccurs="0"
-                                   maxOccurs="1">
-                            <xs:element name="Fullscreen"
-                                        minOccurs="0"
-                                        maxOccurs="1" />
-                            <xs:element name="Geometry"
-                                        type="WindowGeometryType"
-                                        minOccurs="0"
-                                        maxOccurs="1" />
-                        </xs:choice>
-                        <xs:element name="State"
-                                    type="StateType"
-                                    minOccurs="0"
-                                    maxOccurs="1" />
-                        <xs:element name="Appearance"
-                                    type="AppearanceType"
-                                    minOccurs="0" />
-                        <xs:element name="GridConfigure"
-                                    type="GridConfigureType"
-                                    minOccurs="0" />
-                    </xs:sequence>
-                </xs:complexType>
-            </xs:element>
+                        type="WindowsSettingsType"
+                        minOccurs="0" />
             <xs:element ref="Configure"
                         minOccurs="0"
                         maxOccurs="1" />
@@ -233,6 +196,34 @@ Examples are Frame, LabelFrame and Canvas</xs:documentation>
         <xs:attribute name="name"
                       type="xs:string"
                       use="required" />
+    </xs:complexType>
+    <xs:complexType name="WindowsSettingsType">
+        <xs:sequence>
+            <xs:element name="title"
+                        type="xs:string"
+                        minOccurs="0"
+                        maxOccurs="1" />
+            <xs:choice minOccurs="0"
+                       maxOccurs="1">
+                <xs:element name="Fullscreen"
+                            minOccurs="0"
+                            maxOccurs="1" />
+                <xs:element name="Geometry"
+                            type="WindowGeometryType"
+                            minOccurs="0"
+                            maxOccurs="1" />
+            </xs:choice>
+            <xs:element name="State"
+                        type="StateType"
+                        minOccurs="0"
+                        maxOccurs="1" />
+            <xs:element name="Appearance"
+                        type="AppearanceType"
+                        minOccurs="0" />
+            <xs:element name="GridConfigure"
+                        type="GridConfigureType"
+                        minOccurs="0" />
+        </xs:sequence>
     </xs:complexType>
     <xs:complexType name="WindowGeometryType">
         <xs:sequence>
@@ -269,36 +260,33 @@ Examples are Frame, LabelFrame and Canvas</xs:documentation>
             </xs:element>
         </xs:sequence>
     </xs:complexType>
-    <xs:simpleType name="StateType">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="normal" />
-            <xs:enumeration value="iconic" />
-            <xs:enumeration value="withdrawn" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:complexType name="WidgetType">
+    <xs:element name="WidgetSet">
+        <xs:complexType>
+            <xs:choice minOccurs="1"
+                       maxOccurs="unbounded">
+                <xs:element name="WidgetContainer"
+                            type="WidgetContainerType"
+                            minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation xml:lang="EN">The container Widget is for widgets used to store other widgets.
+Examples are Frame, LabelFrame and Canvas</xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="Widget"
+                            type="WidgetType"
+                            minOccurs="0" />
+                <xs:element name="Tree"
+                            type="TreeWidget"
+                            minOccurs="0" />
+            </xs:choice>
+        </xs:complexType>
+    </xs:element>
+    <xs:complexType name="WidgetBasicType">
         <xs:sequence>
             <xs:element name="widget_class"
                         type="xs:string"
                         minOccurs="1"
                         maxOccurs="1" />
-            <xs:element name="Settings"
-                        minOccurs="0"
-                        maxOccurs="1">
-                <xs:complexType>
-                    <xs:all>
-                        <xs:element name="Geometry"
-                                    type="WidgetGeometryType"
-                                    minOccurs="0" />
-                        <xs:element name="Appearance"
-                                    type="AppearanceType"
-                                    minOccurs="0" />
-                        <xs:element name="Bindings"
-                                    type="BindingsType"
-                                    minOccurs="0" />
-                    </xs:all>
-                </xs:complexType>
-            </xs:element>
             <xs:element ref="Configure"
                         minOccurs="0"
                         maxOccurs="1" />
@@ -307,109 +295,55 @@ Examples are Frame, LabelFrame and Canvas</xs:documentation>
                       type="xs:string"
                       use="required" />
     </xs:complexType>
-    <xs:complexType name="WidgetGeometryType">
-        <xs:sequence>
-            <xs:element name="Placement"
-                        minOccurs="1"
-                        maxOccurs="1">
-                <xs:complexType>
-                    <xs:choice>
-                        <xs:element name="GridPlacement">
-                            <xs:complexType>
-                                <xs:attribute name="column"
-                                              type="xs:unsignedInt"
-                                              use="required" />
-                                <xs:attribute name="row"
-                                              type="xs:unsignedInt"
-                                              use="required" />
-                                <xs:attribute name="columnspan"
-                                              type="xs:unsignedInt"
-                                              use="optional" />
-                                <xs:attribute name="rowspan"
-                                              type="xs:unsignedInt"
-                                              use="optional" />
-                                <xs:attribute name="sticky"
-                                              type="StickyType"
-                                              use="optional" />
-                            </xs:complexType>
-                        </xs:element>
-                        <xs:element name="PackPlacement">
-                            <xs:complexType>
-                                <xs:attribute name="anchor"
-                                              type="xs:string"
-                                              use="required" />
-                            </xs:complexType>
-                        </xs:element>
-                    </xs:choice>
-                </xs:complexType>
-            </xs:element>
-            <xs:element name="Padding"
-                        minOccurs="0"
-                        maxOccurs="1">
-                <xs:complexType>
-                    <xs:attribute name="ipadx"
-                                  type="xs:unsignedByte"
-                                  use="required" />
-                    <xs:attribute name="ipady"
-                                  type="xs:unsignedByte"
-                                  use="required" />
-                    <xs:attribute name="padx"
-                                  type="xs:unsignedByte"
-                                  use="required" />
-                    <xs:attribute name="pady"
-                                  type="xs:unsignedByte"
-                                  use="required" />
-                </xs:complexType>
-            </xs:element>
-        </xs:sequence>
-    </xs:complexType>
-    <xs:simpleType name="StickyType">
-        <xs:restriction base="xs:string">
-            <xs:pattern value="[nsew]{1,4}" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="AnchorType">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="n" />
-            <xs:enumeration value="ne" />
-            <xs:enumeration value="e" />
-            <xs:enumeration value="se" />
-            <xs:enumeration value="s" />
-            <xs:enumeration value="sw" />
-            <xs:enumeration value="w" />
-            <xs:enumeration value="nw" />
-            <xs:enumeration value="center" />
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:complexType name="BindingsType">
-        <xs:sequence>
-            <xs:element name="Bind"
-                        minOccurs="1"
-                        maxOccurs="unbounded">
-                <xs:complexType>
-                    <xs:attribute name="event"
-                                  type="xs:string"
-                                  use="required" />
-                    <xs:attribute name="callback"
-                                  type="xs:string"
-                                  use="required" />
-                    <xs:attribute name="add"
-                                  type="xs:string"
-                                  use="optional" />
-                </xs:complexType>
-            </xs:element>
-        </xs:sequence>
-    </xs:complexType>
-    <xs:complexType name="ContainerWidgetType">
+    <xs:complexType name="WidgetType">
         <xs:complexContent>
-            <xs:extension base="WidgetType">
+            <xs:extension base="WidgetBasicType">
                 <xs:sequence>
-                    <xs:element name="GridConfigure"
-                                type="GridConfigureType"
-                                minOccurs="0" />
+                    <xs:element name="Settings"
+                                minOccurs="0">
+                        <xs:complexType>
+                            <xs:all>
+                                <xs:element name="Geometry"
+                                            type="WidgetGeometryType"
+                                            minOccurs="0" />
+                                <xs:element name="Appearance"
+                                            type="AppearanceType"
+                                            minOccurs="0" />
+                                <xs:element name="Bindings"
+                                            type="BindingsType"
+                                            minOccurs="0" />
+                            </xs:all>
+                        </xs:complexType>
+                    </xs:element>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    <xs:complexType name="WidgetContainerType">
+        <xs:complexContent>
+            <xs:extension base="WidgetBasicType">
+                <xs:sequence>
+                    <xs:element name="Settings"
+                                minOccurs="0">
+                        <xs:complexType>
+                            <xs:all>
+                                <xs:element name="Geometry"
+                                            type="WidgetGeometryType"
+                                            minOccurs="0" />
+                                <xs:element name="GridConfigure"
+                                            type="GridConfigureType"
+                                            minOccurs="0" />
+                                <xs:element name="Appearance"
+                                            type="AppearanceType"
+                                            minOccurs="0" />
+                                <xs:element name="Bindings"
+                                            type="BindingsType"
+                                            minOccurs="0" />
+                            </xs:all>
+                        </xs:complexType>
+                    </xs:element>
                     <xs:element ref="WidgetSet"
-                                minOccurs="0"
-                                maxOccurs="1" />
+                                minOccurs="0" />
                 </xs:sequence>
             </xs:extension>
         </xs:complexContent>
@@ -492,4 +426,85 @@ Examples are Frame, LabelFrame and Canvas</xs:documentation>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
+    <xs:complexType name="WidgetGeometryType">
+        <xs:sequence>
+            <xs:element name="Placement"
+                        minOccurs="1"
+                        maxOccurs="1">
+                <xs:complexType>
+                    <xs:choice>
+                        <xs:element name="GridPlacement">
+                            <xs:complexType>
+                                <xs:attribute name="column"
+                                              type="xs:unsignedInt"
+                                              use="required" />
+                                <xs:attribute name="row"
+                                              type="xs:unsignedInt"
+                                              use="required" />
+                                <xs:attribute name="columnspan"
+                                              type="xs:unsignedInt"
+                                              use="optional" />
+                                <xs:attribute name="rowspan"
+                                              type="xs:unsignedInt"
+                                              use="optional" />
+                                <xs:attribute name="sticky"
+                                              type="StickyType"
+                                              use="optional" />
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element name="PackPlacement">
+                            <xs:complexType>
+                                <xs:attribute name="anchor"
+                                              type="xs:string"
+                                              use="required" />
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:choice>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="Padding"
+                        minOccurs="0"
+                        maxOccurs="1">
+                <xs:complexType>
+                    <xs:attribute name="ipadx"
+                                  type="xs:unsignedInt"
+                                  use="required" />
+                    <xs:attribute name="ipady"
+                                  type="xs:unsignedInt"
+                                  use="required" />
+                    <xs:attribute name="padx"
+                                  type="xs:unsignedInt"
+                                  use="required" />
+                    <xs:attribute name="pady"
+                                  type="xs:unsignedInt"
+                                  use="required" />
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="StateType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="normal" />
+            <xs:enumeration value="iconic" />
+            <xs:enumeration value="withdrawn" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="StickyType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[nsew]{1,4}" />
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="AnchorType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="n" />
+            <xs:enumeration value="ne" />
+            <xs:enumeration value="e" />
+            <xs:enumeration value="se" />
+            <xs:enumeration value="s" />
+            <xs:enumeration value="sw" />
+            <xs:enumeration value="w" />
+            <xs:enumeration value="nw" />
+            <xs:enumeration value="center" />
+        </xs:restriction>
+    </xs:simpleType>
 </xs:schema>
