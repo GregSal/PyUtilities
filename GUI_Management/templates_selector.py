@@ -233,7 +233,7 @@ data_files = ['TemplateID', 'TemplateCategory', 'TreatmentSite',
  default_show_fields = ['workbook_name', 'TemplateID', 'TemplateCategory',
                            'TreatmentSite', 'modification_date',
                            'Description', 'Status']
-                           
+
 vars = ['workbook_name', 'sheet_name', 'TemplateID', 'TemplateCategory',
         'TreatmentSite', 'modification_date', 'Diagnosis', 'Author',
         'TemplateFileName', 'Status']
@@ -243,18 +243,17 @@ columns = ['TemplateID', 'TemplateCategory', 'TreatmentSite', 'Diagnosis',
             'Number_of_Structures', 'sheet_name', 'Description',
             'TemplateType', 'ApprovalStatus', 'Columns',
             'TemplateFileName']
-            
+
 displaycolumns = ['TemplateID', 'TemplateCategory', 'TreatmentSite',
                     'Diagnosis', 'modification_date', 'Status']
 
 
-column_def = [
-    {
-    	    'column': 'workbook_name', 'text': 'Structure Templates ',
-    	    'anchor': 'w', 'minwidth': 95, 'stretch':'TRUE', 'width': 234
-    	},
-    	{
-        'column': 'TemplateID', 'text': 'Template ', 'show': True, 
+column_def = [dict(
+    workbook_name = {
+        'column': 'workbook_name', 'text': 'Structure Templates ',
+        'anchor': 'w', 'minwidth': 95, 'stretch':'TRUE', 'width': 234},
+    TemplateID = {
+        'column': 'TemplateID', 'text': 'Template ', 'show': True,
         'anchor': 'w', 'minwidth': 11, 'stretch':'TRUE', 'width': 102},
     TemplateCategory = {'minwidth': 16, 'stretch':'TRUE', 'width': 42},
     TreatmentSite = {'anchor': 'w', 'minwidth': 21, 'stretch':'TRUE', 'width': 102},
@@ -336,9 +335,9 @@ def main():
     template_selector.tag_configure('File', foreground='blue',
                                     background='light grey', image=file_image)
     template_selector.tag_configure('Template', image=template_image)
-    
-    template_selector.tag_bind('File', '<Double-ButtonRelease-1>', callback=file_select)  
-    
+
+    template_selector.tag_bind('File', '<Double-ButtonRelease-1>', callback=file_select)
+
 
     template_update = test_window.command_lookup['UpdateSelected']
     template_selector.bind('<<TreeviewSelect>>', template_update, add='+')

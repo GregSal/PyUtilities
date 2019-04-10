@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{56be436a-57e4-4c95-a047-13875f1ad6fd}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>gui_xml_builder.py</StartupFile>
+    <StartupFile>templates_xml_gui_builder.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -19,12 +19,27 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="FileSelectFrame.xml" />
+    <Content Include="FileSelectGUI.xml" />
     <Content Include="GUI Layout settings.txt" />
     <Content Include="GUI Layout.xlsx" />
     <Content Include="GUI_Builder.xsd" />
+    <Content Include="icons\arrow-down.png" />
+    <Content Include="icons\arrow-up.png" />
+    <Content Include="icons\Blueprint.png" />
+    <Content Include="icons\Blueprint2.png" />
+    <Content Include="icons\Box.png" />
+    <Content Include="icons\Box2.png" />
+    <Content Include="icons\Chart_Graph_Ascending.png" />
+    <Content Include="icons\DocumentApproval.ico" />
+    <Content Include="icons\DocumentApproval.png" />
+    <Content Include="icons\Small-triangle-rep-green.png" />
+    <Content Include="icons\Target.png" />
+    <Content Include="icons\Triangle-Down2.png" />
     <Content Include="Options and Functions.xlsx" />
     <Content Include="StructuresGUI.xml" />
     <Content Include="TestGUI.xml" />
+    <Content Include="Tkinter_GUI.xsd" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="dir_gui_trial.py" />
@@ -58,6 +73,9 @@
       <Project>{167f98ff-f940-4216-a4b3-0ed2df5e40cd}</Project>
       <Private>True</Private>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="icons\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

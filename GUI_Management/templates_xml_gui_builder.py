@@ -27,11 +27,13 @@ add_path(variable_path)
 add_path(templates_path)
 
 
-import file_select_window as fg
+import file_select_window
+import file_utilities
+import templates
 from file_utilities import set_base_dir, FileTypes, PathInput
 from data_utilities import select_data
 from spreadsheet_tools import load_reference_table
-from custom_variable_sets import StringV, CustomVariableSet
+from custom_variable_sets import StringV, StrPathV, PathV, CustomVariableSet
 from manage_template_lists import load_template_references
 
 
@@ -45,22 +47,73 @@ ObjectDef = Union[Callable,type]
 ArgType = TypeVar('ArgType', List[Any], Dict[str, Any])
 
 
-class TestVariables(CustomVariableSet):
-    '''A CustomVariable set
-    '''
-    variable_definitions = [{'name': 'test_string',
-                             'variable_type': StringV,
-                             'default': 'Hi There!'}
-                            ]
+class TemplateSelectionsSet(CustomVariableSet):
+    template_directory = set_base_dir(
+            r'Work\Structure Dictionary\Template Spreadsheets')
+    variable_definitions = [
+        {
+            'name': 'spreadsheet_directory',
+            'variable_type': StrPathV,
+            'file_types':'directory',
+            'default': template_directory,
+            'required': False
+        },
+        {
+            'name': 'output_directory',
+            'variable_type': StrPathV,
+            'file_types':'directory',
+            'default': r'Work\Structure Dictionary\Template XML Files',
+            'required': False
+        },
+        {
+            'name': 'structures_file',
+            'variable_type': PathV,
+            'file_types':'Excel Files',
+            'default': template_directory / 'Structure Lookup.xlsx',
+            'required': False
+        },
+        {
+            'name': 'structures_pickle',
+            'variable_type': PathV,
+            'file_types':'Pickle File',
+            'default': template_directory / 'StructureData.pkl',
+            'required': False
+        },
+        {
+            'name': 'template_list_file',
+            'variable_type': PathV,
+            'file_types':'Excel Files',
+            'default': template_directory / 'Template List.xlsx',
+            'required': False
+        },
+        {
+            'name': 'template_pickle',
+            'variable_type': PathV,
+            'file_types':'Pickle File',
+            'default': template_directory / 'TemplateData.pkl',
+            'required': False
+        },
+        {
+            'name': 'selected_templates',
+            'variable_type': StringV,
+            'default': '',
+            'required': False
+        }
+        ]
 
-module_lookup = {'tk':tk, 'ttk':ttk, 'fg':fg}
+
 widget_lookup = OrderedDict()
 variable_lookup = OrderedDict()
 command_lookup = OrderedDict()
-data_set = TestVariables()
+data_set = TemplateSelectionsSet()
 
 
-def update_defs(*arg_set, **kwarg_set)->ArgType:
+module_lookup = {'tk': tk, 'ttk': ttk,
+                 'fg': file_select_window,
+                 'tp': templates}
+
+
+def update_defs(*arg_set, resolve_objects=False, **kwarg_set)->ArgType:
     def value_lookup(value):
         value_str = str(value)
         value_name = value_str[3:]
@@ -74,31 +127,50 @@ def update_defs(*arg_set, **kwarg_set)->ArgType:
             use_value = command_lookup[value_name]
         else:
             use_value = value
-        final_value = module_lookup.get(str(use_value), use_value)
-        return final_value
+        return use_value
 
-    if arg_set:
+    def update_args(arg_set):
         updated_args = list()
         for value in arg_set:
             use_value = value_lookup(value)
             updated_args.append(use_value)
         return updated_args
 
-    if kwarg_set:
+    def update_kwargs(kwarg_set):
         updated_kwargs = dict()
         for key_word, value in kwarg_set.items():
             use_value = value_lookup(value)
             updated_kwargs[key_word] = use_value
         return updated_kwargs
 
+    def get_atribute(atr_str, obj=None):
+        if obj:
+            if '.' in atr_str:
+                sub_obj_str, new_atr_str = update_args(atr_str.split('.',1))
+                sub_obj = getattr(obj, sub_obj_str)
+                return get_atribute(new_atr_str, sub_obj)
+            return getattr(obj, atr_str)
+        if '.' in atr_str:
+            obj_str, new_atr_str = update_args(atr_str.split('.',1))
+            obj = module_lookup.get(obj_str)
+            return get_atribute(new_atr_str, obj)
+        return atr_str
+
+    if len(arg_set) > 1:
+        return update_args(arg_set)
+    elif arg_set:
+        if resolve_objects:
+            return get_atribute(arg_set[0])
+        else:
+            return update_args(arg_set)[0]
+    elif kwarg_set:
+        return update_kwargs(kwarg_set)
     return None
 
 
 def get_class(object_def: ET.Element, class_lookup: str)->ObjectDef:
-    object_type = object_def.findtext(class_lookup)
-    module, class_name = update_defs(*object_type.split('.',1))
-    object_class = getattr(module, class_name)
-    return object_class
+    object_str = object_def.findtext(class_lookup)
+    return update_defs(*arg_set, resolve_objects=True)
 
 
 def initialize_widgets(gui_definition: ET.Element):
@@ -184,6 +256,7 @@ def set_appearance(widget, widget_def):
     if appearance is not None:
         options.update(update_defs(**appearance.attrib))
         widget.configure(**options)
+    pass
 
 
 def grid_config(widget: tk.Widget, widget_def: ET.Element):
@@ -227,7 +300,7 @@ def set_window_geometry(window: tk.Wm, window_settings: ET.Element):
     def get_dimension(geometry, current_position, dimension_name):
         dimension_index = {'Width':0, 'Height': 1,
                            'Xposition': 2, 'Yposition': 3}
-        dimension = update_defs(geometry.findtext(dimension_name))[0]
+        dimension = update_defs(geometry.findtext(dimension_name))
         if not dimension:
             index = dimension_index[dimension_name]
             dimension = current_position[index]
@@ -275,7 +348,7 @@ def configure_widgets(gui_definition):
 
 
 
-xml_file = Path(r'.\TestGUI.xml')
+xml_file = Path(r'.\FileSelectGUI.xml')
 xml_tree = ET.parse(str(xml_file))
 gui_definition = xml_tree.getroot()
 root_element = gui_definition.find('RootWindow')
@@ -303,9 +376,6 @@ class GuiManager():
         self.update_list = OrderedDict()
         xml_tree = ET.parse(str(gui_definition))
         self.gui_definition = xml_tree.getroot()
-
-
-
 
 
     def configure_widget(self,widget_def):
@@ -798,6 +868,11 @@ def template_select_test():
     main_gui = build_top(root)
     #root.withdraw()
     #root.iconify()
+
+    # Add a window icon
+    ico_pict = r'.\icons\DocumentApprovalt.png'
+    root.iconphoto(root, tk.PhotoImage(file=ico_pict))
+
     main_gui.title('Template Selection')
     test_window = GuiManager(main_gui)
     test_window.add_widgets(widget_set, variable_set, command_set)

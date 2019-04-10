@@ -16,7 +16,6 @@ import tkinter.ttk as ttk
 from tkinter import messagebox
 
 
-
 import sys
 # utilities_path = r"C:\Users\Greg\OneDrive - Queen's University\Python\Projects\Utilities"
 templates_path = Path.cwd() / r'..\EclipseRelated\EclipseTemplates\ManageStructuresTemplates'
@@ -394,7 +393,7 @@ widget_placement = {
         )
     }
 
-column_set = pd.dataframe([
+column_set = [
     ['workbook_name', '', 'Structure Templates', 'tree', 95, 'w', 'TRUE', 234],
     ['TemplateID', 'TemplateID', 'Template', 'y', 11, 'w', 'TRUE', 102],
     ['TemplateCategory', 'TemplateCategory', 'Category', 'y', 16, '', 'TRUE', 42],
@@ -410,9 +409,9 @@ column_set = pd.dataframe([
     ['ApprovalStatus', 'ApprovalStatus', 'Approval Status', 'n', 42, '', 'TRUE', 60],
     ['Columns', 'Columns', 'Columns', 'n', 5, '', 'TRUE', 6],
     ['TemplateFileName', 'TemplateFileName', 'Template file name', 'n', 0, 'w', 'TRUE', 156]
-    ],
-    columns=['data_column', 'tree_column_id', 'header_text', 'show', 'minwidth', 'anchor', 'stretch', 'width']
-    )
+    ]
+columns=['data_column', 'tree_column_id', 'header_text', 'show', 'minwidth', 'anchor', 'stretch', 'width']
+
 
 def main():
     '''run current GUI test.
@@ -448,7 +447,7 @@ def main():
     template_image = tk.PhotoImage(file=template_icon)
 
 
-    test_data = TemplateData(select_columns=)
+    test_data = TemplateData(select_columns)
     active_templates = test_data.get_template_data()
     workbooks = test_data.get_workbook_data()
 
@@ -466,8 +465,7 @@ def main():
     header_options = ['text', 'image', 'anchor', 'command']
     for column_def in column_set:
         column = column_def.tree_column_id
-        options =
-        template_selector.column(column, **options)
+        options = template_selector.column(column, **options)
     tree_opts = column_def.pop('workbook_name')
     column_def['#0'] = tree_opts
     tree_opts = heading_def.pop('workbook_name')
