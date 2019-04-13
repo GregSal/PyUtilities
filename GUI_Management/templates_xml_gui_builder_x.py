@@ -36,8 +36,6 @@ from manage_template_lists import load_template_references
 VariableDef = namedtuple('VariableDef', ['name', 'variable_type', 'data_ref'])
 CommandDef = namedtuple('CommandDef', ['name', 'function', 'args', 'kwargs'])
 WidgetDef = namedtuple('WidgetDef', ['name', 'widget_type', 'parent'])
-LookupDict = Dict[str, Any]
-LookupDef = Tuple[str,LookupDict]
 StringValue = Union[tk.StringVar, str]
 Definition = Dict[str, Dict[str, Any]]
 Widgets = Union[List[WidgetDef], tk.Toplevel]
@@ -99,21 +97,16 @@ class TemplateSelectionsSet(CustomVariableSet):
         }
         ]
 
-class ReferenceTracker():
+class reference_tracker():
     token = '::'
     expr = '^[{id_set}]{token}(.*)$'
+    module_lookup = {'tk': tk, 'ttk': ttk,
+                     'fg': file_select_window,
+                     'tp': templates}
 
-    def __init__(self, identifier_list : List[str] = None,
-                 lookup_list: List[LookupDef] = None):
+    def __init__(self, *args, **kwargs):
         self.lookup_groups = dict()
         self.id_list = list()
-        self.rx = None
-        if identifier_list:
-            for id in identifier_list:
-                self.add_lookup_group(id)
-        if lookup_list:
-            for (id, lookup) in lookup_list:
-                self.add_lookup_group(id, lookup)
 
     def add_lookup_group(self, identifier: str, lookup: OrderedDict = None):
         id = identifier[0] # Single character identifiers only
@@ -143,45 +136,44 @@ class ReferenceTracker():
         return item_reference
 
     def lookup_references(self, ref_set):
-        if true_iterable(ref_set):
-            for value in ref_set:
-                updated_references = list()
-                updated_value = self.item_lookup(value)
-                updated_references.append(updated_value)
-        else:
-            updated_references = self.item_lookup(ref_set)
+        updated_references = list()
+        for value in ref_set:
+            updated_value = self.item_lookup(value)
+            updated_references.append(updated_value)
         return updated_references
-
-    def get_attribute(self, ref_str):
-        # Any failure to resolve a reference will return the original string.
-        if '.' in ref_str:
-            # Treat each . as indicating an attribute reference
-            ref_set = self.lookup_references(ref_str.split('.'))
-            obj_def = ref_set[0]
-            # if obj_def is a string, check if it a reference to a module level object
-            if isinstance(obj_def, str):
-                obj = getattr(self.__module__, obj_def, obj_def)
-            else:
-                obj = obj_def
-            # Recursively step through attribute layers
-            for atr_str in ref_set[1:]:
-                obj = getattr(obj, atr_str, ref_str)
+######
+# FIXME complete get_attribute
+#####
+    def get_attribute(self, atr_str, obj=None):
+        if '.' in atr_str:
+            ref_set = atr_str.split('.',1)
+            obj_str, sub_atr_str = self.lookup_references(ref_set)
         else:
-            obj = self.lookup_references(ref_str)
-        return obj
+            sub_atr_str = atr_str
+            obj_str = atr_str
+        if obj:
+            obj_atr = get_attribute(sub_obj_str, obj)
+        else:
+            getattr(self.__module__, obj_str, obj_str)
+            if '.' in atr_str:
+                sub_obj_str, new_atr_str = update_args(atr_str.split('.',1))
+
+                return get_atribute(new_atr_str, sub_obj)
+            return getattr(obj, atr_str)
+
+            obj = module_lookup.get(obj_str, obj_str)
+            return get_atribute(new_atr_str, obj)
+        return atr_str
 
 
 
 #####
 # FIXME build reference_tracker object
 ####
-module_lookup = ('M',
-                 {'tk': tk, 'ttk': ttk,
-                  'fg': file_select_window,
-                  'tp': templates}
-                 )
-identifier_list = ['W', 'V', 'C', 'D']
-lookup_list = [module_lookup]
+widget_lookup = OrderedDict()
+variable_lookup = OrderedDict()
+command_lookup = OrderedDict()
+data_set = TemplateSelectionsSet()
 
 
 

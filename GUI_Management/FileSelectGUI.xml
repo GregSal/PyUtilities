@@ -28,6 +28,7 @@
     </Variable>
   </VariableSet>
   <CommandSet>
+    <!--
     <Command name="TemplateXview">
       <function>ttk.Treeview.xview</function>
       <PositionalArgs>
@@ -56,6 +57,7 @@
       </PositionalArgs>
       <KeywordArgs />
     </Command>
+    -->
     <Command name="Exit">
       <function>W::root.destroy</function>
       <PositionalArgs />
@@ -64,7 +66,7 @@
     <Command name="ShowSelected">
       <function>fg.message_window</function>
       <PositionalArgs>
-        <Arg>W::root</Arg>
+         <!--<Arg>W::root</Arg>-->
       </PositionalArgs>
       <KeywordArgs window_text="Selected Templates"
                    variable="V::SelectedTemplates"/>
@@ -72,11 +74,8 @@
     <Command name="UpdateSelected">
       <function>tp.update_selection</function>
       <!-- In GUI_Construction -->
-      <PositionalArgs>
-        <Arg>W::root</Arg>
-      </PositionalArgs>
-      <KeywordArgs window_text="Selected Templates"
-                   variable="V::SelectedTemplates"/>
+      <PositionalArgs />
+      <KeywordArgs variable="V::SelectedTemplates"/>
     </Command>
     <Command name="BuildTemplates">
       <function>tp.build_xml</function>

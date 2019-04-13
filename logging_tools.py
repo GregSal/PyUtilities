@@ -4,17 +4,18 @@ Includes calling references.
 
 import logging
 
-def config_logger(level: str = 'DEBUG')->logging.Logger:
+def config_logger(level: str = 'DEBUG', prefix=__name__)->logging.Logger:
     '''Configure a basic logger.
     Creates a logger that prints to the standard output with the given level.
-    The name of the calling module is added to the messages.
     Arguments:
         level (optional, str) -- The level of the logger. One of:
-            DEBUG
+            DEBUG (Default)
             INFO
             WARNING
             ERROR
             CRITICAL
+        prefix (optional, str) -- The text to prefix all logger messages with.
+            Default is the logger module name.
     Returns:
         An std-out logger of a given level.
     Example:
@@ -25,7 +26,7 @@ def config_logger(level: str = 'DEBUG')->logging.Logger:
     # create logger
     format_str = '%(name)-20s - %(levelname)s: %(message)s'
     logging.basicConfig(format=format_str)
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger(prefix)
     # Set Level
     if level == 'DEBUG':
         logger.setLevel(logging.DEBUG)
@@ -45,10 +46,9 @@ def config_logger(level: str = 'DEBUG')->logging.Logger:
 
 
 # Log to a file
-def file_logger(file_name: str, level: str = 'DEBUG')->logging.Logger:
+def file_logger(file_name: str, level: str = 'DEBUG', prefix=__name__)->logging.Logger:
     '''Configure a logger that outputs to the specified file.
     Creates a logger that outputs to theb specified file with the given level.
-    The name of the calling module is added to the messages.
     Arguments:
         file_name (str) -- The name of the file to save logging messages to.
         level (optional, str) -- The level of the logger. One of:
@@ -57,6 +57,8 @@ def file_logger(file_name: str, level: str = 'DEBUG')->logging.Logger:
             WARNING
             ERROR
             CRITICAL
+        prefix (optional, str) -- The text to prefix all logger messages with.
+            Default is the logger module name.
     Returns:
         An std-out logger of a given level.
     Example:
@@ -70,7 +72,7 @@ def file_logger(file_name: str, level: str = 'DEBUG')->logging.Logger:
     save_mode = 'w'
     logging.basicConfig(format=msg_format, filename=file_name,
                                          filemode=save_mode, datefmt=date_fmt)
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger(prefix)
     if level == 'DEBUG':
         logger.setLevel(logging.DEBUG)
     elif level == 'INFO':
@@ -87,11 +89,10 @@ def file_logger(file_name: str, level: str = 'DEBUG')->logging.Logger:
         raise ValueError(msg)
     return logger
 
-def ch_logger(logger: logging.Logger = None, level: str = 'DEBUG')->logging.Logger:
+def ch_logger(logger: logging.Logger = None, level: str = 'DEBUG', prefix=__name__)->logging.Logger:
     '''Create a console handler to basic logger.
     Creates a logger if not supplied and adds a handler that prints to the
     console with the given level.
-    The name of the calling module and log level is added to the messages.
     Arguments:
         logger {optional, logging.Logger} -- the logger to add the handler to.
         level {optional, str} -- The level of the logger. One of:
@@ -100,6 +101,8 @@ def ch_logger(logger: logging.Logger = None, level: str = 'DEBUG')->logging.Logg
             WARNING
             ERROR
             CRITICAL
+        prefix (optional, str) -- The text to prefix all logger messages with.
+            Default is the logger module name.
     Returns:
         An std-out logger of a given level.
     Example:
@@ -111,7 +114,7 @@ def ch_logger(logger: logging.Logger = None, level: str = 'DEBUG')->logging.Logg
     '''
     if logger is None:
         # create logger
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger(prefix)
     # create console handler
     ch = logging.StreamHandler()
     # create formatter
@@ -138,7 +141,7 @@ def ch_logger(logger: logging.Logger = None, level: str = 'DEBUG')->logging.Logg
     return logger
 
 def log_dict(logger: logging.Logger, dict_var: dict, text: str = None):
-    '''Log var dict values as debug
+    '''Logger output dictionary values formatted
     '''
     var_list = ['{}:\t{}'.format(key,item) for key, item in dict_var.items()]
     var_str = '\n'.join(var_list)
