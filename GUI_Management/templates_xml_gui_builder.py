@@ -22,7 +22,7 @@ add_path('utilities_path')
 add_path('variable_path')
 add_path('templates_path')
 
-
+from object_reference_management import ReferenceTracker
 import file_select_window
 import file_utilities
 import templates
@@ -44,6 +44,10 @@ Widgets = Union[List[WidgetDef], tk.Toplevel]
 ObjectDef = Union[Callable,type]
 ArgType = TypeVar('ArgType', List[Any], Dict[str, Any])
 
+widget_lookup = OrderedDict()
+variable_lookup = OrderedDict()
+command_lookup = OrderedDict()
+data_set = OrderedDict()
 
 class TemplateSelectionsSet(CustomVariableSet):
     template_directory = set_base_dir(
@@ -99,82 +103,7 @@ class TemplateSelectionsSet(CustomVariableSet):
         }
         ]
 
-class ReferenceTracker():
-    token = '::'
-    expr = '^[{id_set}]{token}(.*)$'
 
-    def __init__(self, identifier_list : List[str] = None,
-                 lookup_list: List[LookupDef] = None):
-        self.lookup_groups = dict()
-        self.id_list = list()
-        self.rx = None
-        if identifier_list:
-            for id in identifier_list:
-                self.add_lookup_group(id)
-        if lookup_list:
-            for (id, lookup) in lookup_list:
-                self.add_lookup_group(id, lookup)
-
-    def add_lookup_group(self, identifier: str, lookup: OrderedDict = None):
-        id = identifier[0] # Single character identifiers only
-        if lookup is None:
-            lookup = OrderedDict()
-        self.lookup_groups[id] = lookup
-        self.id_list.append(id)
-        self.build_rx()
-
-    def build_rx(self):
-        specs = dict(token=self.token,
-                     id_set=''.join(self.id_list)
-                     )
-        full_expression = self.expr.format(specs)
-        self.rx = re.compile(expr)
-
-    def add_item(self, identifier: str, name: str, item: Any):
-        id = identifier[0]
-        self.lookup_groups[id][name] = item
-
-    def item_lookup(self, item_reference: str):
-        matched = self.rx.search(item_reference)
-        if matched:
-            group_id = matched.group(1)
-            item_name = matched.group(2)
-            return self.lookup_groups[group_id][item_name]
-        return item_reference
-
-    def lookup_references(self, ref_set):
-        if true_iterable(ref_set):
-            for value in ref_set:
-                updated_references = list()
-                updated_value = self.item_lookup(value)
-                updated_references.append(updated_value)
-        else:
-            updated_references = self.item_lookup(ref_set)
-        return updated_references
-
-    def get_attribute(self, ref_str):
-        # Any failure to resolve a reference will return the original string.
-        if '.' in ref_str:
-            # Treat each . as indicating an attribute reference
-            ref_set = self.lookup_references(ref_str.split('.'))
-            obj_def = ref_set[0]
-            # if obj_def is a string, check if it a reference to a module level object
-            if isinstance(obj_def, str):
-                obj = getattr(self.__module__, obj_def, obj_def)
-            else:
-                obj = obj_def
-            # Recursively step through attribute layers
-            for atr_str in ref_set[1:]:
-                obj = getattr(obj, atr_str, ref_str)
-        else:
-            obj = self.lookup_references(ref_str)
-        return obj
-
-
-
-#####
-# FIXME build reference_tracker object
-####
 module_lookup = ('M',
                  {'tk': tk, 'ttk': ttk,
                   'fg': file_select_window,
@@ -183,91 +112,27 @@ module_lookup = ('M',
 identifier_list = ['W', 'V', 'C', 'D']
 lookup_list = [module_lookup]
 
-
-
-
-########
-# FIXME convert to reference tracker
-#############
-def update_defs(reference_set, resolve_objects=False)->ArgType:
-    def get_atribute(atr_str, obj=None):
-        if obj:
-            if '.' in atr_str:
-                sub_obj_str, new_atr_str = update_args(atr_str.split('.',1))
-                sub_obj = getattr(obj, sub_obj_str)
-                return get_atribute(new_atr_str, sub_obj)
-            return getattr(obj, atr_str)
-        if '.' in atr_str:
-            obj_str, new_atr_str = update_args(atr_str.split('.',1))
-            obj = module_lookup.get(obj_str, obj_str)
-            return get_atribute(new_atr_str, obj)
-        return atr_str
-
-    def value_lookup(value):
-        value_str = str(value)
-        value_name = value_str[3:]
-        if value_str.startswith('W::'):
-            use_value = widget_lookup[value_name]
-        elif value_str.startswith('V::'):
-            use_value = variable_lookup[value_name]
-        elif value_str.startswith('D::'):
-            use_value = data_set[value_name]
-        elif value_str.startswith('C::'):
-            use_value = command_lookup[value_name]
-        else:
-            use_value = value
-        return use_value
-
-    def update_args(arg_set):
-        updated_args = list()
-        for value in arg_set:
-            use_value = value_lookup(value)
-            updated_args.append(use_value)
-        return updated_args
-
-    def update_kwargs(kwarg_set):
-        updated_kwargs = dict()
-        for key_word, value in kwarg_set.items():
-            use_value = value_lookup(value)
-            updated_kwargs[key_word] = use_value
-        return updated_kwargs
-
-    updated_kwargs = dict()
-    updated_args = list()
-    try:
-        updated_references = update_kwargs(reference_set)
-    except AttributeError:
-        updated_references = update_args(arg_set)
-    if true_iterable(arg_set) and len(arg_set) > 1:
-        return update_args(arg_set)
-    elif arg_set:
-        if resolve_objects:
-            return get_atribute(arg_set[0])
-        else:
-            return update_args(arg_set)[0]
-    elif kwarg_set:
-        return update_kwargs(kwarg_set)
-    return None
+references = ReferenceTracker(identifier_list, lookup_list)
 
 
 def get_class(object_def: ET.Element, class_lookup: str)->ObjectDef:
     object_str = object_def.findtext(class_lookup)
-    return update_defs(object_str, resolve_objects=True)
+    return references.get_attribute(object_str)
 
 
 def initialize_widgets(gui_definition: ET.Element):
     def method_name(gui_definition: ET.Element, name: str)->tk.Widget:
         parent_search = './/*[@name="{}"]../..'.format(name)
         parent_name = gui_definition.find(parent_search).attrib['name']
-        parent = widget_lookup[parent_name]
+        parent = references.lookup_item('Widget', parent_name)
         return parent
 
     for widget in gui_definition.findall(r'.//WidgetSet/*'):
         name = widget.attrib['name']
         parent = method_name(gui_definition, name)
-        widget_class = get_class(widget, 'widget_class')
+        widget_class = get_class(widget, 'widget_class') # TODO Do I need to have different names or each class?
         new_widget = widget_class(name=name, master=parent)
-        widget_lookup[name] = new_widget
+        references.add_item('Widget', name, new_widget)
 
 
 def initialize_variables(gui_definition: ET.Element):
@@ -279,31 +144,29 @@ def initialize_variables(gui_definition: ET.Element):
             except AttributeError:
                 initial_value = data_set[data_name]
             new_variable.set(initial_value)
-        pass
 
     for variable in gui_definition.findall('VariableSet/*'):
         name = variable.attrib['name']
         variable_class = get_class(variable, 'variable_class')
         new_variable = variable_class(name=name)
         set_initial_value(variable, new_variable)
-        variable_lookup[name] = new_variable
+        references.add_item('Variable', name, new_variable)
 
 
 def initialize_commands(gui_definition: ET.Element):
     def get_positional_arguments(command: ET.Element)->List[Any]:
         arg_set = [arg.text for arg in command.findall('PositionalArgs/*')]
-        args = update_defs(*arg_set)
+        args = references.resolve_arg_references(arg_set)
         if args is None:
             args = []
         return args
 
     def get_keyword_arguments(command)->Dict[str, Any]:
         keyword_args = command.find('KeywordArgs')
+        kwargs = None
         if keyword_args is not None:
-            kwargs = update_defs(**keyword_args.attrib)
-            if kwargs is None:
-                 kwargs = dict()
-        else:
+            kwargs = references.resolve_kwarg_references(keyword_args.attrib)
+        if not kwargs:
             kwargs = dict()
         return kwargs
 
@@ -320,14 +183,14 @@ def initialize_commands(gui_definition: ET.Element):
 def generic_configuration(widget: tk.Wm, widget_def: ET.Element):
     configuration = widget_def.find('Configure')
     if configuration is not None:
-        options = dict()
-        options.update(update_defs(**configuration.attrib))
-        widget.configure(**options)
+        options = references.resolve_kwarg_references(configuration.attrib)
+        if options:
+            widget.configure(**options)
         for config_def in configuration.findall('Set'):
             method_name = str(config_def.text)
             method = getattr(widget, method_name)
             options = dict()
-            options.update(update_defs(**config_def.attrib))
+            options.update(references.resolve_kwarg_references(config_def.attrib))
             method(**options)
     pass
 
@@ -336,20 +199,19 @@ def set_appearance(widget, widget_def):
     options = dict()
     appearance = widget_def.find('Appearance')
     if appearance is not None:
-        options.update(update_defs(**appearance.attrib))
+        options.update(references.resolve_kwarg_references(appearance.attrib))
         widget.configure(**options)
-    pass
 
 
 def grid_config(widget: tk.Widget, widget_def: ET.Element):
     grid_configure_def = widget_def.find('GridConfigure')
     if grid_configure_def is not None:
         for column_setting in grid_configure_def.findall('ColumnConfigure'):
-            column_options = update_defs(**column_setting.attrib)
+            column_options = references.resolve_kwarg_references(column_setting.attrib)
             column_index = int(column_options.pop('column'))
             widget.columnconfigure(column_index, column_options)
         for row_setting in grid_configure_def.findall('RowConfigure'):
-            row_options = update_defs(**row_setting.attrib)
+            row_options = references.resolve_kwarg_references(row_setting.attrib)
             row_index = row_options.pop('row')
             widget.rowconfigure(row_index, row_options)
     pass
@@ -361,10 +223,10 @@ def set_widget_geometry(widget: tk.Widget, widget_settings: ET.Element):
         options = dict()
         padding = geometry.find('Padding')
         if padding is not None:
-            options.update(update_defs(**padding.attrib))
+            options.update(references.resolve_kwarg_references(padding.attrib))
         placement = geometry.find('Placement/*')
         if placement is not None:
-            options.update(update_defs(**placement.attrib))
+            options.update(references.resolve_kwarg_references(placement.attrib))
             if 'Grid' in placement.tag:
                 widget.grid(**options)
             elif 'Pack' in placement.tag:
@@ -382,7 +244,7 @@ def set_window_geometry(window: tk.Wm, window_settings: ET.Element):
     def get_dimension(geometry, current_position, dimension_name):
         dimension_index = {'Width':0, 'Height': 1,
                            'Xposition': 2, 'Yposition': 3}
-        dimension = update_defs(geometry.findtext(dimension_name))
+        dimension = match_reference(geometry.findtext(dimension_name))
         if not dimension:
             index = dimension_index[dimension_name]
             dimension = current_position[index]
@@ -420,7 +282,7 @@ def configure_window(window: tk.Wm, window_def: ET.Element):
 def configure_widgets(gui_definition):
     for widget_def in gui_definition.findall(r'.//WidgetSet/*'):
         name = widget_def.attrib['name']
-        widget = widget_lookup[name]
+        widget = references.lookup_item('Widget', name)
         widget_settings = widget_def.find('Settings')
         if widget_settings is not None:
             set_appearance(widget, widget_settings)
@@ -435,17 +297,15 @@ xml_tree = ET.parse(str(xml_file))
 gui_definition = xml_tree.getroot()
 root_element = gui_definition.find('RootWindow')
 root = tk.Tk()
-widget_lookup['root'] = root
-
+references.add_item('W', 'root', root)
 initialize_widgets(gui_definition)
 initialize_variables(gui_definition)
 initialize_commands(gui_definition)
 
-root = widget_lookup['root']
+root = lookup_item(self, 'W', 'root')
+
 configure_window(root, root_element)
 configure_widgets(gui_definition)
-
-root = widget_lookup['root']
 root.mainloop()
 
 
