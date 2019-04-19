@@ -225,14 +225,14 @@ widget_placement = {
     }
 
 data_files = ['TemplateID', 'TemplateCategory', 'TreatmentSite',
-                   'workbook_name', 'sheet_name', 'modification_date',
-                   'Number_of_Structures', 'Description', 'Diagnosis',
-                   'Author', 'Columns', 'TemplateFileName', 'Status',
-                   'TemplateType', 'ApprovalStatus']
+              'workbook_name', 'sheet_name', 'modification_date',
+              'Number_of_Structures', 'Description', 'Diagnosis',
+              'Author', 'Columns', 'TemplateFileName', 'Status',
+              'TemplateType', 'ApprovalStatus']
 
- default_show_fields = ['workbook_name', 'TemplateID', 'TemplateCategory',
-                           'TreatmentSite', 'modification_date',
-                           'Description', 'Status']
+default_show_fields = ['workbook_name', 'TemplateID', 'TemplateCategory',
+                       'TreatmentSite', 'modification_date', 'Description',
+                       'Status']
 
 vars = ['workbook_name', 'sheet_name', 'TemplateID', 'TemplateCategory',
         'TreatmentSite', 'modification_date', 'Diagnosis', 'Author',

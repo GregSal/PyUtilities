@@ -236,7 +236,7 @@ def set_widget_geometry(widget: tk.Widget, widget_settings: ET.Element):
 
 def set_window_geometry(window: tk.Wm, window_settings: ET.Element):
     def parsegeometry(geometry: str)->Tuple[int]:
-        m = re.match(r(\d+)x(\d+)([-+]\d+)([-+]\d+)', geometry)
+        m = re.match(r'(\d+)x(\d+)([-+]\d+)([-+]\d+)', geometry)
         if not m:
             raise ValueError("failed to parse geometry string")
         return map(int, m.groups())
