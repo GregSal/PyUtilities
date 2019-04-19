@@ -10,11 +10,11 @@ Classes
         Stores and resolves object references.
 
 '''
-from typing import Union, TypeVar, List, Dict, Tuple, Callable, Any
-from collections import OrderedDict
 import re
+from collections import OrderedDict
+from typing import Any, Callable, Dict, List, Tuple, TypeVar, Union
 
-from data_utilities import select_data, true_iterable
+from data_utilities import true_iterable
 
 LookupDict = Dict[str, Any]
 LookupDef = Tuple[str, LookupDict]
@@ -24,16 +24,16 @@ class ReferenceTracker():
     Class Attributes:
         token {str} -- The token used to indicate an object reference.
             (default: '::')
-        expr {str} -- A Regular expression template used to search for object
-            references. The expression contains two .format references:
+        ref_pattern {str} -- A Regular expression template used to search for
+            object references. The expression contains two .format references:
                 {token}: The token used to indicate an object reference.
                 {id_set}: A string containing the 1 character object group identifiers.
                 (default: '^[{id_set}]{token}(.*)$')
     '''
     token = '::'
-    expr = '^[{id_set}]{token}(.*)$'
+    ref_pattern = '^[{id_set}]{token}(.*)$'
 
-    def __init__(self, identifier_list : List[str] = None,
+    def __init__(self, identifier_list: List[str] = None,
                  lookup_list: List[LookupDef] = None):
         '''ReferenceTracker object creation.
 
@@ -43,34 +43,54 @@ class ReferenceTracker():
         '''
         self.lookup_groups = dict()
         self.id_list = list()
-        self.rx = None
+        self.ref_rx = None
         if identifier_list:
             for group_id in identifier_list:
                 self.add_lookup_group(group_id)
         if lookup_list:
             for (group_id, lookup) in lookup_list:
                 self.add_lookup_group(group_id, lookup)
-def add_lookup_group(self, identifier: str, lookup: OrderedDict = None):
-        id = identifier[0] # Single character identifiers only
+
+    def add_lookup_group(self, identifier: str, lookup: LookupDict = None):
+        '''Create a new lookup group and assign an identifier.
+
+        Arguments:
+            identifier {str} -- A single character used to identify the group.
+                Only the first character of the supplied string is uses as the
+                identifier.
+            lookup {LookupDict} -- A dictionary containing names and objects
+                for reference. (default: {None})
+        '''
+        group_id = identifier[0] # Single character identifiers only
         if lookup is None:
             lookup = OrderedDict()
-        self.lookup_groups[id] = lookup
-        self.id_list.append(id)
+        self.lookup_groups[group_id] = lookup
+        self.id_list.append(group_id)
         self.build_rx()
 
     def build_rx(self):
-        specs = dict(token=self.token,
-                     id_set=''.join(self.id_list)
-                     )
-        full_expression = self.expr.format(specs)
-        self.rx = re.compile(full_expression)
+        '''Compile a Regular expression search pattern to find references in a
+        string.
+        '''
+        specs = dict(token=self.token, id_set=''.join(self.id_list))
+        full_expression = self.ref_pattern.format(specs)
+        self.ref_rx = re.compile(full_expression)
 
     def add_item(self, identifier: str, name: str, item: Any):
-        id = identifier[0]
-        self.lookup_groups[id][name] = item
+        '''Add a new item for reference.
+
+        Arguments:
+            identifier {str} -- A single character used to identify the
+                reference group. Only the first character of the supplied
+                string is uses as the identifier.
+            name {str} -- Ther name used to reference the group item.
+            item {Any} -- The object to be referenced
+        '''
+        group_id = identifier[0]
+        self.lookup_groups[group_id][name] = item
 
     def match_reference(self, item_reference: str):
-        matched = self.rx.search(item_reference)
+        matched = self.ref_rx.search(item_reference)
         if matched:
             group_id = matched.group(1)
             item_name = matched.group(2)
@@ -138,7 +158,7 @@ def main():
     def test_method():
         print('this is test_method')
 
-    class test_object():
+    class TestObject():
         def __init__(self):
             self.atr1 = 'this is atr1'
             self.atr2 = 'This is atr2'
@@ -147,7 +167,7 @@ def main():
     test_lookup = ('M', {'tm': TestModuleClass})
     identifier_list = ['A', 'B']
     lookup_list = [test_lookup]
-    to1 = test_object()
+    to1 = TestObject()
     test_ref = ReferenceTracker(identifier_list, lookup_list)
     test_ref.add_lookup_group('New', {'T1': 'test1', 'T2': test_module_function})
     test_ref.add_item('A', 'I1', to1)
@@ -160,4 +180,3 @@ def main():
     fnc1()
 if __name__ == '__main__':
     main()
-

@@ -130,7 +130,7 @@ def initialize_widgets(gui_definition: ET.Element):
     for widget in gui_definition.findall(r'.//WidgetSet/*'):
         name = widget.attrib['name']
         parent = method_name(gui_definition, name)
-        widget_class = get_class(widget, 'widget_class') # TODO Do I need to have different names or each class?
+        widget_class = get_class(widget, 'widget_class')
         new_widget = widget_class(name=name, master=parent)
         references.add_item('Widget', name, new_widget)
 
@@ -236,7 +236,7 @@ def set_widget_geometry(widget: tk.Widget, widget_settings: ET.Element):
 
 def set_window_geometry(window: tk.Wm, window_settings: ET.Element):
     def parsegeometry(geometry: str)->Tuple[int]:
-        m = re.match("(\d+)x(\d+)([-+]\d+)([-+]\d+)", geometry)
+        m = re.match(r(\d+)x(\d+)([-+]\d+)([-+]\d+)', geometry)
         if not m:
             raise ValueError("failed to parse geometry string")
         return map(int, m.groups())
