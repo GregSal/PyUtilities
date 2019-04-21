@@ -62,6 +62,7 @@ class ReferenceTracker():
         if lookup_list:
             for (group_id, lookup) in lookup_list:
                 self.add_lookup_group(group_id, lookup)
+        pass
 
     def add_lookup_group(self, identifier: str, lookup: LookupDict = None):
         '''Create a new lookup group and assign an identifier.
@@ -101,6 +102,20 @@ class ReferenceTracker():
         group_id = identifier[0]
         self.lookup_groups[group_id][name] = item
 
+    def lookup_item(self, group_id: str, item_name: str)->Any:
+        '''Fetch an object reference.
+
+        Arguments:
+            group_id {str} -- A single character used to identify the
+                reference group. Only the first character of the supplied
+                string is uses as the identifier.
+            item_name {str} -- The reference name of the group item.
+
+        Returns:
+            {Any} -- The object referenced.
+        '''
+        return self.lookup_groups[group_id][item_name]
+
     def match_reference(self, item_reference: str)-> Any:
         '''Replace string references with object being referred to.
         If no valid reference is found return the original string.
@@ -115,22 +130,8 @@ class ReferenceTracker():
         if matched:
             group_id = matched.group(1)
             item_name = matched.group(2)
-            return self.lookup_groups[group_id][item_name]
+            return self.lookup_item(group_id, item_name)
         return item_reference
-
-    def lookup_item(self, group_id: str, item_name: str)->Any:
-        '''Fetch an object reference.
-
-        Arguments:
-            group_id {str} -- A single character used to identify the
-                reference group. Only the first character of the supplied
-                string is uses as the identifier.
-            item_name {str} -- The reference name of the group item.
-
-        Returns:
-            {Any} -- The object referenced.
-        '''
-        return self.lookup_groups[group_id][item_name]
 
     def resolve_arg_references(self, arg_set: ReferenceList)->ObjectList:
         '''Convert a list of reference strings to their corresponding objects.
@@ -169,6 +170,49 @@ class ReferenceTracker():
             updated_kwargs[key_word] = updated_value
         return updated_kwargs
 
+    def get_attribute(self, ref_str)->Any:
+        '''Convert a compound (dotted) reference into the specified attribute
+        of the object reference.
+
+        Arguments:
+            ref_str {str} -- A string containing an object references and
+                possibly a reference to an attribute of the object.
+
+        Returns:
+            {Any} -- The object attribute referenced or the input string.
+        '''
+        if '.' in ref_str:
+            # Treat each . as indicating an attribute reference
+            ref_set = self.resolve_arg_references(ref_str.split('.'))
+            obj_def = ref_set[0]
+            # if obj_def is a string, check if it a reference to a module level
+            # object.
+            if isinstance(obj_def, str):
+                obj = getattr(self.__module__, obj_def, obj_def)
+            else:
+                obj = obj_def
+            # Recursively step through attribute layers
+            for atr_str in ref_set[1:]:
+                obj = getattr(obj, atr_str, ref_str)
+        else:
+            obj = self.match_reference(ref_str)
+        return obj
+
+    def apply_method(self, ref_str)->Any:
+        '''Obtain the output of a compound (dotted) method '()' reference
+        applied to the specified object reference.
+
+        Arguments:
+            ref_str {str} -- A string containing an object references and
+                a reference to a method of the object.
+
+        Returns:
+            {Any} -- The output of the object method.
+        '''
+        # TODO Add method to call function reference
+        raise NotImplementedError
+
+
     def lookup_references(self, ref_set: ReferenceSet)->ObjectSet:
         '''Convert a one or more reference strings to their corresponding
             objects.  The return container type will match the input container
@@ -193,36 +237,8 @@ class ReferenceTracker():
             except AttributeError:
                 updated_references = self.resolve_arg_references(ref_set)
         else:
-            updated_references = self.match_reference(ref_set)
+            updated_references = self.get_attribute(ref_set)
         return updated_references
-
-    def get_attribute(self, ref_str)->Any:
-        '''Convert a compound (dotted) reference into the specified attribute
-        of the object reference.
-
-        Arguments:
-            ref_str {str} -- A string containing an object references and
-                possibly a reference to an attribute of the object.
-
-        Returns:
-            {Any} -- The object attribute referenced or the input string.
-        '''
-        if '.' in ref_str:
-            # Treat each . as indicating an attribute reference
-            ref_set = self.lookup_references(ref_str.split('.'))
-            obj_def = ref_set[0]
-            # if obj_def is a string, check if it a reference to a module level
-            # object.
-            if isinstance(obj_def, str):
-                obj = getattr(self.__module__, obj_def, obj_def)
-            else:
-                obj = obj_def
-            # Recursively step through attribute layers
-            for atr_str in ref_set[1:]:
-                obj = getattr(obj, atr_str, ref_str)
-        else:
-            obj = self.lookup_references(ref_str)
-        return obj
 
 
 def test_module_function():
@@ -252,7 +268,7 @@ def main():
     identifier_list = ['A', 'B']
     lookup_list = [test_lookup]
     to1 = TestObject()
-#%%
+     #%%
     test_ref = ReferenceTracker(identifier_list, lookup_list)
     test_ref.add_lookup_group('New', {'T1': 'test1',
                                       'T2': test_module_function})

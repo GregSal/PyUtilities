@@ -2,5 +2,9 @@
     "python.pythonPath": "C:\\ProgramData\\Anaconda3\\python.exe",
     "python.dataScience.sendSelectionToInteractiveWindow": true,
     "python.autoComplete.addBrackets": true,
-    "python.dataScience.allowLiveShare": false
+    "python.dataScience.allowLiveShare": false,
+    "python.unitTest.promptToConfigure": false,
+    "python.unitTest.pyTestEnabled": false,
+    "python.unitTest.unittestEnabled": false,
+    "python.unitTest.nosetestsEnabled": false
 }
