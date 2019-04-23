@@ -271,3 +271,20 @@ tmp
 .vs/*
 .vscode/*
 *.mypy_cache/*
+/GUI_Management/Old Code/tree_view.py
+/GUI_Management/Old Code/template_select_gui.py
+/GUI_Management/Old Code/templates_xml_gui_builder_x.py
+/GUI_Management/Old Code/templates_selector.py
+/GUI_Management/Old Code/templates.py
+/GUI_Management/Old Code/structure_set_parameters.py
+/GUI_Management/Old Code/structure_set_gui.py
+/GUI_Management/Old Code/SampleFile.xslt
+/GUI_Management/Old Code/resizable_top.py
+/GUI_Management/Old Code/ReportGUI.py
+/GUI_Management/Old Code/ModifyTemplate.py
+/GUI_Management/Old Code/GUI_Templates.py
+/GUI_Management/Old Code/gui_manager.py
+/GUI_Management/Old Code/GUI_Definitions.py
+/GUI_Management/Old Code/GUI_Construction.py
+/GUI_Management/Old Code/extract_structures.py
+/GUI_Management/Old Code/dir_gui_trial.py

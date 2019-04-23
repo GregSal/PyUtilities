@@ -18,8 +18,8 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as tkf
 from tkinter import messagebox
-from file_utilities import FileTypes, get_file_path
-from file_utilities import set_base_dir, PathInput
+from Utilities.file_utilities import FileTypes, get_file_path, make_full_path
+from Utilities.file_utilities import set_base_dir, PathInput
 
 FileTypeSelection = Union[List[str], FileTypes]
 StringValue = Union[tk.StringVar, str]
@@ -45,7 +45,7 @@ class SelectFile():
         initialdir: {optional, PathInput} -- The initial path, possibly
             including a default file name, for the file selection.
             Default is the path returned by set_base_dir().
-	    master: {tk.Tk} -- The logical parent of the file dialog. The file
+        master: {tk.Tk} -- The logical parent of the file dialog. The file
             dialog is displayed on top of its parent window.
     Directory Window:
         mustexist: {bool} -- Specifies whether the user may specify
@@ -72,7 +72,7 @@ class SelectFile():
             dialog be presented to the user when the selected file already
             exists. A false value ignores existing files. Default is False.
     Open File Selection Window
-	    multiple: {bool} -- If True, Allows the user to choose multiple files
+        multiple: {bool} -- If True, Allows the user to choose multiple files
             from the Open dialog.
         '''
     all_dialogue_options = ('master',

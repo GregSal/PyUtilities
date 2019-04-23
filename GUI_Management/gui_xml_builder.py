@@ -31,7 +31,8 @@ import file_select_window as fg
 from file_utilities import set_base_dir, FileTypes, PathInput
 from data_utilities import select_data
 from spreadsheet_tools import load_reference_table
-from custom_variable_sets import StringV, CustomVariableSet
+from Utilities.CustomVariableSet.custom_variable_sets import StringV
+from Utilities.CustomVariableSet.custom_variable_sets import CustomVariableSet
 from manage_template_lists import load_template_references
 
 

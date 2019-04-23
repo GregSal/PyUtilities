@@ -22,15 +22,17 @@ add_path('utilities_path')
 add_path('variable_path')
 add_path('templates_path')
 
-from template_config import TemplateSelectionsSet
-from object_reference_management import ReferenceTracker, ReferenceSet, ObjectSet
-import file_select_window
-import file_utilities
-import templates
-from file_utilities import set_base_dir, FileTypes, PathInput
-from data_utilities import select_data, true_iterable
-from spreadsheet_tools import load_reference_table
-from custom_variable_sets import StringV, StrPathV, PathV, CustomVariableSet
+import Utilities.GUI_Management.file_select_window as fg
+from Utilities.GUI_Management.template_config import TemplateSelectionsSet
+from Utilities.GUI_Management.object_reference_management import ReferenceTracker
+from Utilities.GUI_Management.object_reference_management import ReferenceSet
+from Utilities.GUI_Management.object_reference_management import ObjectSet
+from Utilities.file_utilities import set_base_dir, FileTypes, PathInput
+from Utilities.data_utilities import select_data, true_iterable
+from Utilities.spreadsheet_tools import load_reference_table
+from Utilities.CustomVariableSet.custom_variable_sets import StringV
+from Utilities.CustomVariableSet.custom_variable_sets import StrPathV, PathV
+from Utilities.CustomVariableSet.custom_variable_sets import CustomVariableSet
 from manage_template_lists import load_template_references
 
 
@@ -42,17 +44,24 @@ ArgType = TypeVar('ArgType', List[Any], Dict[str, Any])
 
 
 class GuiManager():
-    identifier_list = ['Widget', 'Variable', 'Command', 'Xecute']
-    data_set = TemplateSelectionsSet()
-    module_lookup = [('M', {'tk': tk, 'ttk': ttk})]
+    identifier_list = ['Widget', 'Variable', 'Command']
+    variable_definitions = [{'name': 'test_string',
+                             'variable_type': StringV,
+                             'default': 'Hi There!'
+                             }
+                            ]
+    data_set = TemplateSelectionsSet(variable_definitions)
+    lookup_list = [('Tkinter', {'tk': tk, 'ttk': ttk, 'fg': fg})]
 
-    def __init_(self, data_set: CustomVariableSet, xml_file: Path):
-        data_set = TemplateSelectionsSet()
-        self.reference = ReferenceTracker(self.identifier_list, self.lookup_list)
-        self.reference.add_lookup_group('D', data_set)
+    def __init__(self, data_set: CustomVariableSet, xml_file: Path):
+        self.reference = ReferenceTracker(self.identifier_list,
+                                          self.lookup_list)
+        self.reference.add_lookup_group('Data', data_set)
+        self.reference.add_lookup_group('Globals', globals())
         self.definition = self.load_xml(xml_file)
         self.make_root()
         self.initialize_variables()
+        self.initialize_windows()
         self.initialize_widgets()
         self.initialize_commands()
         root_widget = self.definition.find('RootWindow')
@@ -62,7 +71,7 @@ class GuiManager():
 
     def load_xml(self, xml_file: Path):
         xml_tree = ET.parse(str(xml_file))
-        return xml_tree.getroot
+        return xml_tree.getroot()
 
     def make_root(self):
         root = tk.Tk()
@@ -135,7 +144,7 @@ class GuiManager():
         return parent
 
     def initialize_variables(self):
-        def get_initial_value(variable: ET.Elemente)->Any:
+        def get_initial_value(variable: ET.Element)->Any:
             data_name = variable.findtext('data_reference')
             if data_name is not None:
                 data_item = self.lookup_item('D', data_name)
@@ -155,7 +164,7 @@ class GuiManager():
             self.add_reference('Variable', name, new_variable)
 
     def initialize_windows(self):
-        for window_def in self.definition.findall(r'.//Window/*'):
+        for window_def in self.definition.findall(r'.//WindowSet/*'):
             name = window_def.attrib['name']
             parent = self.get_parent(name)
             new_window = tk.Toplevel(name=name, master=parent)
@@ -165,7 +174,7 @@ class GuiManager():
         for widget_def in self.definition.findall(r'.//WidgetSet/*'):
             name = widget_def.attrib['name']
             parent = self.get_parent(name)
-            widget_class = get_class(widget_def, 'widget_class')
+            widget_class = self.get_class(widget_def, 'widget_class')
             new_widget = widget_class(name=name, master=parent)
             self.add_reference('Widget', name, new_widget)
 
@@ -327,14 +336,20 @@ class GuiManager():
             self.configure_item(widget, widget_settings)
 
 
+
+
+
+
+
 # Done To Here
 
 
 
 
-gui_def_file = Path(r'.\FileSelectGUI.xml')
+#gui_def_file = Path(r'.\FileSelectGUI.xml')
 gui_def_file = Path(r'.\TestGUI.xml')
-gui = GuiManager(gui_def_file)
+data_set = TemplateSelectionsSet()
+gui = GuiManager(data_set, gui_def_file)
 gui.execute()
 
 
@@ -355,25 +370,6 @@ def update_selection(event, variable: StringValue):
 def print_select(event):
         selected = str(event.widget.focus())
         messagebox.showinfo('Selected File', selected)
-
-
-def file_select(event):
-        selected_file = event.widget.focus()
-        file_templates = event.widget.get_children(item=selected_file)
-        select_list = event.widget.selection()
-        a = (template in select_list for template in file_templates)
-        select_str = '\n'.join([str(item) for item in file_templates])
-        heading = '{} Selected:'.format(str(selected_file))
-        #messagebox.showinfo(heading, select_str)
-        if all(a):
-            event.widget.selection_remove(*file_templates)
-            event.widget.item(selected_file, open=True)
-            #messagebox.showinfo(heading, select_str)
-        else:
-            event.widget.selection_add(*file_templates)
-            event.widget.item(selected_file, open=True)
-            #messagebox.showinfo(heading, select_str)
-        #
 
 
 def insert_template_items(template_selector, workbooks, show_vars):
@@ -398,338 +394,20 @@ def insert_template_items(template_selector, workbooks, show_vars):
             template_ref[name] = id
 
 
-def file_select_test():
-    '''Test entry in top level window.
-    '''
-    projects_path = set_base_dir(sub_dir=r'Python\Projects')
-    test_file_path = projects_path / r"Utilities\Testing\Test Data\Test table.xlsx"
-    path_data = FileSelectionSet(template_file=test_file_path)
-    variable_set = [
-        VariableDef('template_filename', tk.StringVar, 'template_file'),
-        VariableDef('template_dir', tk.StringVar, 'spreadsheet_directory')
-        ]
-    widget_set = [
-        WidgetDef('fle_selector_group', ttk.Frame, 'top'),
-        WidgetDef('template_select', FileSelectGUI, 'fle_selector_group'),
-        WidgetDef('input_dir_select', FileSelectGUI, 'fle_selector_group'),
-        WidgetDef('exit_button', ttk.Button, 'fle_selector_group'),
-        WidgetDef('refresh_template_list', ttk.Button, 'fle_selector_group')
-        ]
-    command_set = [
-        CommandDef('Exit',  tk.Tk.destroy, ('W::top',),{}),
-        CommandDef('Show_File', message_window, (), {
-            'window_text': 'File String',
-            'variable': 'V::template_filename',
-            'parent_window': 'W::fle_selector_group'
-            })
-        ]
-    widget_definitions = {
-        'template_select': dict(
-            text='Test Template File Selection',
-            title='Select File',
-            path_variable='V::template_filename',
-            type_selection=FileTypes('Excel Files'),
-            starting_path=Path.cwd(),
-            action='open',
-            button_text='Browse'
-            ),
-        'input_dir_select': dict(
-            text='Test Directory Selection',
-            title='Select Directory',
-            path_variable='V::template_dir',
-            type_selection=FileTypes('directory'),
-            starting_path=Path.cwd(),
-            action='open',
-            button_text='Browse'
-            ),
-        'exit_button': dict(
-            text='Exit',
-            command='C::Exit'
-            ),
-        'refresh_template_list': dict(
-            text='Refresh Template List',
-            command='C::Show_File'
-            )
-        }
-    widget_appearance = {
-        'template_select': dict(
-            borderwidth=10,
-            relief='groove',
-            entry_cursor='xterm',
-            entry_justify='left',
-            entry_width=115,
-            button_width=10
-            ),
-        'input_dir_select': dict(
-            borderwidth=10,
-            relief='groove',
-            entry_cursor='xterm',
-            entry_justify='left',
-            entry_width=115,
-            button_width=10
-            ),
-        'exit_button': dict(
-            width=26
-            ),
-        'refresh_template_list': dict(
-            width=26
-            )
-        }
-    widget_placement = {
-       'fle_selector_group': dict(
-            layout_method='grid',
-            padx=5, pady=5,
-            column=0, row=0, sticky='nsew'
-            ),
-        'template_select': dict(
-            layout_method='grid',
-            padx=5, pady=5,
-            column=0, row=0, sticky='nsew'
-            ),
-        'input_dir_select': dict(
-            layout_method='grid',
-            padx=5, pady=5,
-            column=0, row=1, sticky='nsew'
-            ),
-        'refresh_template_list': dict(
-            layout_method='grid',
-            padx=5, pady=5,
-            column=1, row=0
-            ),
-        'exit_button': dict(
-            layout_method='grid',
-            padx=5, pady=5,
-            column=1, row=1
-            )
-        }
-
-    root = make_root()
-    main_gui = build_top(root)
-    fle_selector_group=ttk.Frame(master=main_gui)
-    test_window = GuiManager(main_gui,  data_set=path_data)
-    test_window.add_widgets(widget_set, variable_set, command_set)
-    test_window.define_widgets(widget_definitions, widget_appearance)
-    test_window.construct_gui(widget_placement)
-    show_message(button_parent=root, parent_window=main_gui,
-                 button_text='show file string', window_text='File String',
-                 variable=test_window.variable_lookup['template_filename'])
-    root.iconify()
-    #root.withdraw()
-    root.mainloop()
-
-
-def template_select_test():
-    '''Test entry in top level window.
-    '''
-    widget_set = [
-        WidgetDef('template_selector_group', ttk.Frame, 'top'),
-        WidgetDef('template_selector', ttk.Treeview, 'template_selector_group'),
-        WidgetDef('selector_scrollbar_h', ttk.Scrollbar, 'template_selector_group'),
-        WidgetDef('selector_scrollbar_v', ttk.Scrollbar, 'template_selector_group'),
-        WidgetDef('selection_button', ttk.Button, 'top')
-        ]
-    variable_set = [
-        VariableDef('template_filename', tk.StringVar, None),
-        VariableDef('template_dir', tk.StringVar, None),
-        VariableDef('template_selection', tk.StringVar, None)
-        ]
-    command_set = [
-        CommandDef('Exit',  tk.Tk.destroy, ('W::top',),{}),
-        CommandDef('Template xview', ttk.Treeview.xview,
-                   ('W::template_selector',), {}),
-        CommandDef('Template yview', ttk.Treeview.yview,
-                   ('W::template_selector',), {}),
-        CommandDef('Template H Scroll', ttk.Scrollbar.set,
-                   ('W::selector_scrollbar_h',), {}),
-        CommandDef('Template V Scroll', ttk.Scrollbar.set,
-                   ('W::selector_scrollbar_v',), {}),
-        CommandDef('Show_File', message_window, (),
-                   {'window_text': 'File String',
-                    'variable': 'V::template_filename',
-                    'parent_window': 'W::template_selector_group'
-                    }),
-        CommandDef('Show_Selected', message_window, (),
-                   {'window_text': 'Selected Templates',
-                    'variable': 'V::template_selection',
-                    'parent_window': 'W::template_selector_group'
-                    }),
-        CommandDef('UpdateSelected', update_selection, (),
-                   {'variable': 'V::template_selection'})
-        ]
-    widget_definitions = {
-        'selector_scrollbar_h': dict(
-            orient='horizontal',
-            command='C::Template xview'
-            ),
-        'selector_scrollbar_v': dict(
-            orient='vertical',
-            command='C::Template yview'
-            ),
-        'template_selector': dict(
-            xscrollcommand='C::Template H Scroll',
-            yscrollcommand='C::Template V Scroll'
-            ),
-        'selection_button': dict(
-            text='Show Selected',
-            command='C::Show_Selected'
-            )
-        }
-
-    widget_appearance = {
-        'template_selector_group': dict(
-            borderwidth=10,
-            relief='groove',
-            ),
-        'selection_button': dict(
-            width=26
-            )
-        }
-
-    widget_placement = {
-        'template_selector_group': dict(
-            layout_method='grid',
-            padx=0, pady=0,
-            column=0, row=0, sticky='nsew'
-            ),
-        'template_selector': dict(
-            layout_method='grid',
-            padx=5, pady=5,
-            column=0, row=0, sticky='nsew'
-            ),
-        'selector_scrollbar_h': dict(
-            layout_method='grid',
-            padx=0, pady=0,
-            column=0, row=1, sticky='ew'
-            ),
-        'selector_scrollbar_v': dict(
-            layout_method='grid',
-            padx=0, pady=0,
-            column=1, row=0, sticky='ns'
-            ),
-        'selection_button': dict(
-            layout_method='grid',
-            padx=10, pady=10,
-            column=0, row=2
-            )
-        }
-
-
-    root = make_root()
-    main_gui = build_top(root)
-    #root.withdraw()
-    #root.iconify()
-
-    # Add a window icon
-    ico_pict = r'.\icons\DocumentApprovalt.png'
-    root.iconphoto(root, tk.PhotoImage(file=ico_pict))
-
-    main_gui.title('Template Selection')
-    test_window = GuiManager(main_gui)
-    test_window.add_widgets(widget_set, variable_set, command_set)
-    test_window.define_widgets(widget_definitions, widget_appearance)
-
-    template_selector_group = test_window.widget_lookup['template_selector_group']
-    template_selector_group.columnconfigure(0, weight=1)
-    template_selector_group.rowconfigure(0, weight=1)
-
-    style = ttk.Style()
-    style.theme_use('vista')
-    normal_font = tkFont.Font(family='Calibri', size=11, weight='normal')
-    button_font = tkFont.Font(family='Calibri', size=12, weight='bold')
-    title_font = tkFont.Font(family='Tacoma', size=36, weight='bold')
-    style.configure('TButton', font=button_font)
-    style.configure('Treeview', font=normal_font)
-
-    projects_path = set_base_dir(sub_dir=r'Python\Projects')
-    icon_folder = r'EclipseRelated\EclipseTemplates\ManageStructuresTemplates\icons'
-    icon_path = projects_path / icon_folder
-    file_icon = icon_path / 'Box2.png'
-    template_icon = icon_path / 'Blueprint2.png'
-    file_image = tk.PhotoImage(file=file_icon)
-    template_image = tk.PhotoImage(file=template_icon)
-
-
-    test_data = TemplateData()
-    active_templates = test_data.get_template_data()
-    workbooks = test_data.get_workbook_data()
-    vars = ['workbook_name', 'sheet_name', 'TemplateID', 'TemplateCategory',
-            'TreatmentSite', 'modification_date', 'Diagnosis', 'Author',
-            'template_file_name', 'Status']
-
-    columns = ['TemplateID', 'TemplateCategory', 'TreatmentSite', 'Diagnosis',
-               'modification_date', 'Author', 'Status',
-               'Number_of_Structures', 'sheet_name', 'Description',
-               'TemplateType', 'ApprovalStatus', 'Columns',
-               'template_file_name']
-    displaycolumns = ['TemplateID', 'TemplateCategory', 'TreatmentSite',
-                      'Diagnosis', 'modification_date', 'Status']
-
-    column_def = dict(
-        workbook_name = {'anchor': 'w', 'minwidth': 95, 'stretch':'TRUE', 'width': 234},
-        TemplateID = {'anchor': 'w', 'minwidth': 11, 'stretch':'TRUE', 'width': 102},
-        TemplateCategory = {'minwidth': 16, 'stretch':'TRUE', 'width': 42},
-        TreatmentSite = {'anchor': 'w', 'minwidth': 21, 'stretch':'TRUE', 'width': 102},
-        Diagnosis = {'anchor': 'w', 'minwidth': 74, 'stretch':'TRUE', 'width': 150},
-        modification_date = {'anchor': 'w', 'minwidth': 69, 'stretch':'TRUE', 'width': 96},
-        Author = {'minwidth': 21, 'stretch':'TRUE', 'width': 24},
-        Status = {'minwidth': 32, 'stretch':'TRUE', 'width': 48},
-        Number_of_Structures = {'minwidth': 5, 'stretch':'TRUE', 'width': 12},
-        sheet_name = {'anchor': 'w', 'minwidth': 11, 'stretch':'TRUE', 'width': 132},
-        Description = {'anchor': 'w', 'minwidth': 16, 'stretch':'TRUE', 'width': 1308},
-        TemplateType = {'minwidth': 28, 'stretch':'TRUE', 'width': 54},
-        ApprovalStatus = {'minwidth': 42, 'stretch':'TRUE', 'width': 60},
-        Columns = {'minwidth': 5, 'stretch':'TRUE', 'width': 6},
-        template_file_name = {'anchor': 'w', 'minwidth': 0, 'stretch':'TRUE', 'width': 156}
-        )
-    heading_def = dict(
-        workbook_name = { 'text': 'Structure Templates '},
-        sheet_name = { 'text': 'Worksheet '},
-        TemplateID = { 'text': 'Template '},
-        TemplateCategory = { 'text': 'Category '},
-        TreatmentSite = { 'text': 'Site '},
-        modification_date = { 'text': 'Modification Date '},
-        Diagnosis = { 'text': 'Diagnosis '},
-        Author = { 'text': 'Author '},
-        template_file_name = { 'text': 'Template file name '},
-        Status = { 'text': 'Status '},
-        Number_of_Structures = { 'text': '# Structures '},
-        Description = { 'text': 'Description '},
-        TemplateType = { 'text': 'Template Type '},
-        ApprovalStatus = { 'text': 'Approval Status '},
-        Columns = { 'text': 'Columns '}
-        )
-
-
-    #test_vars = ['workbook_name', 'TemplateID', 'TemplateCategory']
-    #test_show_vars = ['TemplateID', 'TemplateCategory']
-    template_selector = test_window.widget_lookup['template_selector']
-    template_selector['columns'] = columns
-    template_selector['displaycolumns'] = displaycolumns
-    tree_opts = column_def.pop('workbook_name')
-    column_def['#0'] = tree_opts
-    for column, options in column_def.items():
-        template_selector.column(column, **options)
-    tree_opts = heading_def.pop('workbook_name')
-    heading_def['#0'] = tree_opts
-    for column, options in heading_def.items():
-        template_selector.heading(column, **options)
-    insert_template_items(template_selector, workbooks, columns)
-    template_selector.tag_configure('File', foreground='blue',
-                                    background='light grey', image=file_image)
-    template_selector.tag_configure('Template', image=template_image)
-    template_selector.tag_bind('File', '<Double-ButtonRelease-1>', callback=file_select)  # the item clicked can be found via tree.focus()
-    template_update = test_window.command_lookup['UpdateSelected']
-    template_selector.bind('<<TreeviewSelect>>', template_update, add='+')
-
-    test_window.construct_gui(widget_placement)
-
-    show_message(button_parent=root, parent_window=main_gui,
-                 button_text='show file string', window_text='File String',
-                 variable=test_window.variable_lookup['template_filename'])
-    root.iconify()
-    #root.withdraw()
-    root.mainloop()
-
-
-#if __name__ == '__main__':
-#    main()
+def file_select(event):
+        selected_file = event.widget.focus()
+        file_templates = event.widget.get_children(item=selected_file)
+        select_list = event.widget.selection()
+        a = (template in select_list for template in file_templates)
+        select_str = '\n'.join([str(item) for item in file_templates])
+        heading = '{} Selected:'.format(str(selected_file))
+        #messagebox.showinfo(heading, select_str)
+        if all(a):
+            event.widget.selection_remove(*file_templates)
+            event.widget.item(selected_file, open=True)
+            #messagebox.showinfo(heading, select_str)
+        else:
+            event.widget.selection_add(*file_templates)
+            event.widget.item(selected_file, open=True)
+            #messagebox.showinfo(heading, select_str)
+        #

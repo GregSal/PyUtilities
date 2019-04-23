@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:include schemaLocation=".\Tkinter_GUI.xsd" />
+  <!--For object Reference:
+  T::{tk, ttk}.{widget name}
+  G::{global function or object}
+  V::{variable name}
+  W::{Widget or Window name}
+  C::{Command Name}
+  I::{Image name}-->
   <xs:element name="GuiDefinition">
     <xs:complexType>
       <xs:sequence>
@@ -30,17 +37,7 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
-        <xs:element minOccurs="1" maxOccurs="1" name="RootWindow">
-          <xs:complexType>
-            <xs:complexContent mixed="false">
-              <xs:extension base="WindowType">
-                <xs:sequence>
-                  <xs:element minOccurs="0" maxOccurs="unbounded" name="Window" type="WindowType" />
-                </xs:sequence>
-              </xs:extension>
-            </xs:complexContent>
-          </xs:complexType>
-        </xs:element>
+        <xs:element minOccurs="1" maxOccurs="1" name="RootWindow" type="WindowType" />
       </xs:sequence>
     </xs:complexType>
   </xs:element>
@@ -69,13 +66,23 @@
     </xs:sequence>
     <xs:attribute name="name" type="xs:string" use="required" />
   </xs:complexType>
+
+  <xs:element name="WindowSet">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" name="Window" type="WindowType" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
   <xs:element name="WidgetSet">
     <xs:complexType>
       <xs:choice minOccurs="1" maxOccurs="unbounded">
         <xs:element minOccurs="0" name="WidgetContainer" type="WidgetContainerType">
           <xs:annotation>
-            <xs:documentation xml:lang="EN">The container Widget is for widgets used to store other widgets.
-Examples are Frame, LabelFrame and Canvas</xs:documentation>
+            <xs:documentation xml:lang="EN">
+              The container Widget is for widgets used to store other widgets.
+              Examples are Frame, LabelFrame and Canvas
+            </xs:documentation>
           </xs:annotation>
         </xs:element>
         <xs:element minOccurs="0" name="Widget" type="WidgetType" />
@@ -87,6 +94,7 @@ Examples are Frame, LabelFrame and Canvas</xs:documentation>
     <xs:sequence>
       <xs:element minOccurs="0" name="Settings" type="WindowsSettingsType" />
       <xs:element minOccurs="0" maxOccurs="1" ref="Configure" />
+      <xs:element minOccurs="0" ref="WindowSet" />
       <xs:element minOccurs="0" ref="WidgetSet" />
     </xs:sequence>
     <xs:attribute name="name" type="xs:string" use="required" />

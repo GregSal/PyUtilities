@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{56be436a-57e4-4c95-a047-13875f1ad6fd}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>object_reference_management.py</StartupFile>
+    <StartupFile>templates_xml_gui_builder.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -43,28 +43,12 @@
     <Content Include="Tkinter_GUI.xsd" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="dir_gui_trial.py" />
-    <Compile Include="extract_structures.py" />
     <Compile Include="file_select_window.py" />
-    <Compile Include="GUI_Construction.py" />
-    <Compile Include="GUI_Definitions.py" />
-    <Compile Include="gui_manager.py" />
-    <Compile Include="GUI_Templates.py" />
-    <Compile Include="gui_xml_builder.py" />
-    <Compile Include="ModifyTemplate.py" />
     <Compile Include="object_reference_management.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ReportGUI.py" />
-    <Compile Include="resizable_top.py" />
-    <Compile Include="structure_set_gui.py" />
-    <Compile Include="structure_set_parameters.py" />
-    <Compile Include="templates.py" />
-    <Compile Include="templates_selector.py" />
     <Compile Include="templates_xml_gui_builder.py" />
     <Compile Include="template_config.py" />
-    <Compile Include="template_select_gui.py" />
-    <Compile Include="tree_view.py" />
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>

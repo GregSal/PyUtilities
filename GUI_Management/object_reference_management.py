@@ -14,7 +14,7 @@ import re
 from collections import OrderedDict
 from typing import Any, Callable, Dict, List, Tuple, TypeVar, Union
 
-from data_utilities import true_iterable
+from Utilities.data_utilities import true_iterable
 
 LookupDict = Dict[str, Any]
 LookupDef = Tuple[str, LookupDict]
@@ -188,7 +188,7 @@ class ReferenceTracker():
             # if obj_def is a string, check if it a reference to a module level
             # object.
             if isinstance(obj_def, str):
-                obj = getattr(self.__module__, obj_def, obj_def)
+                obj = self.lookup_item('G', obj_def)
             else:
                 obj = obj_def
             # Recursively step through attribute layers

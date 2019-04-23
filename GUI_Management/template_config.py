@@ -2,7 +2,7 @@
 Created on Feb 23 2019
 
 @author: Greg Salomons
-Configuration data for Structuire templates GUI
+Configuration data for Structure templates GUI
 '''
 
 # Set the path to the Utilities Package.
@@ -12,7 +12,7 @@ add_path('variable_path')
 
 from custom_variable_sets import CustomVariableSet
 from custom_variable_sets import PathV, StringV, StrPathV
-from file_utilities set_base_dir
+from file_utilities import set_base_dir
 
 
 class TemplateSelectionsSet(CustomVariableSet):
