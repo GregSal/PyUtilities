@@ -1,7 +1,7 @@
 import unittest
 import xlwings as xw
-from Tools.file_utilities import get_file_path
-from Tools.spreadsheet_tools import *
+from file_utilities import get_file_path
+from spreadsheet_tools import *
 
 TEST_DATA_PATH = r'Python\Projects\EclipseRelated\BeamDataTools'
 TEST_DATA_PATH += '\\Testing\\Test Data'

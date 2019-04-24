@@ -14,7 +14,7 @@ import re
 from collections import OrderedDict
 from typing import Any, Callable, Dict, List, Tuple, TypeVar, Union
 
-from Utilities.data_utilities import true_iterable
+from data_utilities import true_iterable
 
 LookupDict = Dict[str, Any]
 LookupDef = Tuple[str, LookupDict]
@@ -102,7 +102,7 @@ class ReferenceTracker():
         group_id = identifier[0]
         self.lookup_groups[group_id][name] = item
 
-    def lookup_item(self, group_id: str, item_name: str)->Any:
+    def lookup_item(self, identifier: str, item_name: str)->Any:
         '''Fetch an object reference.
 
         Arguments:
@@ -114,6 +114,7 @@ class ReferenceTracker():
         Returns:
             {Any} -- The object referenced.
         '''
+        group_id = identifier[0]
         return self.lookup_groups[group_id][item_name]
 
     def match_reference(self, item_reference: str)-> Any:

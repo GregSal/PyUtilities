@@ -1,6 +1,6 @@
-from Tools.spreadsheet_tools import *
-from Tools.electron_functions import *
-from Tools.data_processing import *
+from spreadsheet_tools import *
+from electron_functions import *
+from data_processing import *
 
 test_worksheet_info = dict(file_name='Profile Parameter analysis.xlsx',
                      sub_dir=r'Work\electrons',

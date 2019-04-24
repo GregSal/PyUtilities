@@ -10,8 +10,8 @@ from __init__ import add_path
 add_path('utilities_path')
 add_path('variable_path')
 
-from custom_variable_sets import CustomVariableSet
-from custom_variable_sets import PathV, StringV, StrPathV
+from CustomVariableSet.custom_variable_sets import CustomVariableSet
+from CustomVariableSet.custom_variable_sets import PathV, StringV, StrPathV
 from file_utilities import set_base_dir
 
 

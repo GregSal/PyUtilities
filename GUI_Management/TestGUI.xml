@@ -67,7 +67,6 @@
               <Geometry>
                 <Grid column="0"
                       row="3"/>
-
               </Geometry>
             </Settings>
           </Widget>
@@ -78,7 +77,6 @@
               <Geometry>
                 <Grid column="0"
                       row="0"/>
-
               </Geometry>
             </Settings>
           </Widget>
@@ -101,7 +99,6 @@
               <Geometry>
                 <Grid column="0"
                       row="1"/>
-
               </Geometry>
             </Settings>
           </Widget>

@@ -18,8 +18,8 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as tkf
 from tkinter import messagebox
-from Utilities.file_utilities import FileTypes, get_file_path, make_full_path
-from Utilities.file_utilities import set_base_dir, PathInput
+from file_utilities import FileTypes, get_file_path, make_full_path
+from file_utilities import set_base_dir, PathInput
 
 FileTypeSelection = Union[List[str], FileTypes]
 StringValue = Union[tk.StringVar, str]

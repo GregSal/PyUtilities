@@ -17,23 +17,21 @@ import tkinter.ttk as ttk
 from tkinter import messagebox
 
 # Set the path to the Utilities Package.
-from __init__ import add_path
-add_path('utilities_path')
-add_path('variable_path')
+from GUI_Management.__init__ import add_path
 add_path('templates_path')
 
-import Utilities.GUI_Management.file_select_window as fg
-from Utilities.GUI_Management.template_config import TemplateSelectionsSet
-from Utilities.GUI_Management.object_reference_management import ReferenceTracker
-from Utilities.GUI_Management.object_reference_management import ReferenceSet
-from Utilities.GUI_Management.object_reference_management import ObjectSet
-from Utilities.file_utilities import set_base_dir, FileTypes, PathInput
-from Utilities.data_utilities import select_data, true_iterable
-from Utilities.spreadsheet_tools import load_reference_table
-from Utilities.CustomVariableSet.custom_variable_sets import StringV
-from Utilities.CustomVariableSet.custom_variable_sets import StrPathV, PathV
-from Utilities.CustomVariableSet.custom_variable_sets import CustomVariableSet
-from manage_template_lists import load_template_references
+import GUI_Management.file_select_window as fg
+from GUI_Management.template_config import TemplateSelectionsSet
+from GUI_Management.object_reference_management import ReferenceTracker
+from GUI_Management.object_reference_management import ReferenceSet
+from GUI_Management.object_reference_management import ObjectSet
+from file_utilities import set_base_dir, FileTypes, PathInput
+from data_utilities import select_data, true_iterable
+from spreadsheet_tools import load_reference_table
+from CustomVariableSet.custom_variable_sets import StringV
+from CustomVariableSet.custom_variable_sets import StrPathV, PathV
+from CustomVariableSet.custom_variable_sets import CustomVariableSet
+from EclipseRelated.EclipseTemplates.ManageStructuresTemplates.manage_template_lists import load_template_references
 
 
 ObjectDef = Union[Callable,type]
@@ -44,7 +42,7 @@ ArgType = TypeVar('ArgType', List[Any], Dict[str, Any])
 
 
 class GuiManager():
-    identifier_list = ['Widget', 'Variable', 'Command']
+    identifier_list = ['Widget', 'Variable', 'Command', 'X']
     variable_definitions = [{'name': 'test_string',
                              'variable_type': StringV,
                              'default': 'Hi There!'
@@ -65,9 +63,10 @@ class GuiManager():
         self.initialize_widgets()
         self.initialize_commands()
         root_widget = self.definition.find('RootWindow')
-        configure_window(root, root_widget)
+        self.configure_window(root_widget)
         for window_def in self.definition.findall(r'.//Window'):
             self.configure_window(window_def)
+        self.configure_widgets()
 
     def load_xml(self, xml_file: Path):
         xml_tree = ET.parse(str(xml_file))
@@ -197,7 +196,7 @@ class GuiManager():
 
         for command in self.definition.findall('CommandSet/*'):
             name = command.attrib['name']
-            function = get_class(command, 'function')
+            function = self.get_class(command, 'function')
             args = get_positional_arguments(command)
             kwargs = get_keyword_arguments(command)
             command_callable = partial(function, *args, **kwargs)
@@ -235,11 +234,11 @@ class GuiManager():
             for column_setting in grid_def.findall('ColumnConfigure'):
                 column_options = self.resolve(column_setting.attrib)
                 column_index = int(column_options.pop('column'))
-                widget.columnconfigure(column_index, column_options)
+                tk_item.columnconfigure(column_index, column_options)
             for row_setting in grid_def.findall('RowConfigure'):
                 row_options = self.resolve(row_setting.attrib)
                 row_index = row_options.pop('row')
-                widget.rowconfigure(row_index, row_options)
+                tk_item.rowconfigure(row_index, row_options)
         pass
 
     def set_fullscreen(self, window: tk.Wm, settings: ET.Element):
@@ -261,12 +260,13 @@ class GuiManager():
         geometry_str = '{Width:d}x{Height:d}{Xposition:+d}{Yposition:+d}'
 
         current_size = geometry_reg.match(window.geometry())
+        dimensions = dict()
         for dim in geometry_list:
             dimension = geometry.findtext(dim)
             if dimension is not None:
-                dimensions[dim] = self.resolve(dimension)
+                dimensions[dim] = int(self.resolve(dimension))
             else:
-                dimensions[dim] = current_size.group(dim)
+                dimensions[dim] = int(current_size.group(dim))
         dimension_str = geometry_str.format(**dimensions)
         window.geometry(dimension_str)
 
@@ -280,19 +280,19 @@ class GuiManager():
                 stack_method(stack_window)
         pass
 
-    def set_window_geometry(self, window: tk.Wm, geometry: ET.Element):
-        geometry = window_settings.find('Geometry')
+    def set_window_geometry(self, window: tk.Wm, settings: ET.Element):
+        geometry = settings.find('Geometry')
         if geometry is not None:
-            self.set_window_dimensions(self, window, geometry)
-            self.stacking_adjustment(self, window, geometry)
+            self.set_window_dimensions(window, geometry)
+            self.stacking_adjustment(window, geometry)
         else:
-            self.set_fullscreen(window, geometry)
+            self.set_fullscreen(window, settings)
         pass
 
     def set_icon_state(self, window: tk.Wm, settings: ET.Element):
-        newstate = window_def.findtext(r'.//state')
+        newstate = settings.findtext(r'.//state')
         if newstate:
-            widget.state(newstate)
+            window.state(newstate)
         pass
 
     def configure_window(self, window_def):
@@ -310,30 +310,29 @@ class GuiManager():
         self.configure_item(window, window_def)
 
     def set_widget_geometry(self, widget: tk.Widget, settings: ET.Element):
+        options = dict()
         geometry = settings.find('Geometry')
-        if geometry is not None:
-            options = dict()
-            padding = geometry.find('Padding')
-            if padding is not None:
-                options.update(self.resolve(padding.attrib))
-            placement = geometry.find('./1')
-            options.update(self.resolve(placement.attrib))
-            if 'Grid' in placement.tag:
-                widget.grid(**options)
-            elif 'Pack' in placement.tag:
-                widget.pack(**options)
+        padding = geometry.find('Padding')
+        if padding is not None:
+            options.update(self.resolve(padding.attrib))
+        placement = geometry[0]
+        options.update(self.resolve(placement.attrib))
+        if 'Grid' in placement.tag:
+            widget.grid(**options)
+        elif 'Pack' in placement.tag:
+            widget.pack(**options)
         pass
 
     def configure_widgets(self):
         for widget_def in self.definition.findall(r'.//WidgetSet/*'):
             name = widget_def.attrib['name']
             widget = self.lookup_item('Widget', name)
+            self.configure_item(widget, widget_def)
             widget_settings = widget_def.find('Settings')
-            if widget_settings is not None:
-                self.set_appearance(widget, widget_settings)
-                self.grid_config(widget, widget_settings)
-                self.set_widget_geometry(widget, widget_settings)
-            self.configure_item(widget, widget_settings)
+            self.set_appearance(widget, widget_settings)
+            self.grid_config(widget, widget_settings)
+            self.set_widget_geometry(widget, widget_settings)
+
 
 
 
@@ -401,6 +400,7 @@ def file_select(event):
         a = (template in select_list for template in file_templates)
         select_str = '\n'.join([str(item) for item in file_templates])
         heading = '{} Selected:'.format(str(selected_file))
+        Print('') # wf
         #messagebox.showinfo(heading, select_str)
         if all(a):
             event.widget.selection_remove(*file_templates)
