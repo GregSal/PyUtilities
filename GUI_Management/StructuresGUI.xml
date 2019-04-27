@@ -214,11 +214,9 @@
                                    yscrollcommand="C::TemplateVScroll"/>
                         <Settings>
                             <Geometry>
-                                <Placement>
-                                    <GridPlacement column="0"
+                                    <Grid column="0"
                                                    row="0"
                                                    sticky="nsew"/>
-                                </Placement>
                                 <Padding ipadx="0"
                                          ipady="0"
                                          padx="5"

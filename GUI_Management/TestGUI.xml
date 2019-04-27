@@ -7,6 +7,14 @@
       <data_reference>test_string</data_reference>
     </Variable>
   </VariableSet>
+  <ImageSet>
+    <PhotoImage name="file_image"
+                file_path=".\icons\Box2.png"/>
+    <PhotoImage name="template_image"
+                file_path=".\icons\Blueprint2.png"/>
+    <PhotoImage name="DVH_image"
+                file_path=".\icons\DVH Black smaller.png"/>
+  </ImageSet>
   <CommandSet>
     <Command name="Exit">
       <function>W::root.destroy</function>
@@ -83,7 +91,9 @@
           <Widget name="text_button">
             <widget_class>T::ttk.Button</widget_class>
             <Configure text="Display"
-                       command="C::ShowText"/>
+                       command="C::ShowText"
+                       image="I::DVH_image"
+                       compound="left"/>
             <Settings>
               <Geometry>
                 <Grid column="1"

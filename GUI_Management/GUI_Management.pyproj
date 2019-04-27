@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{56be436a-57e4-4c95-a047-13875f1ad6fd}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>templates_xml_gui_builder.py</StartupFile>
+    <StartupFile>xml_gui_builder.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -34,20 +34,30 @@
     <Content Include="icons\Chart_Graph_Ascending.png" />
     <Content Include="icons\DocumentApproval.ico" />
     <Content Include="icons\DocumentApproval.png" />
+    <Content Include="icons\DVH Black smaller.png" />
+    <Content Include="icons\DVH Black.ico" />
+    <Content Include="icons\DVH Black.png" />
+    <Content Include="icons\DVH2.ico" />
     <Content Include="icons\Small-triangle-rep-green.png" />
     <Content Include="icons\Target.png" />
     <Content Include="icons\Triangle-Down2.png" />
     <Content Include="Options and Functions.xlsx" />
     <Content Include="StructuresGUI.xml" />
     <Content Include="TestGUI.xml" />
+    <Content Include="TestGUI_2.xml" />
+    <Content Include="TestGUI_3.xml" />
     <Content Include="Tkinter_GUI.xsd" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="file_select_window.py" />
+    <Compile Include="gui_methods.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="object_reference_management.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="templates_xml_gui_builder.py" />
+    <Compile Include="tree_view.py" />
+    <Compile Include="xml_gui_builder.py" />
     <Compile Include="template_config.py" />
     <Compile Include="__init__.py" />
   </ItemGroup>

@@ -97,7 +97,7 @@ class SelectFile():
         '''
         '''
         # Set defaults
-        for attr, value in self.default_attributes.items():
+        for attr, value in self.default_attributes.items():  # FIXME explicitly define the defaults in init
             self.__setattr__(attr, value)
         self.configure(**file_params)
 
@@ -278,7 +278,7 @@ class FileSelectGUI(ttk.LabelFrame):
         self.file_entry = ttk.Entry(master=self)
         self.browse_button = ttk.Button(text='Browse', master=self)
 
-    def config(self, **options):
+    def configure(self, **options):
         reduced_options = self.entry_config(**options)
         reduced_options = self.browse_window.configure(**reduced_options)
         reduced_options = self.button_config(**reduced_options)
@@ -319,15 +319,17 @@ class FileSelectGUI(ttk.LabelFrame):
         self.browse_button.configure(**browse_options)
         return unused_parameters
 
-    def build(self, **build_instructions):
+    def grid(self, **build_instructions):
         reduced_instructions = self.build_entry(**build_instructions)
         unused_parameters = self.build_button(**reduced_instructions)
         self.columnconfigure(0, weight=1)
-        layout_method = unused_parameters.pop('layout_method', None)
-        if 'pack' in layout_method:
-            self.pack(**unused_parameters)
-        else:
-            self.grid(**unused_parameters)
+        super().grid(**unused_parameters)
+
+    def pack(self, **build_instructions):
+        reduced_instructions = self.build_entry(**build_instructions)
+        unused_parameters = self.build_button(**reduced_instructions)
+        self.columnconfigure(0, weight=1)
+        super().pack(**unused_parameters)
 
     def build_entry(self, **build_instructions):
         option_prefix = 'entry_'
@@ -369,16 +371,6 @@ class FileSelectGUI(ttk.LabelFrame):
     def set(self, file_path: PathInput):
         return self.path_variable.set(str(file_path))
 
-
-def message_window(parent_window: tk.Widget, window_text: StringValue = '',
-                   variable: StringValue = 'Nothing to say'):
-    '''Display the sting message or variable content.'''
-    if isinstance(variable, tk.StringVar):
-        str_message = variable.get()
-    else:
-        str_message = str(variable)
-    messagebox.showinfo(title=window_text, message=variable.get(),
-                        parent=parent_window)
 
 def main():
     '''open test selection window.

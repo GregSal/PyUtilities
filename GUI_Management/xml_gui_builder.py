@@ -21,7 +21,8 @@ from GUI_Management.__init__ import add_path
 add_path('templates_path')
 
 import GUI_Management.file_select_window as fg
-from GUI_Management.template_config import TemplateSelectionsSet
+import GUI_Management.gui_methods as gm
+import GUI_Management.template_config as tp
 from GUI_Management.object_reference_management import ReferenceTracker
 from GUI_Management.object_reference_management import ReferenceSet
 from GUI_Management.object_reference_management import ObjectSet
@@ -31,7 +32,6 @@ from spreadsheet_tools import load_reference_table
 from CustomVariableSet.custom_variable_sets import StringV
 from CustomVariableSet.custom_variable_sets import StrPathV, PathV
 from CustomVariableSet.custom_variable_sets import CustomVariableSet
-from EclipseRelated.EclipseTemplates.ManageStructuresTemplates.manage_template_lists import load_template_references
 
 
 ObjectDef = Union[Callable,type]
@@ -42,13 +42,7 @@ ArgType = TypeVar('ArgType', List[Any], Dict[str, Any])
 
 
 class GuiManager():
-    identifier_list = ['Widget', 'Variable', 'Command', 'X']
-    variable_definitions = [{'name': 'test_string',
-                             'variable_type': StringV,
-                             'default': 'Hi There!'
-                             }
-                            ]
-    data_set = TemplateSelectionsSet(variable_definitions)
+    identifier_list = ['Widget', 'Variable', 'Image', 'Command', 'X']
     lookup_list = [('Tkinter', {'tk': tk, 'ttk': ttk, 'fg': fg})]
 
     def __init__(self, data_set: CustomVariableSet, xml_file: Path):
@@ -59,6 +53,7 @@ class GuiManager():
         self.definition = self.load_xml(xml_file)
         self.make_root()
         self.initialize_variables()
+        self.initialize_images()
         self.initialize_windows()
         self.initialize_widgets()
         self.initialize_commands()
@@ -161,6 +156,24 @@ class GuiManager():
             new_variable = variable_class(name=name)
             new_variable.set(get_initial_value(variable))
             self.add_reference('Variable', name, new_variable)
+
+    def initialize_images(self):
+        for image in self.definition.findall('ImageSet/*'):
+            name = image.attrib['name']
+            image_file = image.attrib['file_path']
+            image_type = image.tag
+            if 'PhotoImage' in image_type:
+                new_image = tk.PhotoImage(file=image_file)
+            elif 'BitmapImage' in image_type:
+                options = dict()
+                fg_colour = image.attrib.get('foreground')
+                if fg_colour:
+                    options['foreground'] = fg_colour
+                bg_colour = image.attrib.get('background')
+                if bg_colour:
+                    options['background'] = bg_colour
+                new_image = tk.BitmapImage(file=image_file, **options)
+            self.add_reference('Image', name, new_image)
 
     def initialize_windows(self):
         for window_def in self.definition.findall(r'.//WindowSet/*'):
@@ -275,7 +288,7 @@ class GuiManager():
         for stacking_element in stacking_group.iter():
             stacking_name = stacking_element.tag
             if hasattr(tk.Tk, stacking_name):
-                stack_method = getattr(tk.Tk, stacking_name)
+                stack_method = getattr(window, stacking_name)
                 stack_window = self.resolve(str(stacking_element.text))
                 stack_method(stack_window)
         pass
@@ -341,73 +354,38 @@ class GuiManager():
 
 
 # Done To Here
+def set_style():
+    style = ttk.Style()
+    style.theme_use('vista')
+    normal_font = tkFont.Font(family='Calibri', size=11, weight='normal')
+    button_font = tkFont.Font(family='Calibri', size=12, weight='bold')
+    title_font = tkFont.Font(family='Tacoma', size=36, weight='bold')
+    style.configure('TButton', font=button_font)
+    style.configure('Treeview', font=normal_font)
 
+def images():
+    projects_path = set_base_dir(sub_dir=r'Python\Projects')
+    icon_folder = r'EclipseRelated\EclipseTemplates\ManageStructuresTemplates\icons'
+    icon_path = projects_path / icon_folder
+    file_icon = icon_path / 'Box2.png'
+    template_icon = icon_path / 'Blueprint2.png'
+    file_image = tk.PhotoImage(file=file_icon)
+    template_image = tk.PhotoImage(file=template_icon)
 
 
 
 #gui_def_file = Path(r'.\FileSelectGUI.xml')
-gui_def_file = Path(r'.\TestGUI.xml')
-data_set = TemplateSelectionsSet()
+gui_def_file = Path(r'.\TestGUI_2.xml')
+variable_definitions = [{'name': 'test_string',
+                         'variable_type': StringV,
+                         'default': 'Hi There!'
+                         }
+                        ]
+data_set = tp.TemplateSelectionsSet(variable_definitions)
+
 gui = GuiManager(data_set, gui_def_file)
 gui.execute()
 
 
 
 
-def print_selection():
-        select_list = [str(item) for item in template_selector.selection()]
-        select_str = '\n'.join(select_list)
-        messagebox.showinfo('Selected Templates', select_str)
-
-
-def update_selection(event, variable: StringValue):
-        select_list = [str(item) for item in event.widget.selection()]
-        select_str = '\n'.join(select_list)
-        variable.set(select_str)
-
-
-def print_select(event):
-        selected = str(event.widget.focus())
-        messagebox.showinfo('Selected File', selected)
-
-
-def insert_template_items(template_selector, workbooks, show_vars):
-    '''Add the template items to the workbook.
-    '''
-    #top_level = template_selector.insert('', 0, text='Structure Templates')
-    template_ref = dict()
-    for workbook, sheets in workbooks:
-        workbook_str = workbook.split('.', 1)[0]
-        file_ref = template_selector.insert('', 'end', workbook_str,
-                                            text=workbook_str,
-                                            open=True,
-                                            tags=('File',))
-        template_ref[workbook_str] = file_ref
-        for template_data in sheets.itertuples():
-            name = template_data.TemplateID
-            template_values = [getattr(template_data, item)
-                               for item in show_vars]
-            id = template_selector.insert(file_ref, 'end', name, text=name,
-                                          values=template_values,
-                                          tags=('Template',))
-            template_ref[name] = id
-
-
-def file_select(event):
-        selected_file = event.widget.focus()
-        file_templates = event.widget.get_children(item=selected_file)
-        select_list = event.widget.selection()
-        a = (template in select_list for template in file_templates)
-        select_str = '\n'.join([str(item) for item in file_templates])
-        heading = '{} Selected:'.format(str(selected_file))
-        Print('') # wf
-        #messagebox.showinfo(heading, select_str)
-        if all(a):
-            event.widget.selection_remove(*file_templates)
-            event.widget.item(selected_file, open=True)
-            #messagebox.showinfo(heading, select_str)
-        else:
-            event.widget.selection_add(*file_templates)
-            event.widget.item(selected_file, open=True)
-            #messagebox.showinfo(heading, select_str)
-        #

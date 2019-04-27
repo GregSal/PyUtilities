@@ -288,3 +288,7 @@ tmp
 /GUI_Management/Old Code/GUI_Construction.py
 /GUI_Management/Old Code/extract_structures.py
 /GUI_Management/Old Code/dir_gui_trial.py
+/GUI_Management/.mypy_cache/3.7/Utilities/GUI_Management/template_config.data.json
+*.json
+/GUI_Management/Old Code/gui_xml_builder_old.py
+/GUI_Management/tree_view - Copy.py

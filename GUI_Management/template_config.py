@@ -5,14 +5,13 @@ Created on Feb 23 2019
 Configuration data for Structure templates GUI
 '''
 
-# Set the path to the Utilities Package.
-from __init__ import add_path
-add_path('utilities_path')
-add_path('variable_path')
+
+from typing import Union, TypeVar, List, Dict, Tuple, Callable, Any
 
 from CustomVariableSet.custom_variable_sets import CustomVariableSet
 from CustomVariableSet.custom_variable_sets import PathV, StringV, StrPathV
 from file_utilities import set_base_dir
+from EclipseRelated.EclipseTemplates.ManageStructuresTemplates.manage_template_lists import load_template_references
 
 
 class TemplateSelectionsSet(CustomVariableSet):
@@ -68,3 +67,62 @@ class TemplateSelectionsSet(CustomVariableSet):
             'required': False
         }
         ]
+
+
+
+# TODO  Asses which methods should stay here
+
+def update_selection(event, variable):
+    select_list = [str(item) for item in event.widget.selection()]
+    select_str = '\n'.join(select_list)
+    variable.set(select_str)
+
+
+def select_list_2_str(select_list: List[str])-> str:
+    return '\n'.join(select_list)
+
+
+def print_select(event):
+    selected = str(event.widget.focus())
+    messagebox.showinfo('Selected File', selected)
+
+
+def insert_template_items(template_selector, workbooks, show_vars):
+    '''Add the template items to the workbook.
+    '''
+    #top_level = template_selector.insert('', 0, text='Structure Templates')
+    template_ref = dict()
+    for workbook, sheets in workbooks:
+        workbook_str = workbook.split('.', 1)[0]
+        file_ref = template_selector.insert('', 'end', workbook_str,
+                                            text=workbook_str,
+                                            open=True,
+                                            tags=('File',))
+        template_ref[workbook_str] = file_ref
+        for template_data in sheets.itertuples():
+            name = template_data.TemplateID
+            template_values = [getattr(template_data, item)
+                               for item in show_vars] # FIXME do not use id as variable
+            id = template_selector.insert(file_ref, 'end', name, text=name,
+                                          values=template_values,
+                                          tags=('Template',))
+            template_ref[name] = id
+
+
+def file_select(event):
+    selected_file = event.widget.focus()
+    file_templates = event.widget.get_children(item=selected_file)
+    select_list = event.widget.selection()
+    a = (template in select_list for template in file_templates)
+    select_str = '\n'.join([str(item) for item in file_templates])
+    heading = '{} Selected:'.format(str(selected_file))
+    #messagebox.showinfo(heading, select_str)
+    if all(a):
+        event.widget.selection_remove(*file_templates)
+        event.widget.item(selected_file, open=True)
+        #messagebox.showinfo(heading, select_str)
+    else:
+        event.widget.selection_add(*file_templates)
+        event.widget.item(selected_file, open=True)
+        #messagebox.showinfo(heading, select_str)
+    #
