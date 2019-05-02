@@ -292,3 +292,8 @@ tmp
 *.json
 /GUI_Management/Old Code/gui_xml_builder_old.py
 /GUI_Management/tree_view - Copy.py
+GUI_Management/test.py
+*.json
+GUI_Management/.mypy_cache/3.7/Utilities/GUI_Management/__init__.meta.json
+GUI_Management/.mypy_cache/3.7/Utilities/__init__.meta.json
+GUI_Management/.mypy_cache/3.7/Utilities/__init__.meta.json
