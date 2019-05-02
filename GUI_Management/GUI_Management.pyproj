@@ -43,10 +43,10 @@
     <Content Include="icons\Triangle-Down2.png" />
     <Content Include="Options and Functions.xlsx" />
     <Content Include="StructuresGUI.xml" />
-    <Content Include="TestGUI.xml" />
     <Content Include="TestGUI_2.xml" />
     <Content Include="TestGUI_3.xml" />
     <Content Include="Tkinter_GUI.xsd" />
+    <Content Include="Tkinter_Widgets.xsd" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="file_select_window.py" />

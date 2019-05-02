@@ -173,20 +173,8 @@
     <xs:complexContent mixed="false">
       <xs:extension base="WidgetBasicType">
         <xs:sequence>
-          <xs:element name="Settings">
-            <xs:complexType>
-              <xs:all>
-                <xs:element name="Geometry"
-                            type="WidgetGeometryType" />
-                <xs:element minOccurs="0"
-                            name="Appearance"
-                            type="AppearanceType" />
-                <xs:element minOccurs="0"
-                            name="Bindings"
-                            type="BindingsType" />
-              </xs:all>
-            </xs:complexType>
-          </xs:element>
+          <xs:element name="Settings"
+                      type="WidgetSettingsType" />
         </xs:sequence>
       </xs:extension>
     </xs:complexContent>
@@ -195,23 +183,8 @@
     <xs:complexContent mixed="false">
       <xs:extension base="WidgetBasicType">
         <xs:sequence>
-          <xs:element name="Settings">
-            <xs:complexType>
-              <xs:all>
-                <xs:element name="Geometry"
-                            type="WidgetGeometryType" />
-                <xs:element minOccurs="0"
-                            name="GridConfigure"
-                            type="GridConfigureType" />
-                <xs:element minOccurs="0"
-                            name="Appearance"
-                            type="AppearanceType" />
-                <xs:element minOccurs="0"
-                            name="Bindings"
-                            type="BindingsType" />
-              </xs:all>
-            </xs:complexType>
-          </xs:element>
+          <xs:element name="Settings"
+                      type="WidgetContainerSettingsType" />
           <xs:element minOccurs="0"
                       ref="WidgetSet" />
         </xs:sequence>
@@ -229,15 +202,50 @@
               <xs:sequence>
                 <xs:element minOccurs="1"
                             maxOccurs="unbounded"
-                            name="ColumnDef">
+                            name="Column">
                   <xs:complexType>
-                    <xs:attribute name="data_column"
-                                  type="xs:string"
-                                  use="optional" />
-                    <xs:attribute name="tree_column_id"
+                    <xs:all>
+                      <xs:element minOccurs="0"
+                                  maxOccurs="1"
+                                  name="ColumnDef">
+                        <xs:complexType>
+                          <xs:attribute name="anchor"
+                                        type="AnchorType"
+                                        use="optional" />
+                          <xs:attribute name="width"
+                                        type="xs:unsignedInt"
+                                        use="optional" />
+                          <xs:attribute name="stretch"
+                                        type="xs:boolean"
+                                        use="optional" />
+                          <xs:attribute name="minwidth"
+                                        type="xs:unsignedInt"
+                                        use="optional" />
+                        </xs:complexType>
+                      </xs:element>
+                      <xs:element minOccurs="0"
+                                  maxOccurs="1"
+                                  name="HeaderDef">
+                        <xs:complexType>
+                          <xs:attribute name="text"
+                                        type="xs:string"
+                                        use="optional" />
+                          <xs:attribute name="image"
+                                        type="xs:string"
+                                        use="optional" />
+                          <xs:attribute name="anchor"
+                                        type="AnchorType"
+                                        use="optional" />
+                          <xs:attribute name="command"
+                                        type="xs:string"
+                                        use="optional" />
+                        </xs:complexType>
+                      </xs:element>
+                    </xs:all>
+                    <xs:attribute name="name"
                                   type="xs:string"
                                   use="required" />
-                    <xs:attribute name="header_text"
+                    <xs:attribute name="data_reference"
                                   type="xs:string"
                                   use="optional" />
                     <xs:attribute name="show"
@@ -250,18 +258,6 @@
                         </xs:restriction>
                       </xs:simpleType>
                     </xs:attribute>
-                    <xs:attribute name="minwidth"
-                                  type="xs:unsignedInt"
-                                  use="optional" />
-                    <xs:attribute name="anchor"
-                                  type="AnchorType"
-                                  use="optional" />
-                    <xs:attribute name="stretch"
-                                  type="xs:boolean"
-                                  use="optional" />
-                    <xs:attribute name="width"
-                                  type="xs:unsignedInt"
-                                  use="optional" />
                   </xs:complexType>
                 </xs:element>
               </xs:sequence>

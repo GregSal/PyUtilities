@@ -57,11 +57,11 @@ def insert_template_items(template_selector, workbooks, show_vars):
         for template_data in sheets.itertuples():
             name = template_data.TemplateID
             template_values = [getattr(template_data, item)
-                               for item in show_vars] # FIXME do not use id as variable
-            id = template_selector.insert(file_ref, 'end', name, text=name,
+                               for item in show_vars] 
+            item_id = template_selector.insert(file_ref, 'end', name, text=name,
                                           values=template_values,
                                           tags=('Template',))
-            template_ref[name] = id
+            template_ref[name] = item_id
 
 
 def file_select(event):

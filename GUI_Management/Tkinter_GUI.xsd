@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xs:schema elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<xs:schema elementFormDefault="qualified"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:simpleType name="StateType">
     <xs:restriction base="xs:string">
       <xs:enumeration value="normal" />
@@ -26,43 +27,74 @@
     </xs:restriction>
   </xs:simpleType>
   <xs:complexType name="AppearanceType">
-    <xs:attribute name="borderwidth" type="xs:unsignedByte" use="optional" />
-    <xs:attribute name="relief" type="xs:string" use="optional" />
-    <xs:attribute name="background" type="xs:string" use="optional" />
-    <xs:attribute name="foreground" type="xs:string" use="optional" />
-    <xs:attribute name="image" type="xs:string" use="optional" />
+    <xs:attribute name="borderwidth"
+                  type="xs:unsignedByte"
+                  use="optional" />
+    <xs:attribute name="relief"
+                  type="xs:string"
+                  use="optional" />
+    <xs:attribute name="background"
+                  type="xs:string"
+                  use="optional" />
+    <xs:attribute name="foreground"
+                  type="xs:string"
+                  use="optional" />
+    <xs:attribute name="image"
+                  type="xs:string"
+                  use="optional" />
   </xs:complexType>
   <xs:complexType name="GridConfigureType">
     <xs:choice maxOccurs="unbounded">
-      <xs:element minOccurs="0" name="ColumnConfigure">
+      <xs:element minOccurs="0"
+                  name="ColumnConfigure">
         <xs:complexType>
-          <xs:attribute name="column" type="xs:unsignedInt" />
-          <xs:attribute name="weight" type="xs:unsignedInt" use="required" />
+          <xs:attribute name="column"
+                        type="xs:unsignedInt" />
+          <xs:attribute name="weight"
+                        type="xs:unsignedInt"
+                        use="required" />
         </xs:complexType>
       </xs:element>
-      <xs:element minOccurs="0" name="RowConfigure">
+      <xs:element minOccurs="0"
+                  name="RowConfigure">
         <xs:complexType>
-          <xs:attribute name="row" type="xs:unsignedInt" />
-          <xs:attribute name="weight" type="xs:unsignedInt" use="required" />
+          <xs:attribute name="row"
+                        type="xs:unsignedInt" />
+          <xs:attribute name="weight"
+                        type="xs:unsignedInt"
+                        use="required" />
         </xs:complexType>
       </xs:element>
     </xs:choice>
   </xs:complexType>
-  <xs:complexType name="BindingsType">
+
+  <xs:complexType name="BindingsType"><!-- Expand this definition to incluse parts of event -->
     <xs:sequence>
-      <xs:element minOccurs="1" maxOccurs="unbounded" name="Bind">
+      <xs:element minOccurs="1"
+                  maxOccurs="unbounded"
+                  name="Bind">
         <xs:complexType>
-          <xs:attribute name="event" type="xs:string" use="required" />
-          <xs:attribute name="callback" type="xs:string" use="required" />
-          <xs:attribute name="add" type="xs:string" use="optional" />
+          <xs:attribute name="event"
+                        type="xs:string"
+                        use="required" />
+          <xs:attribute name="callback"
+                        type="xs:string"
+                        use="required" />
+          <xs:attribute name="add"
+                        type="xs:string"
+                        use="optional" />
         </xs:complexType>
       </xs:element>
     </xs:sequence>
   </xs:complexType>
+
+
   <xs:element name="Configure">
     <xs:complexType>
       <xs:sequence>
-        <xs:element minOccurs="0" maxOccurs="unbounded" name="Set">
+        <xs:element minOccurs="0"
+                    maxOccurs="unbounded"
+                    name="Set">
           <xs:complexType>
             <xs:simpleContent>
               <xs:extension base="xs:string">
@@ -75,67 +107,165 @@
       <xs:anyAttribute processContents="skip" />
     </xs:complexType>
   </xs:element>
+
+
   <xs:complexType name="WindowsSettingsType">
     <xs:sequence>
-      <xs:element minOccurs="0" maxOccurs="1" name="title" type="xs:string" />
-      <xs:choice minOccurs="0" maxOccurs="1">
-        <xs:element minOccurs="0" maxOccurs="1" name="Fullscreen" />
-        <xs:element minOccurs="0" maxOccurs="1" name="Geometry" type="WindowGeometryType" />
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="title"
+                  type="xs:string" />
+      <xs:choice minOccurs="0"
+                 maxOccurs="1">
+        <xs:element minOccurs="0"
+                    maxOccurs="1"
+                    name="Fullscreen" />
+        <xs:element minOccurs="0"
+                    maxOccurs="1"
+                    name="Geometry"
+                    type="WindowGeometryType" />
       </xs:choice>
-      <xs:element minOccurs="0" maxOccurs="1" name="State" type="StateType" />
-      <xs:element minOccurs="0" name="Appearance" type="AppearanceType" />
-      <xs:element minOccurs="0" name="GridConfigure" type="GridConfigureType" />
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="State"
+                  type="StateType" />
+      <xs:element minOccurs="0"
+                  name="Appearance"
+                  type="AppearanceType" />
+      <xs:element minOccurs="0"
+                  name="GridConfigure"
+                  type="GridConfigureType" />
     </xs:sequence>
   </xs:complexType>
   <xs:complexType name="WindowGeometryType">
     <xs:sequence>
-      <xs:element minOccurs="0" maxOccurs="1" name="Height" type="xs:unsignedInt" />
-      <xs:element minOccurs="0" maxOccurs="1" name="Width" type="xs:unsignedInt" />
-      <xs:element minOccurs="0" maxOccurs="1" name="Xposition" type="xs:int" />
-      <xs:element minOccurs="0" maxOccurs="1" name="Yposition" type="xs:int" />
-      <xs:element minOccurs="0" name="Stacking">
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="Height"
+                  type="xs:unsignedInt" />
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="Width"
+                  type="xs:unsignedInt" />
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="Xposition"
+                  type="xs:int" />
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="Yposition"
+                  type="xs:int" />
+      <xs:element minOccurs="0"
+                  name="Stacking">
         <xs:complexType>
           <xs:sequence>
-            <xs:element minOccurs="0" maxOccurs="1" name="lift" type="xs:string" />
-            <xs:element minOccurs="0" maxOccurs="1" name="lower" type="xs:string" />
+            <xs:element minOccurs="0"
+                        maxOccurs="1"
+                        name="lift"
+                        type="xs:string" />
+            <xs:element minOccurs="0"
+                        maxOccurs="1"
+                        name="lower"
+                        type="xs:string" />
           </xs:sequence>
         </xs:complexType>
       </xs:element>
     </xs:sequence>
   </xs:complexType>
+
+
   <xs:complexType name="WidgetGeometryType">
     <xs:sequence>
       <xs:choice>
         <xs:element name="Grid">
           <xs:complexType>
-            <xs:attribute name="column" type="xs:unsignedInt" use="required" />
-            <xs:attribute name="row" type="xs:unsignedInt" use="required" />
-            <xs:attribute name="columnspan" type="xs:unsignedInt" use="optional" />
-            <xs:attribute name="rowspan" type="xs:unsignedInt" use="optional" />
-            <xs:attribute name="sticky" type="StickyType" use="optional" />
+            <xs:attribute name="column"
+                          type="xs:unsignedInt"
+                          use="required" />
+            <xs:attribute name="row"
+                          type="xs:unsignedInt"
+                          use="required" />
+            <xs:attribute name="columnspan"
+                          type="xs:unsignedInt"
+                          use="optional" />
+            <xs:attribute name="rowspan"
+                          type="xs:unsignedInt"
+                          use="optional" />
+            <xs:attribute name="sticky"
+                          type="StickyType"
+                          use="optional" />
           </xs:complexType>
         </xs:element>
         <xs:element name="Pack">
           <xs:complexType>
-            <xs:attribute name="anchor" type="xs:string" use="required" />
+            <xs:attribute name="anchor"
+                          type="xs:string"
+                          use="required" />
           </xs:complexType>
         </xs:element>
       </xs:choice>
-      <xs:element minOccurs="0" maxOccurs="1" name="Padding">
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="Padding">
         <xs:complexType>
-          <xs:attribute name="ipadx" type="xs:unsignedInt" use="optional" />
-          <xs:attribute name="ipady" type="xs:unsignedInt" use="optional" />
-          <xs:attribute name="padx" type="xs:unsignedInt" use="optional" />
-          <xs:attribute name="pady" type="xs:unsignedInt" use="optional" />
+          <xs:attribute name="ipadx"
+                        type="xs:unsignedInt"
+                        use="optional" />
+          <xs:attribute name="ipady"
+                        type="xs:unsignedInt"
+                        use="optional" />
+          <xs:attribute name="padx"
+                        type="xs:unsignedInt"
+                        use="optional" />
+          <xs:attribute name="pady"
+                        type="xs:unsignedInt"
+                        use="optional" />
         </xs:complexType>
       </xs:element>
     </xs:sequence>
   </xs:complexType>
   <xs:complexType name="WidgetBasicType">
     <xs:sequence>
-      <xs:element minOccurs="1" maxOccurs="1" name="widget_class" type="xs:string" />
-      <xs:element minOccurs="0" maxOccurs="1" ref="Configure" />
+      <xs:element minOccurs="1"
+                  maxOccurs="1"
+                  name="widget_class"
+                  type="xs:string" />
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  ref="Configure" />
     </xs:sequence>
-    <xs:attribute name="name" type="xs:string" use="required" />
+    <xs:attribute name="name"
+                  type="xs:string"
+                  use="required" />
+  </xs:complexType>
+  <xs:complexType name="WidgetSettingsType">
+    <xs:all>
+      <xs:element name="Geometry"
+                  type="WidgetGeometryType" />
+      <xs:element minOccurs="0"
+                  name="Appearance"
+                  type="AppearanceType" />
+      <xs:element minOccurs="0"
+                  name="Bindings"
+                  type="BindingsType" />
+    </xs:all>
+  </xs:complexType>
+  <xs:complexType name="WidgetContainerSettingsType">
+    <xs:all>
+
+      <xs:element name="Geometry"
+                  type="WidgetGeometryType" />
+      <xs:element minOccurs="0"
+                  name="Appearance"
+                  type="AppearanceType" />
+      <xs:element minOccurs="0"
+                  name="Bindings"
+                  type="BindingsType" />
+
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="GridConfigure"
+                  type="GridConfigureType" />
+    </xs:all>
   </xs:complexType>
 </xs:schema>

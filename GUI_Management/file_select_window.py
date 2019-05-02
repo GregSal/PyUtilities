@@ -75,6 +75,7 @@ class SelectFile():
         multiple: {bool} -- If True, Allows the user to choose multiple files
             from the Open dialog.
         '''
+    # TODO explicitly define the dialog defaults in
     all_dialogue_options = ('master',
                             'title',
                             'initialdir')
@@ -96,8 +97,11 @@ class SelectFile():
     def __init__(self, **file_params):
         '''
         '''
+        # TODO Do not set defaults as SelectFile object attributes
+        # Initialize filetypes, dialog, options
+        #
         # Set defaults
-        for attr, value in self.default_attributes.items():  # FIXME explicitly define the defaults in init
+        for attr, value in self.default_attributes.items():
             self.__setattr__(attr, value)
         self.configure(**file_params)
 

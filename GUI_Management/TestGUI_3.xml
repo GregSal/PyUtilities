@@ -114,13 +114,17 @@
         <WidgetSet>
           <WidgetContainer name="template_selector_group">
             <widget_class>ttk.Frame</widget_class>
+            <Configure borderwidth="10"
+                       relief="groove"/>
             <Settings>
-              <Appearance borderwidth="10"
-                          relief="groove"/>
               <Geometry>
                 <Grid column="0"
                       row="1"
                       sticky="nsew"/>
+                <Padding ipadx="0"
+                         ipady="0"
+                         padx="0"
+                         pady="0"/>
               </Geometry>
               <GridConfigure>
                 <ColumnConfigure column="0"
@@ -130,172 +134,241 @@
               </GridConfigure>
             </Settings>
             <WidgetSet>
-              <Widget name="treeplaceholder">
-                <widget_class>ttk.Label</widget_class>
-                <Configure text="Tree Goes Here" />
+              <Widget name="selector_scrollbar_h">
+                <widget_class>ttk.Scrollbar</widget_class>
+                <Configure orient="horizontal"
+                           command="C::TemplateXview"/>
+                <Settings>
+                  <Geometry>
+                    <Grid column="0"
+                          row="1"
+                          sticky="ew"/>
+                    <Padding ipadx="0"
+                             ipady="0"
+                             padx="0"
+                             pady="0"/>
+                  </Geometry>
+                </Settings>
+              </Widget>
+              <Widget name="selector_scrollbar_v">
+                <widget_class>ttk.Scrollbar</widget_class>
+                <Configure orient="vertical"
+                           command="C::TemplateYview"/>
+                <Settings>
+                  <Geometry>
+                    <Grid column="1"
+                          row="0"
+                          sticky="ns"/>
+                    <Padding ipadx="0"
+                             ipady="0"
+                             padx="0"
+                             pady="0"/>
+                  </Geometry>
+                </Settings>
+              </Widget>
+              <Tree name="template_selector">
+                <widget_class>ttk.Treeview</widget_class>
+                <Configure xscrollcommand="C::TemplateHScroll"
+                           yscrollcommand="C::TemplateVScroll"/>
                 <Settings>
                   <Geometry>
                     <Grid column="0"
                           row="0"
-                          rowspan="2"
                           sticky="nsew"/>
+                    <Padding ipadx="0"
+                             ipady="0"
+                             padx="5"
+                             pady="5"/>
                   </Geometry>
+                  <Bindings>
+                    <Bind event="&lt;&lt;TreeviewSelect&gt;&gt;"
+                          callback="C::UpdateSelected"
+                          add="+"/>
+                  </Bindings>
                 </Settings>
-              </Widget>
+                <ColumnSet>
+                  <Column name="Structure Templates"
+                          data_reference="workbook_name"
+                          show="y">
+                    <ColumnDef minwidth="95"
+                               anchor="w"
+                               stretch="true"
+                               width="234"/>
+                  </Column>
+                  <Column name="TemplateID"
+                          data_reference="TemplateID"
+                          show="y">
+                    <ColumnDef minwidth="11"
+                               anchor="w"
+                               stretch="true"
+                               width="102"/>
+                    <HeaderDef text="Template"/>
+                  </Column>
+                  <Column name="TemplateCategory"
+                          data_reference="TemplateCategory"
+                          show="y">
+                    <ColumnDef minwidth="16"
+                               stretch="true"
+                               width="42"/>
+                    <HeaderDef text="Category"/>
+                  </Column>
+                  <Column name="TreatmentSite"
+                          data_reference="TreatmentSite"
+                          show="y">
+                    <ColumnDef minwidth="21"
+                               anchor="w"
+                               stretch="true"
+                               width="102"/>
+                  </Column>
+                  <Column data_reference="Diagnosis"
+                          name="Diagnosis"
+                          show="y">
+                    <ColumnDef minwidth="74"
+                               anchor="w"
+                               stretch="true"
+                               width="150"/>
+                    <HeaderDef text="Diagnosis" />
+                  </Column>
+                  <Column data_reference="modification_date"
+                          name="modification_date"
+                          show="y">
+                    <ColumnDef minwidth="69"
+                               anchor="w"
+                               stretch="true"
+                               width="96"/>
+                    <HeaderDef text="Modification Date"/>
+                  </Column>
+                  <Column data_reference="Author"
+                          name="Author"
+                          show="n">
+                    <ColumnDef minwidth="21"
+                               stretch="true"
+                               width="24" />
+                    <HeaderDef text="Author"/>
+                  </Column>
+                  <Column data_reference="Status"
+                          name="Status"
+                          show="y">
+                    <ColumnDef minwidth="32"
+                               stretch="true"
+                               width="48" />
+                    <HeaderDef text="Status"  />
+                  </Column>
+                  <Column data_reference="Number_of_Structures"
+                          name="Number_of_Structures"
+                          show="n">
+                    <ColumnDef minwidth="5"
+                               stretch="true"
+                               width="12"/>
+                    <HeaderDef text="# Structures"/>
+                  </Column>
+                  <Column data_reference="sheet_name"
+                          name="sheet_name"
+                          show="n">
+                    <ColumnDef minwidth="11"
+                               anchor="w"
+                               stretch="true"
+                               width="132"/>
+                    <HeaderDef text="Worksheet"/>
+                  </Column>
+                  <Column data_reference="Description"
+                          name="description"
+                          show="n">
+                    <ColumnDef minwidth="16"
+                               anchor="w"
+                               stretch="true"
+                               width="1308"/>
+                    <HeaderDef text="Description"/>
+                  </Column>
+                  <Column data_reference="TemplateType"
+                          name="TemplateType"
+                          show="n">
+                    <ColumnDef minwidth="28"
+                               stretch="true"
+                               width="54"/>
+                    <HeaderDef text="Template Type"/>
+                  </Column>
+                  <Column data_reference="ApprovalStatus"
+                          name="ApprovalStatus"
+                          show="n">
+                    <ColumnDef minwidth="42"
+                               stretch="true"
+                               width="60"/>
+                    <HeaderDef text="Approval Status"/>
+                  </Column>
+                  <Column data_reference="columns"
+                          name="columns"
+                          show="n">
+                    <ColumnDef minwidth="5"
+                               stretch="true"
+                               width="6"/>
+                    <HeaderDef text="# Columns"/>
+                  </Column>
+                  <Column data_reference="TemplateFileName"
+                          name="TemplateFileName"
+                          show="n">
+                    <ColumnDef minwidth="0"
+                               anchor="w"
+                               stretch="true"
+                               width="156"/>
+                    <HeaderDef text="Template file name"/>
+                  </Column>
+                </ColumnSet>
+                <TagSet>
+                  <tag name="File">
+                    <Appearance foreground="blue"
+                                background="light grey"
+                                image="Box2.png"/>
+                    <!--Change image files to image references-->
+                    <Bindings>
+                      <Bind event="&lt;Double-ButtonRelease-1&gt;"
+                            callback="file_select"/>
+                    </Bindings>
+                  </tag>
+                  <tag name="Template">
+                    <Appearance image="Blueprint2.png"/>
+                  </tag>
+                </TagSet>
+              </Tree>
             </WidgetSet>
           </WidgetContainer>
-          <WidgetContainer name="selected_templates">
+          <WidgetContainer name="Selected_templates">
             <widget_class>ttk.LabelFrame</widget_class>
             <Settings>
               <Geometry>
-                <Grid column="1"
-                      row="0"
-                      sticky="nsew"/>
+                <Grid column="0"
+                      row="0"/>
               </Geometry>
-              <Appearance borderwidth="10"
-                          relief="groove"/>
             </Settings>
             <WidgetSet>
-              <Widget name="selectedtemplateslist">
+              <Widget name="SelectedTemplatesList">
                 <widget_class>ttk.Label</widget_class>
-                <Configure text="Selected Templates goes Here" />
                 <Settings>
                   <Geometry>
-                    <Grid column="1"
-                          row="1"
-                          sticky="nsew"/>
+                    <Grid column="0"
+                          row="0"/>
                   </Geometry>
                 </Settings>
               </Widget>
             </WidgetSet>
           </WidgetContainer>
-          <WidgetContainer name="file_selector_group">
-            <widget_class>ttk.Frame</widget_class>
+          <Widget name="title">
+            <widget_class>ttk.Label</widget_class>
             <Settings>
               <Geometry>
                 <Grid column="0"
-                      row="2"
+                      row="0"
                       columnspan="2"
+                      rowspan="1"
                       sticky="nsew"/>
+
+                <Padding ipadx="0"
+                         ipady="0"
+                         padx="0"
+                         pady="0"/>
               </Geometry>
             </Settings>
-            <WidgetSet>
-              <Widget name="output_directory">
-                <widget_class>fg.FileSelectGUI</widget_class>
-                <Configure text="XML Directory Selection"
-                           title="Select the directory to place the .xml files in."
-                           type_selection="directory"
-                           path_variable="V::XmlOutputDirectory"
-                           starting_path="."
-                           action="open"
-                           button_text="Browse"
-                           entry_cursor="xterm"
-                           entry_width="115"
-                           button_width="10"/>
-                <Settings>
-                  <Geometry>
-                    <Grid column="0"
-                          row="2"
-                          sticky="nsew"/>
-                    <Padding padx="5"
-                             pady="5"/>
-                  </Geometry>
-                  <Appearance borderwidth="10"
-                              relief="groove"/>
-                </Settings>
-              </Widget>
-              <Widget name="template_directory">
-                <widget_class>fg.FileSelectGUI</widget_class>
-                <Configure text="Template Directory"
-                           title="Select the Directory Containing the Excel Template Files"
-                           type_selection="directory"
-                           path_variable="V::TemplateExcelDirectory"
-                           starting_path="."
-                           action="open"
-                           button_text="Browse"
-                           entry_cursor="xterm"
-                           entry_width="115"
-                           button_width="10"/>
-                <Settings>
-                  <Geometry>
-                    <Grid column="0"
-                          row="1"
-                          sticky="nsew"/>
-                    <Padding padx="5"
-                             pady="5"/>
-                  </Geometry>
-                  <Appearance borderwidth="10"
-                              relief="groove"/>
-                </Settings>
-              </Widget>
-              <Widget name="template_list_excel_file">
-                <widget_class>fg.FileSelectGUI</widget_class>
-                <Configure text="Template File Selection"
-                           title="Select File"
-                           type_selection="Excel Files"
-                           path_variable="V::TemplateListFilename"
-                           starting_path="."
-                           action="open"
-                           button_text="Browse"
-                           entry_cursor="xterm"
-                           entry_width="115"
-                           button_width="10"/>
-                <Settings>
-                  <Geometry>
-                    <Grid column="0"
-                          row="0"
-                          sticky="nsew"/>
-                    <Padding padx="5"
-                             pady="5"/>
-                  </Geometry>
-                  <Appearance borderwidth="10"
-                              relief="groove"/>
-                </Settings>
-              </Widget>
-              <Widget name="exit_button">
-                <widget_class>ttk.Button</widget_class>
-                <Configure text="Exit"
-                           command="C::Exit"
-                           width="26"/>
-                <Settings>
-                  <Geometry>
-                    <Grid column="1"
-                          row="0" />
-                    <Padding padx="5"
-                             pady="5"/>
-                  </Geometry>
-                </Settings>
-              </Widget>
-              <Widget name="build_templates">
-                <widget_class>ttk.Button</widget_class>
-                <Configure text="Build the XML Template Files"
-                           command="C::ShowSelected"
-                           width="26"/>
-                <Settings>
-                  <Geometry>
-                    <Grid column="1"
-                          row="1"/>
-                    <Padding padx="5"
-                             pady="5"/>
-                  </Geometry>
-                </Settings>
-              </Widget>
-              <Widget name="refresh_template_list">
-                <widget_class>ttk.Button</widget_class>
-                <Configure text="Refresh Template List"
-                           command="C::Show_TemplateListFilename"
-                           width="26"/>
-                <Settings>
-                  <Geometry>
-                    <Grid column="1"
-                          row="2"/>
-                    <Padding padx="5"
-                             pady="5"/>
-                  </Geometry>
-                </Settings>
-              </Widget>
-            </WidgetSet>
-          </WidgetContainer>
+          </Widget>
           <Widget name="size_grip">
             <widget_class>T::ttk.Sizegrip</widget_class>
             <Settings>

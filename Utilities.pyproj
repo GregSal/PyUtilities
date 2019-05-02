@@ -6,7 +6,7 @@
     <ProjectGuid>{167f98ff-f940-4216-a4b3-0ed2df5e40cd}</ProjectGuid>
     <ProjectHome />
     <StartupFile>GUI_Management\gui_xml_builder.py</StartupFile>
-    <SearchPath>..\..\Projects</SearchPath>
+    <SearchPath>..\..\Projects;..\..\Projects;..\..\Projects</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
