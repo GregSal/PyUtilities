@@ -314,6 +314,19 @@
                     <HeaderDef text="Template file name"/>
                   </Column>
                 </ColumnSet>
+                <LevelSet>
+                  <Level name="File" AddGroupItem="1" >
+                    <GroupBy>workbook_name</GroupBy>
+                  <Tags>File</Tags>
+                  <DisplayValues>workbook_name modification_date</DisplayValues>
+                  </Level>
+                <Level name="Template" AddGroupItem="0">
+                  <GroupBy>sheet_name</GroupBy>
+                <Tags>Template</Tags>
+                <DisplayValues >TemplateID TemplateCategory TreatmentSite modification_date Status</DisplayValues>
+                </Level>
+                </LevelSet>
+
                 <TagSet>
                   <tag name="File">
                     <Appearance foreground="blue"

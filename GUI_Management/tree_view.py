@@ -43,34 +43,34 @@ def insert_tree_items(tree, item_set: pd.DataFrame, groups: List[TreeLevel],
                       reference_set: Dict[str, str] = None)->Dict[str, str]:
     '''Add the template items to the workbook.
     '''
+    def insert_item(group_item):
+        item_values = group_item[this_group.value_list]
+        filtered_values = this_group.value_filter(item_values)
+        name = group_item.name
+        item_tags=list(group_item.tags).append(name)
+        item_id = tree.insert(parent_item, 'end', name, open=True, text=name,
+                            values=filtered_values, tags=item_tags)
+        return item_id
+
     if not reference_set:
         reference_set = dict()
     this_group = groups[0]
     remining_groups = groups[1:] if len(groups)>1 else None
     group_name = this_group.group_name
-    value_selector = this_group.group_values
     item_group = item_set.groupby(group_name)
-    # FIXME finish adding option to make a group level item
-    group_item = item_group.first().iloc[0]
-    group_values = group_item[this_group.value_list]
-    filtered_values = this_group.value_filter(group_values)
-    name = group_item.name
-    item_id = tree.insert(parent_item, 'end', name, open=True, text=name,
-                        values=filtered_values, tags=group_item.tags)
-
+    reference_set[group_name] = item_id
+    if this_group.add_group_item:
+        group_item = item_group.first().iloc[0]
+        item_id = insert_item(group_item)
     for name, items in item_group:
-        value_list = items[this_group.value_list]
-        filtered_values = this_group.value_filter(value_list)
-        item_id = tree.insert(parent_item, 'end', name, open=True, text=name,
-                                values=filtered_values, tags=(group_name,))  # FIXME Add group_name as default tag
+        item_id = insert_item(group_item)
         reference_set[name] = item_id
         if remining_groups:
             reference_set = insert_tree_items(tree, items, remining_groups,
                                               item_id, reference_set)
     return reference_set
 
-
-def initialize_columns(column_set):
+def initialize_columns(tree: ttk.Treeview, column_set):
     '''
     Set order of values and columns (tuple of data_reference)
     Set Columns to display (tuple of column IDs)
@@ -87,8 +87,8 @@ def initialize_columns(column_set):
         columns.append(column_name)
         if 'y' in show:
             displaycolumns.append(name)
-    template_selector['columns'] = columns
-    template_selector['displaycolumns'] = displaycolumns
+    tree['columns'] = columns
+    tree['displaycolumns'] = displaycolumns
     return value_list
 
 def set_columns(tree: ttk.Treeview, column_set: ET.Element):
@@ -102,7 +102,10 @@ def set_columns(tree: ttk.Treeview, column_set: ET.Element):
         tree.column(column_name, **column_dict)
         tree.heading(column_name, **header_dict)
 
-
+def set_column_levels():
+    '''
+    Generate list of groups
+    '''
 
 
 
