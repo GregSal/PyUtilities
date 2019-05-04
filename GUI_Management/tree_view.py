@@ -36,23 +36,23 @@ class TreeSelector(ttk.Treeview):
     def __init__(self, name: str, master: tk.Tk, **options):
         super().__init__(name=name, master=master, **options)
 
-    def build(self, reference_set: ReferenceTracker, tree_def: ET.Element,):
+    def build(self, tree_def: ET.Element, reference_set: ReferenceTracker):
         self.reference = reference_set
         self.reference.lookup_references(ref_set)
-        self.item_set = dict()
         self.groups: List[TreeLevel] = None
         column_set = tree_def.find('ColumnSet')
         self.initialize_columns(column_set)
         self.set_columns(column_set)
         level_set = tree_def.find('LevelSet')
         self.set_column_levels(level_set)
+        tag_set = tree_def.find('TagSet')
+        self.set_tags(tag_set)
 
     def insert_tree_items(self, item_set: pd.DataFrame,
                           groups: List[TreeLevel] = None,
                           parent_item: str = ''):
         '''Add the template items to the workbook.
         '''
-
         def add_group_item(name: str, this_group: TreeLevel, item_group):
             group_item = item_group.first().iloc[0]
             item_values = group_item[this_group.value_list]
@@ -71,7 +71,6 @@ class TreeSelector(ttk.Treeview):
         group_by = this_group.group_by
         for name, new_group in item_group:
             item_id = add_group_item(name, this_group, new_group)
-            self.item_set[name] = item_id
             if remining_groups:
                 insert_tree_items(self, item_set=new_group,
                                   groups=remining_groups,
@@ -128,10 +127,10 @@ class TreeSelector(ttk.Treeview):
             for binding in tag_def.findall('Bind'):
                 event = binding.attrib['event']
                 callback = binding.attrib['callback']
-                template_selector.tag_bind(tag_name, event, callback)
+                add = binding.attrib['add']
+                template_selector.tag_bind(tag_name, event, callback, add)
 
 
-    template_selector.tag_bind('Template', '<<TreeviewSelect>>', callback=template_select)  # the item clicked can be found via tree.focus()
 
 
 
@@ -139,21 +138,3 @@ class TreeSelector(ttk.Treeview):
 # TODO add option to include scroll bars in tree
 
 
-# Same thing, but inserted as first child:
-# template_selector.insert('', 0, 'gallery', text='Applications')
-# Treeview chooses the id:
-# id = template_selector.insert('', 'end', text='Tutorial')
-# tree.move('widgets', 'gallery', 'end')  # move widgets under gallery
-# tree.detach('widgets')
-# tree.delete('widgets')
-# tree.item('widgets', open=True)
-# isopen = tree.item('widgets', 'open')
-# template_selector['columns'] = ('size', 'modified', 'owner')
-# template_selector.column('size', width=100, anchor='center')
-# template_selector.heading('size', text='Size')
-# template_selector.set('widgets', 'size', '12KB')
-# size = template_selector.set('widgets', 'size')
-# template_selector.insert('', 'end', text='Listbox', values=('15KB Yesterday mark'))
-# template_selector.insert('', 'end', text='button', tags=('ttk', 'simple'))
-# template_selector.tag_configure('ttk', background='yellow')
-# template_selector.tag_bind('ttk', '<1>', itemClicked)  # the item clicked can be found via tree.focus()

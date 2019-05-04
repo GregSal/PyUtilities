@@ -231,7 +231,8 @@ class GuiManager():
                 options = dict()
                 options.update(self.resolve(config_def.attrib))
                 item_method(**options)
-        pass
+        if hasattr(tk_item, 'build'):
+            tk_item.build(item_def, self.reference)
 
     def set_appearance(self, tk_item: TkItem, item_def: ET.Element):
         options = dict()

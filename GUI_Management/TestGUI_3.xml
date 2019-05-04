@@ -340,13 +340,11 @@
                     </DisplayValues>
                   </Level>
                 </LevelSet>
-
                 <TagSet>
                   <tag name="File">
                     <Appearance foreground="blue"
                                 background="light grey"
                                 image="I::file_image"/>
-                    <!--Change image files to image references-->
                     <Bindings>
                       <Bind event="&lt;Double-ButtonRelease-1&gt;"
                             callback="C::FileSelect"/>
@@ -354,6 +352,11 @@
                   </tag>
                   <tag name="Template">
                     <Appearance image="I::template_image"/>
+                    <Bindings>
+                      <Bind event="&lt;&lt;TreeviewSelect&gt;&gt;"
+                            callback="C::UpdateSelected"
+                            add="+"/>
+                    </Bindings>
                   </tag>
                 </TagSet>
               </Tree>
