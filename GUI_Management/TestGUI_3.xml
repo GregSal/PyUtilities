@@ -83,6 +83,11 @@
       <PositionalArgs />
       <KeywordArgs variable="V::SelectedTemplates"/>
     </Command>
+    <Command name="FileSelect">
+      <function>tp.file_select</function>
+      <PositionalArgs />
+      <KeywordArgs />
+    </Command>
   </CommandSet>
   <RootWindow name="root">
     <Settings>
@@ -315,31 +320,40 @@
                   </Column>
                 </ColumnSet>
                 <LevelSet>
-                  <Level name="File" AddGroupItem="1" >
+                  <Level name="File" >
                     <GroupBy>workbook_name</GroupBy>
-                  <Tags>File</Tags>
-                  <DisplayValues>workbook_name modification_date</DisplayValues>
+                    <Tags>File</Tags>
+                    <DisplayValues>
+                      workbook_name
+                      modification_date
+                    </DisplayValues>
                   </Level>
-                <Level name="Template" AddGroupItem="0">
-                  <GroupBy>sheet_name</GroupBy>
-                <Tags>Template</Tags>
-                <DisplayValues >TemplateID TemplateCategory TreatmentSite modification_date Status</DisplayValues>
-                </Level>
+                  <Level name="Template" >
+                    <GroupBy>sheet_name</GroupBy>
+                    <Tags>Template</Tags>
+                    <DisplayValues >
+                      TemplateID
+                      TemplateCategory
+                      TreatmentSite
+                      modification_date
+                      Status
+                    </DisplayValues>
+                  </Level>
                 </LevelSet>
 
                 <TagSet>
                   <tag name="File">
                     <Appearance foreground="blue"
                                 background="light grey"
-                                image="Box2.png"/>
+                                image="I::file_image"/>
                     <!--Change image files to image references-->
                     <Bindings>
                       <Bind event="&lt;Double-ButtonRelease-1&gt;"
-                            callback="file_select"/>
+                            callback="C::FileSelect"/>
                     </Bindings>
                   </tag>
                   <tag name="Template">
-                    <Appearance image="Blueprint2.png"/>
+                    <Appearance image="I::template_image"/>
                   </tag>
                 </TagSet>
               </Tree>

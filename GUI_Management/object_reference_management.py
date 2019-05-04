@@ -213,7 +213,6 @@ class ReferenceTracker():
         # TODO Add method to call function reference
         raise NotImplementedError
 
-
     def lookup_references(self, ref_set: ReferenceSet)->ObjectSet:
         '''Convert a one or more reference strings to their corresponding
             objects.  The return container type will match the input container

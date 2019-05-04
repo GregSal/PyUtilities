@@ -281,9 +281,6 @@
                                   minOccurs="0" >
                         <xs:simpleType>
                           <xs:list itemType="xs:string" />
-                          <xs:restriction base="xs:string">
-                            <xs:whiteSpace value="collapse"/>
-                          </xs:restriction >
                         </xs:simpleType>
                       </xs:element>
                       <xs:element name="Tags"
