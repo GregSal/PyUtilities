@@ -7,11 +7,11 @@ Misc GUI methods
 
 # Question Do I need the gui_methods module or should this go into other modules>
 
-from typing import Union, Callable, List, Dict, Tuple, Any
+from typing import Union, List
 import tkinter as tk
-import tkinter.ttk as ttk
-import tkinter.filedialog as tkf
 from tkinter import messagebox
+from file_select_window import FileSelectGUI
+from tree_view import TreeSelector
 
 StringValue = Union[tk.StringVar, str]
 
@@ -24,7 +24,7 @@ def message_window(parent_window: tk.Widget, window_text: StringValue = '',
     else:
         str_message = str(variable)
     messagebox.showinfo(title=window_text, message=str_message,
-                        parent=parent_window)
+                        parent=parent_window, **options)
 
 def update_selection(event, variable: StringValue):
     select_list = [str(item) for item in event.widget.selection()]
@@ -57,7 +57,7 @@ def insert_template_items(template_selector, workbooks, show_vars):
         for template_data in sheets.itertuples():
             name = template_data.TemplateID
             template_values = [getattr(template_data, item)
-                               for item in show_vars] 
+                               for item in show_vars]
             item_id = template_selector.insert(file_ref, 'end', name, text=name,
                                           values=template_values,
                                           tags=('Template',))
@@ -68,9 +68,8 @@ def file_select(event):
     selected_file = event.widget.focus()
     file_templates = event.widget.get_children(item=selected_file)
     select_list = event.widget.selection()
-    a = (template in select_list for template in file_templates)
-    select_str = '\n'.join([str(item) for item in file_templates])
-    heading = '{} Selected:'.format(str(selected_file))
+    #select_str = '\n'.join([str(item) for item in file_templates])
+    #heading = '{} Selected:'.format(str(selected_file))
     #messagebox.showinfo(heading, select_str)
     if all(a):
         event.widget.selection_remove(*file_templates)

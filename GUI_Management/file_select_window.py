@@ -11,13 +11,11 @@ Classes
         sub class of TKinter.Frame
 
 '''
-from typing import Union, Callable, List, Dict, Tuple, Any
+from typing import Union, List, Dict, Tuple, Any
 from pathlib import Path
-from functools import partial
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as tkf
-from tkinter import messagebox
 from file_utilities import FileTypes, get_file_path, make_full_path
 from file_utilities import set_base_dir, PathInput
 
@@ -86,7 +84,7 @@ class SelectFile():
     save_dialogue_options = file_dialogue_options + ('confirmoverwrite',
                                                      'defaultextension')
     open_dialogue_options = file_dialogue_options + ('multiple',)
-    initialdir=None
+    initialdir = None
     default_attributes = dict(
         action='save', filetypes=FileTypes(), check_validity=False,
         master=None, title='', initialdir=str(set_base_dir()),
@@ -273,11 +271,13 @@ class SelectFile():
 
 
 class FileSelectGUI(ttk.LabelFrame):
-    entry_layout=dict(layout_method='grid', padx=10, pady=10, row=0, column=0)
-    button_layout=dict(layout_method='grid', padx=10, pady=10, row=0, column=1)
+    entry_layout = dict(layout_method='grid',
+                        padx=10, pady=10, row=0, column=0)
+    button_layout = dict(layout_method='grid',
+                         padx=10, pady=10, row=0, column=1)
 
     def __init__(self, master: tk.Tk, **options):
-        super().__init__(master=master)
+        super().__init__(master=master, **options)
         self.browse_window = SelectFile(master=master)
         self.file_entry = ttk.Entry(master=self)
         self.browse_button = ttk.Button(text='Browse', master=self)

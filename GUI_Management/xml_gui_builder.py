@@ -4,9 +4,8 @@ Created on Feb 23 2019
 @author: Greg Salomons
 Test ground for constructing GUI
 '''
-from typing import Union, TypeVar, List, Dict, Tuple, Callable, Any
+from typing import Union, TypeVar, List, Dict, Callable, Any
 from pathlib import Path
-from collections import OrderedDict, namedtuple
 from functools import partial
 import xml.etree.ElementTree as ET
 import re
@@ -14,23 +13,18 @@ import re
 import tkinter as tk
 import tkinter.font as tkFont
 import tkinter.ttk as ttk
-from tkinter import messagebox
 
 # Set the path to the Utilities Package.
-from GUI_Management.__init__ import add_path
-add_path('templates_path')
+#from GUI_Management.__init__ import add_path
+#add_path('templates_path')
 
-import GUI_Management.file_select_window as fg
+
 import GUI_Management.gui_methods as gm
 import GUI_Management.template_config as tp
 from GUI_Management.object_reference_management import ReferenceTracker
 from GUI_Management.object_reference_management import ReferenceSet
 from GUI_Management.object_reference_management import ObjectSet
-from file_utilities import set_base_dir, FileTypes, PathInput
-from data_utilities import select_data, true_iterable
-from spreadsheet_tools import load_reference_table
 from CustomVariableSet.custom_variable_sets import StringV
-from CustomVariableSet.custom_variable_sets import StrPathV, PathV
 from CustomVariableSet.custom_variable_sets import CustomVariableSet
 
 
@@ -40,10 +34,12 @@ TkItem = Union[tk.Widget, ttk.Widget, tk.Wm]
 Definition = Dict[str, Dict[str, Any]]
 ArgType = TypeVar('ArgType', List[Any], Dict[str, Any])
 
+import logging_tools
+logger = logging_tools.config_logger(level='WARNING')
 
 class GuiManager():
     identifier_list = ['Widget', 'Variable', 'Image', 'Command', 'X']
-    lookup_list = [('Tkinter', {'tk': tk, 'ttk': ttk, 'fg': fg})]
+    lookup_list = [('Tkinter', {'tk': tk, 'ttk': ttk, 'gm': gm})]
 
     def __init__(self, data_set: CustomVariableSet, xml_file: Path):
         self.reference = ReferenceTracker(self.identifier_list,
@@ -348,10 +344,18 @@ class GuiManager():
             self.set_widget_geometry(widget, widget_settings)
 
 
+def main():
+    #gui_def_file = Path(r'.\FileSelectGUI.xml')
+    gui_def_file = Path(r'.\TestGUI_3.xml')
+    variable_definitions = [{'name': 'test_string',
+                             'variable_type': StringV,
+                             'default': 'Hi There!'
+                             }
+                            ]
+    template_data_set = tp.TemplateSelectionsSet(variable_definitions)
 
-
-
-
+    gui = GuiManager(template_data_set, gui_def_file)
+    gui.execute()
 
 
 # Done To Here
@@ -364,29 +368,5 @@ def set_style():
     style.configure('TButton', font=button_font)
     style.configure('Treeview', font=normal_font)
 
-def images():
-    projects_path = set_base_dir(sub_dir=r'Python\Projects')
-    icon_folder = r'EclipseRelated\EclipseTemplates\ManageStructuresTemplates\icons'
-    icon_path = projects_path / icon_folder
-    file_icon = icon_path / 'Box2.png'
-    template_icon = icon_path / 'Blueprint2.png'
-    file_image = tk.PhotoImage(file=file_icon)
-    template_image = tk.PhotoImage(file=template_icon)
-
-
-
-#gui_def_file = Path(r'.\FileSelectGUI.xml')
-gui_def_file = Path(r'.\TestGUI_2.xml')
-variable_definitions = [{'name': 'test_string',
-                         'variable_type': StringV,
-                         'default': 'Hi There!'
-                         }
-                        ]
-data_set = tp.TemplateSelectionsSet(variable_definitions)
-
-gui = GuiManager(data_set, gui_def_file)
-gui.execute()
-
-
-
-
+if __name__ == '__main__':
+    main()

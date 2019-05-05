@@ -12,7 +12,7 @@ Classes
 '''
 import re
 from collections import OrderedDict
-from typing import Any, Callable, Dict, List, Tuple, TypeVar, Union
+from typing import Any, Dict, List, Tuple, TypeVar
 
 from data_utilities import true_iterable
 

@@ -5,24 +5,23 @@ tree_view widget methods
 
 @author: Greg Salomons
 """
-from typing import Union, Callable, List, Dict, NamedTuple, Tuple, Any
-from collections import OrderedDict, namedtuple
-from pathlib import Path
+from typing import List, Any
 import tkinter as tk
-from tkinter import messagebox
 from tkinter import ttk
 import xml.etree.ElementTree as ET
-from file_utilities import set_base_dir
-from GUI_Management.object_reference_management import ReferenceTracker
 import pandas as pd
+from GUI_Management.object_reference_management import ReferenceTracker
+
+
+# TODO add frame widget that can include scroll bars for tree
 
 class TreeLevel():
     value_list: List[str]
     def __init__(self, level: ET.Element):
-        self.name = level_def.attrib['name']
-        self.group_by = list(level.findtext('GroupBy'))
-        self.tags = list(level.findtext('Tags'))
-        self.group_values = list(level.findtext('DisplayValues'))
+        self.name = level.attrib['name']
+        self.group_by = level.findtext('GroupBy')
+        self.tags = level.findtext('Tags')
+        self.group_values = level.findtext('DisplayValues')
 
     def value_filter(self, values: List[Any])->List[Any]:
         filtered_values = [
@@ -31,15 +30,14 @@ class TreeLevel():
         return filtered_values
 
 
-# TODO generalize initialize_tree
 class TreeSelector(ttk.Treeview):
     def __init__(self, name: str, master: tk.Tk, **options):
         super().__init__(name=name, master=master, **options)
+        self.reference: ReferenceTracker = None
+        self.groups: List[TreeLevel] = None
 
     def build(self, tree_def: ET.Element, reference_set: ReferenceTracker):
         self.reference = reference_set
-        self.reference.lookup_references(ref_set)
-        self.groups: List[TreeLevel] = None
         column_set = tree_def.find('ColumnSet')
         self.initialize_columns(column_set)
         self.set_columns(column_set)
@@ -57,7 +55,7 @@ class TreeSelector(ttk.Treeview):
             group_item = item_group.first().iloc[0]
             item_values = group_item[this_group.value_list]
             filtered_values = this_group.value_filter(item_values)
-            item_tags=list(group_item.tags).append(name)
+            item_tags = list(group_item.tags).append(name)
             item_id = self.insert(parent_item, 'end', name, open=True,
                                   text=name, values=filtered_values,
                                   tags=item_tags)
@@ -66,15 +64,14 @@ class TreeSelector(ttk.Treeview):
         if not groups:
             groups = self.groups
         this_group = groups[0]
-        remining_groups = groups[1:] if len(groups)>1 else None
-        item_group = item_set.groupby(group_by)
+        remining_groups = groups[1:] if len(groups) > 1 else None
         group_by = this_group.group_by
+        item_group = item_set.groupby(group_by)
         for name, new_group in item_group:
             item_id = add_group_item(name, this_group, new_group)
             if remining_groups:
-                insert_tree_items(self, item_set=new_group,
-                                  groups=remining_groups,
-                                  parent_item=item_id)
+                self.insert_tree_items(self, new_group, remining_groups,
+                                       item_id)
         pass
 
     def initialize_columns(self, column_set: ET.Element):
@@ -93,7 +90,7 @@ class TreeSelector(ttk.Treeview):
             value_list.append(value_name)
             columns.append(column_name)
             if 'y' in show:
-                displaycolumns.append(name)
+                displaycolumns.append(column_name)
         self['columns'] = columns
         self['displaycolumns'] = displaycolumns
         TreeLevel.value_list = value_list
@@ -104,23 +101,25 @@ class TreeSelector(ttk.Treeview):
         '''
         for column_def in column_set.findall('Column'):
             column_name = column_def.attrib['name']
-            column_dict = column_def.find('ColumnDef').attrib
-            header_dict = column_def.find('HeaderDef').attrib
-            self.column(column_name, **column_dict)
-            self.heading(column_name, **header_dict)
+            column_data = column_def.find('ColumnDef')
+            if column_data is not None:
+                self.column(column_name, **column_data.attrib)
+            header_data = column_def.find('HeaderDef')
+            if header_data is not None:
+                self.heading(column_name, **header_data.attrib)
 
     def set_column_levels(self, level_set: ET.Element):
         '''
         Generate list of groups
         '''
         self.groups = [TreeLevel(level_def)
-                  for level_def in level_set.findall('Level')]
+                       for level_def in level_set.findall('Level')]
 
     def set_tags(self, tag_set: ET.Element):
         '''
         Set formatting for values and headers
         '''
-        for tag_def in column_set.findall('tag'):
+        for tag_def in tag_set.findall('tag'):
             tag_name = tag_def.attrib['name']
             options = tag_def.find('Appearance').attrib
             self.tag_configure(tag_name, **options)
@@ -128,13 +127,4 @@ class TreeSelector(ttk.Treeview):
                 event = binding.attrib['event']
                 callback = binding.attrib['callback']
                 add = binding.attrib['add']
-                template_selector.tag_bind(tag_name, event, callback, add)
-
-
-
-
-
-
-# TODO add option to include scroll bars in tree
-
-
+                self.tag_bind(tag_name, event, callback, add)

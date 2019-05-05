@@ -6,23 +6,24 @@ Configuration data for Structure templates GUI
 '''
 
 
-from typing import Union, TypeVar, List, Dict, Tuple, Callable, Any
+from typing import List, Dict, Any
 from tkinter import messagebox
-from pathlib import Path
 
 from CustomVariableSet.custom_variable_sets import CustomVariableSet
 from CustomVariableSet.custom_variable_sets import PathV, StringV, StrPathV
 from file_utilities import set_base_dir
 from spreadsheet_tools import load_reference_table
 
-from EclipseRelated.EclipseTemplates.ManageStructuresTemplates.template_manager import load_template_data, update_template_data, build_xml
-#from StructureData import *
+from EclipseRelated.EclipseTemplates.ManageStructuresTemplates.template_manager import load_template_data
+from EclipseRelated.EclipseTemplates.ManageStructuresTemplates.template_manager import update_template_data
+from EclipseRelated.EclipseTemplates.ManageStructuresTemplates.template_manager import build_xml
+
 #from WriteStructureTemplate import *
 #from manage_template_lists import *
 
 class TemplateSelectionsSet(CustomVariableSet):
     template_directory = set_base_dir(
-            r'Work\Structure Dictionary\Template Spreadsheets')
+        r'Work\Structure Dictionary\Template Spreadsheets')
     variable_definitions = [
         {
             'name': 'spreadsheet_directory',
@@ -95,8 +96,8 @@ class TemplateData():
         self.template_selections = dict(
             unique_scans=['TemplateID'],
             select_columns=self.data_fields,
-            criteria_selection = {'workbook_name': 'Basic Templates.xlsx',
-                                  'Status': 'Active'}
+            criteria_selection={'workbook_name': 'Basic Templates.xlsx',
+                                'Status': 'Active'}
             )
         self.set_args(kwargs, 'template_table_info')
         self.set_args(kwargs, 'template_selections')
@@ -116,7 +117,7 @@ class TemplateData():
             self.template_table_info,
             **self.template_selections)
         # load_template_data(pickle_file_name: PathInput, sub_dir: str = None, base_path: Path = None)
-        workbook_str = workbook.split('.', 1)[0]
+        workbook_str = workbook.split('.', 1)[0]  # TODO modify workbook column
         return template_data
 
     def get_workbook_data(self):
@@ -158,7 +159,7 @@ def insert_template_items(template_selector, workbooks, show_vars):
         for template_data in sheets.itertuples():
             name = template_data.TemplateID
             template_values = [getattr(template_data, item)
-                               for item in show_vars] 
+                               for item in show_vars]
             item_id = template_selector.insert(file_ref, 'end', name, text=name,
                                           values=template_values,
                                           tags=('Template',))
@@ -170,8 +171,8 @@ def file_select(event):
     file_templates = event.widget.get_children(item=selected_file)
     select_list = event.widget.selection()
     a = (template in select_list for template in file_templates)
-    select_str = '\n'.join([str(item) for item in file_templates])
-    heading = '{} Selected:'.format(str(selected_file))
+    #select_str = '\n'.join([str(item) for item in file_templates])
+    #heading = '{} Selected:'.format(str(selected_file))
     #messagebox.showinfo(heading, select_str)
     if all(a):
         event.widget.selection_remove(*file_templates)

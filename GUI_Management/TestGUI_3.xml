@@ -32,6 +32,34 @@
                 file_path=".\icons\DVH Black smaller.png"/>
   </ImageSet>
   <CommandSet>
+    <Command name="TemplateXview">
+      <function>ttk.Treeview.xview</function>
+      <PositionalArgs>
+        <Arg>W::template_selector</Arg>
+      </PositionalArgs>
+      <KeywordArgs />
+    </Command>
+    <Command name="TemplateYview">
+      <function>ttk.Treeview.yview</function>
+      <PositionalArgs>
+        <Arg>W::template_selector</Arg>
+      </PositionalArgs>
+      <KeywordArgs />
+    </Command>
+    <Command name="TemplateHScroll">
+      <function>ttk.Scrollbar.set</function>
+      <PositionalArgs>
+        <Arg>W::selector_scrollbar_h</Arg>
+      </PositionalArgs>
+      <KeywordArgs />
+    </Command>
+    <Command name="TemplateVScroll">
+      <function>ttk.Scrollbar.set</function>
+      <PositionalArgs>
+        <Arg>W::selector_scrollbar_v</Arg>
+      </PositionalArgs>
+      <KeywordArgs />
+    </Command>
     <Command name="Exit">
       <function>W::root.destroy</function>
       <PositionalArgs />
@@ -172,7 +200,7 @@
                 </Settings>
               </Widget>
               <Tree name="template_selector">
-                <widget_class>ttk.Treeview</widget_class>
+                <widget_class>gm.TreeSelector</widget_class>
                 <Configure xscrollcommand="C::TemplateHScroll"
                            yscrollcommand="C::TemplateVScroll"/>
                 <Settings>
@@ -362,7 +390,7 @@
               </Tree>
             </WidgetSet>
           </WidgetContainer>
-          <WidgetContainer name="Selected_templates">
+          <WidgetContainer name="templates_display">
             <widget_class>ttk.LabelFrame</widget_class>
             <Settings>
               <Geometry>
@@ -371,7 +399,7 @@
               </Geometry>
             </Settings>
             <WidgetSet>
-              <Widget name="SelectedTemplatesList">
+              <Widget name="selected_templates_list">
                 <widget_class>ttk.Label</widget_class>
                 <Settings>
                   <Geometry>
