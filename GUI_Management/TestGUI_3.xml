@@ -214,9 +214,11 @@
                              pady="5"/>
                   </Geometry>
                   <Bindings>
-                    <Bind event="&lt;&lt;TreeviewSelect&gt;&gt;"
-                          callback="C::UpdateSelected"
-                          add="+"/>
+                    <Bind>
+                      <event>&lt;&lt;TreeviewSelect&gt;&gt;</event>
+                      <callback>C::UpdateSelected</callback>
+                      <add>+</add>
+                    </Bind>
                   </Bindings>
                 </Settings>
                 <ColumnSet>
@@ -374,16 +376,21 @@
                                 background="light grey"
                                 image="I::file_image"/>
                     <Bindings>
-                      <Bind event="&lt;Double-ButtonRelease-1&gt;"
-                            callback="C::FileSelect"/>
+                      <Bind>
+                        <event>&lt;Double-ButtonRelease-1&gt;</event>
+                        <callback>C::FileSelect</callback>
+
+                      </Bind>
                     </Bindings>
                   </tag>
                   <tag name="Template">
                     <Appearance image="I::template_image"/>
                     <Bindings>
-                      <Bind event="&lt;&lt;TreeviewSelect&gt;&gt;"
-                            callback="C::UpdateSelected"
-                            add="+"/>
+                      <Bind>
+                        <event>&lt;&lt;TreeviewSelect&gt;&gt;</event>
+                        <callback>C::UpdateSelected</callback>
+                        <add>+</add>
+                    </Bind>
                     </Bindings>
                   </tag>
                 </TagSet>

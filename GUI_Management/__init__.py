@@ -1,5 +1,5 @@
 '''
-Manage Structure Templates
+GUI Manager
 @author: Greg Salomons
 '''
 from pathlib import Path
@@ -15,7 +15,8 @@ def add_path(relative_path: str):
 # Set the path to the Utilities Package.
 utilities_path = '..'
 variable_path = r'..\CustomVariableSet'
-templates_path = r'..\..\EclipseRelated\EclipseTemplates\ManageStructuresTemplates'
+templates_path = r'..\template_gui'
+
 
 add_path(utilities_path)
 add_path(variable_path)

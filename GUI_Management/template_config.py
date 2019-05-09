@@ -14,9 +14,11 @@ from CustomVariableSet.custom_variable_sets import PathV, StringV, StrPathV
 from file_utilities import set_base_dir
 from spreadsheet_tools import load_reference_table
 
-from EclipseRelated.EclipseTemplates.ManageStructuresTemplates.template_manager import load_template_data
-from EclipseRelated.EclipseTemplates.ManageStructuresTemplates.template_manager import update_template_data
-from EclipseRelated.EclipseTemplates.ManageStructuresTemplates.template_manager import build_xml
+from template_gui.manage_template_lists import import_template_list
+from template_gui.template_manager import update_template_data
+from template_gui.template_manager import build_xml
+from template_gui.manage_template_lists import select_templates
+from template_gui.WriteStructureTemplate import build_templates
 
 #from WriteStructureTemplate import *
 #from manage_template_lists import *

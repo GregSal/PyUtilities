@@ -120,11 +120,17 @@ class TreeSelector(ttk.Treeview):
         Set formatting for values and headers
         '''
         for tag_def in tag_set.findall('tag'):
-            tag_name = tag_def.attrib['name']
-            options = tag_def.find('Appearance').attrib
-            self.tag_configure(tag_name, **options)
-            for binding in tag_def.findall('Bind'):
-                event = binding.attrib['event']
-                callback = binding.attrib['callback']
-                add = binding.attrib['add']
-                self.tag_bind(tag_name, event, callback, add)
+
+            tag_name = self.reference.lookup_references(tag_def.attrib['name'])
+            tag_appearance = tag_def.find('Appearance')
+            if tag_appearance:
+                options = self.reference.lookup_references(
+                    tag_appearance.attrib)
+                self.tag_configure(tag_name, **options)
+            for binding in tag_def.findall(r'.//Bind'):
+                event = self.reference.lookup_references(
+                    binding.findtext('event'))
+                #FIXME Need to clean extra white space from binding event and other elements
+                callback = self.reference.lookup_references(
+                    binding.findtext('callback'))
+                self.tag_bind(tag_name, event, callback) # add option is not available for tag_bind

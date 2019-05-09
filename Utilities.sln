@@ -11,7 +11,7 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "CustomVariableSet", "Custom
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "DataFitting", "DataFitting\DataFitting.pyproj", "{F3F35AA3-0E41-4AD7-BD08-E1F2AF7CD7A0}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ManageStructuresTemplates", "..\EclipseRelated\EclipseTemplates\ManageStructuresTemplates\ManageStructuresTemplates.pyproj", "{E332936F-0E17-4F36-944D-FB377EE415A9}"
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "template_gui", "template_gui\template_gui.pyproj", "{E332936F-0E17-4F36-944D-FB377EE415A9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

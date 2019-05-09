@@ -6,8 +6,7 @@
     <ProjectGuid>{167f98ff-f940-4216-a4b3-0ed2df5e40cd}</ProjectGuid>
     <ProjectHome />
     <StartupFile>GUI_Management\gui_xml_builder.py</StartupFile>
-    <SearchPath>
-    </SearchPath>
+    <SearchPath>template_gui;CustomVariableSet;Testing;DataFitting</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
@@ -39,18 +38,6 @@
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.7" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\EclipseRelated\EclipseTemplates\ManageStructuresTemplates\ManageStructuresTemplates.pyproj">
-      <Name>ManageStructuresTemplates</Name>
-      <Project>{e332936f-0e17-4f36-944d-fb377ee415a9}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="GUI_Management\GUI_Management.pyproj">
-      <Name>GUI_Management</Name>
-      <Project>{56be436a-57e4-4c95-a047-13875f1ad6fd}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Testing\" />

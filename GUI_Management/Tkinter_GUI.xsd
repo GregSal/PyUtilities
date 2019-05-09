@@ -68,21 +68,24 @@
     </xs:choice>
   </xs:complexType>
 
-  <xs:complexType name="BindingsType"><!-- Expand this definition to incluse parts of event -->
+  <xs:complexType name="BindingsType">
+    <!-- Expand this definition to include parts of event -->
     <xs:sequence>
       <xs:element minOccurs="1"
                   maxOccurs="unbounded"
                   name="Bind">
         <xs:complexType>
-          <xs:attribute name="event"
+          <xs:sequence>
+            <xs:element name="event"
+                        type="xs:string" />
+            <xs:element name="callback"
+                        type="xs:string" />
+            <xs:element name="add"
+                        maxOccurs="1"
+                        minOccurs="0"
                         type="xs:string"
-                        use="required" />
-          <xs:attribute name="callback"
-                        type="xs:string"
-                        use="required" />
-          <xs:attribute name="add"
-                        type="xs:string"
-                        use="optional" />
+                        />
+          </xs:sequence>
         </xs:complexType>
       </xs:element>
     </xs:sequence>

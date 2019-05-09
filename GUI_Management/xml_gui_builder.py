@@ -14,10 +14,6 @@ import tkinter as tk
 import tkinter.font as tkFont
 import tkinter.ttk as ttk
 
-# Set the path to the Utilities Package.
-#from GUI_Management.__init__ import add_path
-#add_path('templates_path')
-
 
 import GUI_Management.gui_methods as gm
 import GUI_Management.template_config as tp

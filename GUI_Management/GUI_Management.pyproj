@@ -6,13 +6,13 @@
     <ProjectGuid>{56be436a-57e4-4c95-a047-13875f1ad6fd}</ProjectGuid>
     <ProjectHome />
     <StartupFile>xml_gui_builder.py</StartupFile>
-    <SearchPath>..\GUI_Management;..\..\..\Projects</SearchPath>
+    <SearchPath>..\..\Utilities;..\GUI_Management;..\template_gui;..\CustomVariableSet</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
     <InterpreterId />
-    <IsWindowsApplication>True</IsWindowsApplication>
+    <IsWindowsApplication>False</IsWindowsApplication>
     <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
@@ -61,18 +61,6 @@
     <Compile Include="xml_gui_builder.py" />
     <Compile Include="template_config.py" />
     <Compile Include="__init__.py" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CustomVariableSet\CustomVariableSet.pyproj">
-      <Name>CustomVariableSet</Name>
-      <Project>{7fd5d963-2e83-4ae8-a878-b831529ce827}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Utilities.pyproj">
-      <Name>Utilities</Name>
-      <Project>{167f98ff-f940-4216-a4b3-0ed2df5e40cd}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="icons\" />
