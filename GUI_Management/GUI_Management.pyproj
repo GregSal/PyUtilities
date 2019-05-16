@@ -46,6 +46,7 @@
     <Content Include="StructuresGUI.xml" />
     <Content Include="TestGUI_2.xml" />
     <Content Include="TestGUI_3.xml" />
+    <Content Include="TestGUI_4.xml" />
     <Content Include="Tkinter_GUI.xsd" />
     <Content Include="Tkinter_Widgets.xsd" />
   </ItemGroup>

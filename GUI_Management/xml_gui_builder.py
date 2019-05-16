@@ -24,17 +24,18 @@ from CustomVariableSet.custom_variable_sets import StringV
 from CustomVariableSet.custom_variable_sets import CustomVariableSet
 
 
-ObjectDef = Union[Callable,type]
+ObjectDef = Union[Callable, type]
 StringValue = Union[tk.StringVar, str]
 TkItem = Union[tk.Widget, ttk.Widget, tk.Wm]
 Definition = Dict[str, Dict[str, Any]]
 ArgType = TypeVar('ArgType', List[Any], Dict[str, Any])
 
-import logging_tools
-logger = logging_tools.config_logger(level='WARNING')
+# FIXME Need to clean extra white space from all findtext calls
+# FIXME Need to pass all findtext results through resolve
+
 
 class GuiManager():
-    identifier_list = ['Widget', 'Variable', 'Image', 'Command', 'X']
+    identifier_list = ['Widget', 'Variable', 'Image', 'Command', 'Font']
     lookup_list = [('Tkinter', {'tk': tk, 'ttk': ttk, 'gm': gm})]
 
     def __init__(self, data_set: CustomVariableSet, xml_file: Path):
@@ -167,6 +168,19 @@ class GuiManager():
                 new_image = tk.BitmapImage(file=image_file, **options)
             self.add_reference('Image', name, new_image)
 
+    def initialize_styles(self):
+        theme = self.definition.findtext('Styles/Theme')
+        style = ttk.Style()
+        style.theme_use(theme)
+        for font_def in self.definition.findall('Styles/Font'):
+            name = font_def.attrib['name']
+            options = dict()
+            options['family'] = font_def.findtext('family')
+            options['size'] = float(font_def.findtext('size'))
+            options['weight'] = font_def.findtext('weight')
+            new_font = tkFont.Font(**options)
+            self.add_reference('Font', name, new_font)
+
     def initialize_windows(self):
         for window_def in self.definition.findall(r'.//WindowSet/*'):
             name = window_def.attrib['name']
@@ -278,12 +292,13 @@ class GuiManager():
 
     def stacking_adjustment(self, window: tk.Wm, geometry: ET.Element):
         stacking_group = geometry.find('Stacking')
-        for stacking_element in stacking_group.iter():
-            stacking_name = stacking_element.tag
-            if hasattr(tk.Tk, stacking_name):
-                stack_method = getattr(window, stacking_name)
-                stack_window = self.resolve(str(stacking_element.text))
-                stack_method(stack_window)
+        if stacking_group:
+            for stacking_element in stacking_group.iter():
+                stacking_name = stacking_element.tag
+                if hasattr(tk.Tk, stacking_name):
+                    stack_method = getattr(window, stacking_name)
+                    stack_window = self.resolve(str(stacking_element.text))
+                    stack_method(stack_window)
         pass
 
     def set_window_geometry(self, window: tk.Wm, settings: ET.Element):
@@ -342,25 +357,27 @@ class GuiManager():
 
 def main():
     #gui_def_file = Path(r'.\FileSelectGUI.xml')
-    gui_def_file = Path(r'.\TestGUI_3.xml')
+    gui_def_file = Path(r'.\TestGUI_4.xml')
     variable_definitions = [{'name': 'test_string',
                              'variable_type': StringV,
                              'default': 'Hi There!'
                              }
                             ]
     template_data_set = tp.TemplateSelectionsSet(variable_definitions)
+    template_definitions = tp.load_template_list(template_data_set['template_pickle'])
+    template_data_set['TemplateData'] = template_definitions
 
     gui = GuiManager(template_data_set, gui_def_file)
     gui.execute()
 
 
-# Done To Here
+# TODO Add style settings to xml, xsd
 def set_style():
     style = ttk.Style()
     style.theme_use('vista')
     normal_font = tkFont.Font(family='Calibri', size=11, weight='normal')
     button_font = tkFont.Font(family='Calibri', size=12, weight='bold')
-    title_font = tkFont.Font(family='Tacoma', size=36, weight='bold')
+    title_font = tkFont.Font(family='Tacoma', size=24, weight='bold')
     style.configure('TButton', font=button_font)
     style.configure('Treeview', font=normal_font)
 

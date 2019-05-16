@@ -72,6 +72,19 @@
             </xs:sequence>
           </xs:complexType>
         </xs:element>
+        <xs:element minOccurs="0"
+                    maxOccurs="1"
+                    name="Styles">
+          <xs:complexType>
+            <xs:choice  minOccurs="1"
+                        maxOccurs="unbounded">
+              <xs:element name="Theme"
+                          type="xs:string" />
+              <xs:element name="Font"
+                          type="FontType" />
+            </xs:choice>
+          </xs:complexType>
+        </xs:element>
         <xs:element minOccurs="1"
                     maxOccurs="1"
                     name="RootWindow"
@@ -113,6 +126,20 @@
                            processContents="skip" />
         </xs:complexType>
       </xs:element>
+    </xs:sequence>
+    <xs:attribute name="name"
+                  type="xs:string"
+                  use="required" />
+  </xs:complexType>
+  <xs:complexType name="FontType">
+    <xs:sequence>
+      <xs:element name="family"
+                  type="xs:string" />
+      <xs:element name="size"
+                  type="xs:float" />
+      <xs:element minOccurs="0"
+                  name="weight"
+                  type="xs:string" />
     </xs:sequence>
     <xs:attribute name="name"
                   type="xs:string"
@@ -196,9 +223,12 @@
       <xs:extension base="WidgetType">
         <xs:sequence>
           <xs:element name="ColumnSet"
-                      minOccurs="0" >
+                      minOccurs="0">
             <xs:complexType>
               <xs:sequence>
+                <xs:element name="ItemData"
+                            type="xs:string">
+                </xs:element>
                 <xs:element minOccurs="1"
                             maxOccurs="unbounded"
                             name="Column">
@@ -253,6 +283,7 @@
                         <xs:restriction base="xs:string">
                           <xs:enumeration value="y" />
                           <xs:enumeration value="n" />
+                          <xs:enumeration value="tree" />
                         </xs:restriction>
                       </xs:simpleType>
                     </xs:attribute>
@@ -263,28 +294,28 @@
             </xs:complexType>
           </xs:element>
           <xs:element name="LevelSet"
-                      minOccurs="0" >
+                      minOccurs="0">
             <xs:complexType>
               <xs:sequence>
                 <xs:element name="Level"
                             minOccurs="1"
-                            maxOccurs="unbounded" >
+                            maxOccurs="unbounded">
                   <xs:complexType>
                     <xs:choice minOccurs="1"
                                maxOccurs="unbounded">
-                      <xs:element name="GroupBy" >
+                      <xs:element name="GroupBy">
                         <xs:simpleType>
                           <xs:list itemType="xs:string" />
                         </xs:simpleType>
                       </xs:element>
                       <xs:element name="DisplayValues"
-                                  minOccurs="0" >
+                                  minOccurs="0">
                         <xs:simpleType>
                           <xs:list itemType="xs:string" />
                         </xs:simpleType>
                       </xs:element>
                       <xs:element name="Tags"
-                                  minOccurs="0" >
+                                  minOccurs="0">
                         <xs:simpleType>
                           <xs:list itemType="xs:string" />
                         </xs:simpleType>
@@ -303,7 +334,7 @@
           </xs:element>
           <xs:element name="TagSet"
                       minOccurs="0"
-                      maxOccurs="1" >
+                      maxOccurs="1">
             <xs:complexType>
               <xs:sequence>
                 <xs:element minOccurs="1"

@@ -2,6 +2,10 @@
 <GuiDefinition xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                xsi:noNamespaceSchemaLocation="file:./GUI_Builder.xsd">
   <VariableSet>
+    <Variable name="Output">
+      <variable_class>tk.StringVar</variable_class>
+      <data_reference>test_string</data_reference>
+    </Variable>
     <Variable name="TemplateListFilename">
       <variable_class>tk.StringVar</variable_class>
       <data_reference>template_list_file</data_reference>
@@ -113,6 +117,24 @@
       <KeywordArgs />
     </Command>
   </CommandSet>
+  <Styles>
+    <Theme>vista</Theme>
+    <Font name="normal_font">
+      <family>Calibri</family>
+      <size>11</size>
+      <weight>normal</weight>
+    </Font>
+    <Font name="button_font">
+      <family>Calibri</family>
+      <size>12</size>
+      <weight>bold</weight>
+    </Font>
+    <Font name="title_font">
+      <family>Tacoma</family>
+      <size>24</size>
+      <weight>bold</weight>
+    </Font>
+  </Styles>
   <RootWindow name="root">
         <Settings>
           <title>Structure Template Selector</title>
@@ -414,8 +436,137 @@
               </Widget>
             </WidgetSet>
           </WidgetContainer>
+          <WidgetContainer name="file_selector_group">
+            <widget_class>ttk.Frame</widget_class>
+            <Settings>
+              <Geometry>
+                <Grid column="0"
+                      row="2"
+                      columnspan="2"
+                      sticky="nsew"/>
+              </Geometry>
+            </Settings>
+            <WidgetSet>
+              <Widget name="output_directory">
+                <widget_class>fg.FileSelectGUI</widget_class>
+                <Configure text="XML Directory Selection"
+                           title="Select the directory to place the .xml files in."
+                           type_selection="directory"
+                           path_variable="V::XmlOutputDirectory"
+                           starting_path="."
+                           action="open"
+                           button_text="Browse"
+                           entry_cursor="xterm"
+                           entry_width="115"
+                           button_width="10"/>
+                <Settings>
+                  <Geometry>
+                    <Grid column="0"
+                          row="2"
+                          sticky="nsew"/>
+                    <Padding padx="5"
+                             pady="5"/>
+                  </Geometry>
+                  <Appearance borderwidth="10"
+                              relief="groove"/>
+                </Settings>
+              </Widget>
+              <Widget name="template_directory">
+                <widget_class>fg.FileSelectGUI</widget_class>
+                <Configure text="Template Directory"
+                           title="Select the Directory Containing the Excel Template Files"
+                           type_selection="directory"
+                           path_variable="V::TemplateExcelDirectory"
+                           starting_path="."
+                           action="open"
+                           button_text="Browse"
+                           entry_cursor="xterm"
+                           entry_width="115"
+                           button_width="10"/>
+                <Settings>
+                  <Geometry>
+                    <Grid column="0"
+                          row="1"
+                          sticky="nsew"/>
+                    <Padding padx="5"
+                             pady="5"/>
+                  </Geometry>
+                  <Appearance borderwidth="10"
+                              relief="groove"/>
+                </Settings>
+              </Widget>
+              <Widget name="template_list_excel_file">
+                <widget_class>fg.FileSelectGUI</widget_class>
+                <Configure text="Template File Selection"
+                           title="Select File"
+                           type_selection="Excel Files"
+                           path_variable="V::TemplateListFilename"
+                           starting_path="."
+                           action="open"
+                           button_text="Browse"
+                           entry_cursor="xterm"
+                           entry_width="115"
+                           button_width="10"/>
+                <Settings>
+                  <Geometry>
+                    <Grid column="0"
+                          row="0"
+                          sticky="nsew"/>
+                    <Padding padx="5"
+                             pady="5"/>
+                  </Geometry>
+                  <Appearance borderwidth="10"
+                              relief="groove"/>
+                </Settings>
+              </Widget>
+              <Widget name="exit_button">
+                <widget_class>ttk.Button</widget_class>
+                <Configure text="Exit"
+                           command="C::Exit"
+                           width="26"/>
+                <Settings>
+                  <Geometry>
+                    <Grid column="1"
+                          row="0" />
+                    <Padding padx="5"
+                             pady="5"/>
+                  </Geometry>
+                </Settings>
+              </Widget>
+              <Widget name="build_templates">
+                <widget_class>ttk.Button</widget_class>
+                <Configure text="Build the XML Template Files"
+                           command="C::ShowSelected"
+                           width="26"/>
+                <Settings>
+                  <Geometry>
+                    <Grid column="1"
+                          row="1"/>
+                    <Padding padx="5"
+                             pady="5"/>
+                  </Geometry>
+                </Settings>
+              </Widget>
+              <Widget name="refresh_template_list">
+                <widget_class>ttk.Button</widget_class>
+                <Configure text="Refresh Template List"
+                           command="C::Show_TemplateListFilename"
+                           width="26"/>
+                <Settings>
+                  <Geometry>
+                    <Grid column="1"
+                          row="2"/>
+                    <Padding padx="5"
+                             pady="5"/>
+                  </Geometry>
+                </Settings>
+              </Widget>
+            </WidgetSet>
+          </WidgetContainer>
           <Widget name="title">
             <widget_class>ttk.Label</widget_class>
+            <Configure text="Structure Template Manager"
+                       font="F::title_font"/>
             <Settings>
               <Geometry>
                 <Grid column="0"

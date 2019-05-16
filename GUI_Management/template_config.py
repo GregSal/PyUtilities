@@ -7,7 +7,10 @@ Configuration data for Structure templates GUI
 
 
 from typing import List, Dict, Any
+from pathlib import Path
+from pickle import load
 from tkinter import messagebox
+import pandas as pd
 
 from CustomVariableSet.custom_variable_sets import CustomVariableSet
 from CustomVariableSet.custom_variable_sets import PathV, StringV, StrPathV
@@ -78,6 +81,23 @@ class TemplateSelectionsSet(CustomVariableSet):
         ]
 
 
+def load_template_list(template_list_pickle_file_path: Path):
+    '''Import the list of active templates.
+    '''
+    file = open(str(template_list_pickle_file_path), 'rb')
+    template_list = load(file)
+    file.close()
+    active_templates = template_list[template_list.Status == 'Active']
+    active_templates['Columns'] = active_templates['Columns'].astype('int64')
+    split_names = active_templates['workbook_name'].str.split('.', 1)
+    active_templates['workbook_name'] = [name[0] for name in split_names]
+    return active_templates
+
+
+
+
+# TODO  Assess which methods should stay here
+
 class TemplateData():
     data_fields = ['TemplateID', 'TemplateCategory', 'TreatmentSite',
                    'workbook_name', 'sheet_name', 'modification_date',
@@ -118,18 +138,14 @@ class TemplateData():
             self.template_file_info,
             self.template_table_info,
             **self.template_selections)
+        template_data.workbook_name = template_data.workbook_name.str.split('.', 1)[0]
         # load_template_data(pickle_file_name: PathInput, sub_dir: str = None, base_path: Path = None)
-        workbook_str = workbook.split('.', 1)[0]  # TODO modify workbook column
         return template_data
 
     def get_workbook_data(self):
         return self.template_data.groupby('workbook_name')
 
 
-
-
-
-# TODO  Asses which methods should stay here
 
 def update_selection(event, variable):
     select_list = [str(item) for item in event.widget.selection()]
@@ -172,11 +188,11 @@ def file_select(event):
     selected_file = event.widget.focus()
     file_templates = event.widget.get_children(item=selected_file)
     select_list = event.widget.selection()
-    a = (template in select_list for template in file_templates)
+    selected = (template in select_list for template in file_templates)
     #select_str = '\n'.join([str(item) for item in file_templates])
     #heading = '{} Selected:'.format(str(selected_file))
     #messagebox.showinfo(heading, select_str)
-    if all(a):
+    if all(selected):
         event.widget.selection_remove(*file_templates)
         event.widget.item(selected_file, open=True)
         #messagebox.showinfo(heading, select_str)
@@ -184,6 +200,3 @@ def file_select(event):
         event.widget.selection_add(*file_templates)
         event.widget.item(selected_file, open=True)
         #messagebox.showinfo(heading, select_str)
-    #
-
-

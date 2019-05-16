@@ -129,7 +129,7 @@ def true_iterable(variable)-> bool:
     Arguments:
         variable {Iterable[Any]} -- The variable to test.
     Returns:
-        True if variable uis a non-string iterable.
+        True if variable is a non-string iterable.
     '''
     return not isinstance(variable, str) and isinstance(variable, Iterable)
 
