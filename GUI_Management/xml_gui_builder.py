@@ -35,7 +35,7 @@ ArgType = TypeVar('ArgType', List[Any], Dict[str, Any])
 
 
 class GuiManager():
-    identifier_list = ['Widget', 'Variable', 'Image', 'Command', 'Font']
+    identifier_list = ['Widget', 'Variable', 'Image', 'Command', 'Font', 'X']
     lookup_list = [('Tkinter', {'tk': tk, 'ttk': ttk, 'gm': gm})]
 
     def __init__(self, data_set: CustomVariableSet, xml_file: Path):
@@ -47,6 +47,7 @@ class GuiManager():
         self.make_root()
         self.initialize_variables()
         self.initialize_images()
+        self.initialize_styles()
         self.initialize_windows()
         self.initialize_widgets()
         self.initialize_commands()
@@ -176,7 +177,7 @@ class GuiManager():
             name = font_def.attrib['name']
             options = dict()
             options['family'] = font_def.findtext('family')
-            options['size'] = float(font_def.findtext('size'))
+            options['size'] = int(font_def.findtext('size'))
             options['weight'] = font_def.findtext('weight')
             new_font = tkFont.Font(**options)
             self.add_reference('Font', name, new_font)

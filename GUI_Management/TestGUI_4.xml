@@ -448,7 +448,7 @@
             </Settings>
             <WidgetSet>
               <Widget name="output_directory">
-                <widget_class>fg.FileSelectGUI</widget_class>
+                <widget_class>gm.FileSelectGUI</widget_class>
                 <Configure text="XML Directory Selection"
                            title="Select the directory to place the .xml files in."
                            type_selection="directory"
@@ -472,7 +472,7 @@
                 </Settings>
               </Widget>
               <Widget name="template_directory">
-                <widget_class>fg.FileSelectGUI</widget_class>
+                <widget_class>gm.FileSelectGUI</widget_class>
                 <Configure text="Template Directory"
                            title="Select the Directory Containing the Excel Template Files"
                            type_selection="directory"
@@ -496,7 +496,7 @@
                 </Settings>
               </Widget>
               <Widget name="template_list_excel_file">
-                <widget_class>fg.FileSelectGUI</widget_class>
+                <widget_class>gm.FileSelectGUI</widget_class>
                 <Configure text="Template File Selection"
                            title="Select File"
                            type_selection="Excel Files"
