@@ -324,7 +324,7 @@ class GuiManager():
         if window_settings is not None:
             title_text = window_settings.findtext('title')
             if title_text:
-                window.title = title_text
+                window.title(title_text)
             self.set_appearance(window, window_settings)
             self.grid_config(window, window_settings)
             self.set_window_geometry(window, window_settings)
@@ -370,17 +370,6 @@ def main():
 
     gui = GuiManager(template_data_set, gui_def_file)
     gui.execute()
-
-
-# TODO Add style settings to xml, xsd
-def set_style():
-    style = ttk.Style()
-    style.theme_use('vista')
-    normal_font = tkFont.Font(family='Calibri', size=11, weight='normal')
-    button_font = tkFont.Font(family='Calibri', size=12, weight='bold')
-    title_font = tkFont.Font(family='Tacoma', size=24, weight='bold')
-    style.configure('TButton', font=button_font)
-    style.configure('Treeview', font=normal_font)
 
 if __name__ == '__main__':
     main()

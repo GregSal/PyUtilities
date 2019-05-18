@@ -6,22 +6,18 @@ Configuration data for Structure templates GUI
 '''
 
 
-from typing import List, Dict, Any
+from typing import Union
 from pathlib import Path
 from pickle import load
+import tkinter as tk
 from tkinter import messagebox
-import pandas as pd
+
+StringValue = Union[tk.StringVar, str]
 
 from CustomVariableSet.custom_variable_sets import CustomVariableSet
 from CustomVariableSet.custom_variable_sets import PathV, StringV, StrPathV
 from file_utilities import set_base_dir
-from spreadsheet_tools import load_reference_table
 
-from template_gui.manage_template_lists import import_template_list
-from template_gui.template_manager import update_template_data
-from template_gui.template_manager import build_xml
-from template_gui.manage_template_lists import select_templates
-from template_gui.WriteStructureTemplate import build_templates
 
 #from WriteStructureTemplate import *
 #from manage_template_lists import *
@@ -94,67 +90,10 @@ def load_template_list(template_list_pickle_file_path: Path):
     return active_templates
 
 
-
-
-# TODO  Assess which methods should stay here
-
-class TemplateData():
-    data_fields = ['TemplateID', 'TemplateCategory', 'TreatmentSite',
-                   'workbook_name', 'sheet_name', 'modification_date',
-                   'Number_of_Structures', 'Description', 'Diagnosis',
-                   'Author', 'Columns', 'template_file_name', 'Status',
-                   'TemplateType', 'ApprovalStatus']
-
-    def __init__(self, **kwargs):
-        self.template_file_info = dict(
-            file_name='Template List.xlsx',
-            sub_dir=r'Work\Structure Dictionary\Template Spreadsheets',
-            sheet_name='templates'
-            )
-        self.template_table_info = dict(
-            starting_cell='A1',
-            header=1
-            )
-        self.template_selections = dict(
-            unique_scans=['TemplateID'],
-            select_columns=self.data_fields,
-            criteria_selection={'workbook_name': 'Basic Templates.xlsx',
-                                'Status': 'Active'}
-            )
-        self.set_args(kwargs, 'template_table_info')
-        self.set_args(kwargs, 'template_selections')
-        self.set_args(kwargs, 'template_data')
-        self.template_data = self.get_template_data()
-
-    def set_args(self, arguments: Dict[str, Any], dict_name: str):
-        dict_to_update = self.__getattribute__(dict_name)
-        field_names = tuple(dict_to_update.keys())
-        args_dict = {key: value for key, value in arguments.items()
-                     if key in field_names}
-        dict_to_update.update(args_dict)
-
-    def get_template_data(self):
-        template_data = load_reference_table(
-            self.template_file_info,
-            self.template_table_info,
-            **self.template_selections)
-        template_data.workbook_name = template_data.workbook_name.str.split('.', 1)[0]
-        # load_template_data(pickle_file_name: PathInput, sub_dir: str = None, base_path: Path = None)
-        return template_data
-
-    def get_workbook_data(self):
-        return self.template_data.groupby('workbook_name')
-
-
-
 def update_selection(event, variable):
     select_list = [str(item) for item in event.widget.selection()]
     select_str = '\n'.join(select_list)
     variable.set(select_str)
-
-
-def select_list_2_str(select_list: List[str])-> str:
-    return '\n'.join(select_list)
 
 
 def print_select(event):
@@ -162,41 +101,29 @@ def print_select(event):
     messagebox.showinfo('Selected File', selected)
 
 
-def insert_template_items(template_selector, workbooks, show_vars):
-    '''Add the template items to the workbook.
-    '''
-    #top_level = template_selector.insert('', 0, text='Structure Templates')
-    template_ref = dict()
-    for workbook, sheets in workbooks:
-        workbook_str = workbook.split('.', 1)[0]
-        file_ref = template_selector.insert('', 'end', workbook_str,
-                                            text=workbook_str,
-                                            open=True,
-                                            tags=('File',))
-        template_ref[workbook_str] = file_ref
-        for template_data in sheets.itertuples():
-            name = template_data.TemplateID
-            template_values = [getattr(template_data, item)
-                               for item in show_vars]
-            item_id = template_selector.insert(file_ref, 'end', name, text=name,
-                                          values=template_values,
-                                          tags=('Template',))
-            template_ref[name] = item_id
-
-
-def file_select(event):
+def file_select(event, variable: StringValue):
     selected_file = event.widget.focus()
+    event.widget.item(selected_file, open=True)
+    #test_message_window(event.widget, (selected_file,), 'Selected File')
+
     file_templates = event.widget.get_children(item=selected_file)
+    #test_message_window(event.widget, file_templates, 'Templates in Selected File')
+
+    event.widget.selection_remove(selected_file)
     select_list = event.widget.selection()
-    selected = (template in select_list for template in file_templates)
-    #select_str = '\n'.join([str(item) for item in file_templates])
-    #heading = '{} Selected:'.format(str(selected_file))
-    #messagebox.showinfo(heading, select_str)
-    if all(selected):
+    #test_message_window(event.widget, select_list, 'All Selected Templates')
+
+    is_selected = [file_template in select_list
+                   for file_template in file_templates]
+    if all(is_selected):
         event.widget.selection_remove(*file_templates)
-        event.widget.item(selected_file, open=True)
-        #messagebox.showinfo(heading, select_str)
     else:
         event.widget.selection_add(*file_templates)
-        event.widget.item(selected_file, open=True)
-        #messagebox.showinfo(heading, select_str)
+    update_selection(event, variable)
+
+def test_message_window(parent_window: tk.Widget, file_templates, window_text):
+    '''Display the sting message or variable content.'''
+    str_message = '\n'.join(file_templates)
+    messagebox.showinfo(title=window_text, message=str_message,
+                        parent=parent_window)
+

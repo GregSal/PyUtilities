@@ -5,13 +5,16 @@ tree_view widget methods
 
 @author: Greg Salomons
 """
-from typing import List, Any
+from typing import List, Union, Any
 import tkinter as tk
 from tkinter import ttk
 import xml.etree.ElementTree as ET
 import pandas as pd
 from GUI_Management.object_reference_management import ReferenceTracker
 from data_utilities import true_iterable
+
+
+StringValue = Union[tk.StringVar, str]
 
 
 # TODO add frame widget that can include scroll bars for tree
@@ -125,6 +128,7 @@ class TreeSelector(ttk.Treeview):
             header_data = column_def.find('HeaderDef')
             if header_data is not None:
                 self.heading(column_name, **header_data.attrib)
+        pass
 
     def set_column_levels(self, level_set: ET.Element):
         '''
@@ -149,4 +153,8 @@ class TreeSelector(ttk.Treeview):
                     binding.findtext('event'))
                 callback = self.reference.lookup_references(
                     binding.findtext('callback'))
-                self.tag_bind(tag_name, event, callback) # add option is not available for tag_bind
+                self.tag_bind(tag_name, event, callback)
+                # add option is not available for tag_bind
+        pass
+
+
