@@ -1,6 +1,5 @@
 from spreadsheet_tools import *
-from electron_functions import *
-from data_processing import *
+from data_utilities import *
 
 test_worksheet_info = dict(file_name='Profile Parameter analysis.xlsx',
                      sub_dir=r'Work\electrons',
@@ -44,7 +43,7 @@ sheet_names = ['TR3 square Profile Parameters',
 ########
 # Test range
 ########C:\Users\Greg\OneDrive - Queen's University\
-from Tools.spreadsheet_tools import *
+from spreadsheet_tools import *
 
 
 parameter_sheet_info = dict(

@@ -23,7 +23,6 @@
   <ItemGroup>
     <Content Include="FileSelectFrame.xml" />
     <Content Include="FileSelectGUI.xml" />
-    <Content Include="GUI Layout settings.txt" />
     <Content Include="GUI Layout.xlsx" />
     <Content Include="GUI_Builder.xsd" />
     <Content Include="icons\arrow-down.png" />
@@ -44,8 +43,6 @@
     <Content Include="icons\Triangle-Down2.png" />
     <Content Include="Options and Functions.xlsx" />
     <Content Include="StructuresGUI.xml" />
-    <Content Include="TestGUI_2.xml" />
-    <Content Include="TestGUI_3.xml" />
     <Content Include="TestGUI_4.xml" />
     <Content Include="Tkinter_GUI.xsd" />
     <Content Include="Tkinter_Widgets.xsd" />

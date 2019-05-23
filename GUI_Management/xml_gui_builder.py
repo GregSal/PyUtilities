@@ -13,6 +13,7 @@ import re
 import tkinter as tk
 import tkinter.font as tkFont
 import tkinter.ttk as ttk
+from tkinter import scrolledtext
 
 
 import GUI_Management.gui_methods as gm
@@ -30,19 +31,25 @@ TkItem = Union[tk.Widget, ttk.Widget, tk.Wm]
 Definition = Dict[str, Dict[str, Any]]
 ArgType = TypeVar('ArgType', List[Any], Dict[str, Any])
 
-# FIXME Need to clean extra white space from all findtext calls
-# FIXME Need to pass all findtext results through resolve
+# TODO Need to clean extra white space from all findtext calls
+# TODO Need to pass all findtext results through resolve
+# TODO Need method to handle binding events
 
 
 class GuiManager():
     identifier_list = ['Widget', 'Variable', 'Image', 'Command', 'Font', 'X']
     lookup_list = [('Tkinter', {'tk': tk, 'ttk': ttk, 'gm': gm})]
+    # TODO Create import method that builds a sub-class GuiManager and merges its top window/widget with the current GuiManager
+    # Use geometry to a widget, link a window to a related window or widget
+    # Merge the reference attribute
 
     def __init__(self, data_set: CustomVariableSet, xml_file: Path):
         self.reference = ReferenceTracker(self.identifier_list,
                                           self.lookup_list)
         self.reference.add_lookup_group('Data', data_set)
+        # Question is it a good idea to include globals in the reference set?
         self.reference.add_lookup_group('Globals', globals())
+        self.data_link = dict()
         self.definition = self.load_xml(xml_file)
         self.make_root()
         self.initialize_variables()
@@ -63,7 +70,7 @@ class GuiManager():
 
     def make_root(self):
         root = tk.Tk()
-        self.reference.add_item('Widget', 'root', root)
+        self.reference.set_item('Widget', 'root', root)
 
     def execute(self):
         root = self.lookup_item('Window', 'root')
@@ -97,20 +104,8 @@ class GuiManager():
         '''
         return self.reference.lookup_item(group_id, item_name)
 
-    def call_item(self, group_id: str, item_name: str) -> Any:
-        '''Fetch an object reference.
-        Arguments:
-            group_id {str} -- A single character used to identify the
-                reference group. Only the first character of the supplied
-                string is uses as the identifier.
-            item_name {str} -- The reference name of the group item.
-        Returns:
-            {Any} -- The object referenced.
-        '''
-        return self.reference.lookup_item(group_id, item_name)
-
-    def add_reference(self, identifier: str, name: str, item: Any):
-        '''Add a new item for reference.
+    def set_reference(self, identifier: str, name: str, item: Any):
+        '''Add or update a reference item.
 
         Arguments:
             identifier {str} -- A single character used to identify the
@@ -119,7 +114,7 @@ class GuiManager():
             name {str} -- The name used to reference the group item.
             item {Any} -- The object to be referenced
         '''
-        self.reference.add_item(identifier, name, item)
+        self.reference.set_item(identifier, name, item)
 
     def get_class(self, object_def: ET.Element, class_lookup: str)->ObjectDef:
         object_str = object_def.findtext(class_lookup)
@@ -131,25 +126,21 @@ class GuiManager():
         parent = self.lookup_item('W', parent_name)
         return parent
 
-    def initialize_variables(self):
-        def get_initial_value(variable: ET.Element)->Any:
-            data_name = variable.findtext('data_reference')
-            if data_name is not None:
-                data_item = self.lookup_item('D', data_name)
-                try:
-                    initial_value = data_item.value
-                except AttributeError:
-                    initial_value = data_item
-            else:
-                initial_value = None
-            return initial_value
+    def build_data_link(self, variable: ET.Element):
+        variable_name = variable.attrib['name']
+        data_name = variable.findtext('data_reference')
+        if data_name is not None:
+            self.data_link[variable_name] = data_name
+        pass
 
+    def initialize_variables(self):
         for variable in self.definition.findall('VariableSet/*'):
             name = variable.attrib['name']
             variable_class = self.get_class(variable, 'variable_class')
             new_variable = variable_class(name=name)
-            new_variable.set(get_initial_value(variable))
-            self.add_reference('Variable', name, new_variable)
+            self.set_reference('Variable', name, new_variable)
+            self.build_data_link(variable)
+            self.update_variable(name, 'from_data')
 
     def initialize_images(self):
         for image in self.definition.findall('ImageSet/*'):
@@ -167,7 +158,7 @@ class GuiManager():
                 if bg_colour:
                     options['background'] = bg_colour
                 new_image = tk.BitmapImage(file=image_file, **options)
-            self.add_reference('Image', name, new_image)
+            self.set_reference('Image', name, new_image)
 
     def initialize_styles(self):
         theme = self.definition.findtext('Styles/Theme')
@@ -180,14 +171,14 @@ class GuiManager():
             options['size'] = int(font_def.findtext('size'))
             options['weight'] = font_def.findtext('weight')
             new_font = tkFont.Font(**options)
-            self.add_reference('Font', name, new_font)
+            self.set_reference('Font', name, new_font)
 
     def initialize_windows(self):
         for window_def in self.definition.findall(r'.//WindowSet/*'):
             name = window_def.attrib['name']
             parent = self.get_parent(name)
             new_window = tk.Toplevel(name=name, master=parent)
-            self.add_reference('Window', name, new_window)
+            self.set_reference('Window', name, new_window)
 
     def initialize_widgets(self):
         for widget_def in self.definition.findall(r'.//WidgetSet/*'):
@@ -195,7 +186,7 @@ class GuiManager():
             parent = self.get_parent(name)
             widget_class = self.get_class(widget_def, 'widget_class')
             new_widget = widget_class(name=name, master=parent)
-            self.add_reference('Widget', name, new_widget)
+            self.set_reference('Widget', name, new_widget)
 
     def initialize_commands(self):
         def get_positional_arguments(command: ET.Element)->List[Any]:
@@ -217,13 +208,18 @@ class GuiManager():
         for command in self.definition.findall('CommandSet/*'):
             name = command.attrib['name']
             function = self.get_class(command, 'function')
+            data_update = bool(command.findtext('update_data'))
             args = get_positional_arguments(command)
             kwargs = get_keyword_arguments(command)
-            command_callable = partial(function, *args, **kwargs)
-            self.add_reference('Command', name, command_callable)
+            if data_update:
+                command_callable = partial(self.update_and_run,
+                                           function, *args, **kwargs)
+            else:
+                command_callable = partial(function, *args, **kwargs)
+            self.set_reference('Command', name, command_callable)
             # The X:: reference indicates a reference to the output of the
             # C:: command reference ## Not yet implemented
-            self.add_reference('Xecute', name, command_callable)
+            self.set_reference('Xecute', name, command_callable)
         pass
 
     def configure_item(self, tk_item: TkItem, item_def: ET.Element):
@@ -240,6 +236,7 @@ class GuiManager():
                 item_method(**options)
         if hasattr(tk_item, 'build'):
             tk_item.build(item_def, self.reference)
+        pass
 
     def set_appearance(self, tk_item: TkItem, item_def: ET.Element):
         options = dict()
@@ -354,6 +351,31 @@ class GuiManager():
             self.set_appearance(widget, widget_settings)
             self.grid_config(widget, widget_settings)
             self.set_widget_geometry(widget, widget_settings)
+
+    def update_variable(self, variable_name: str, update_method='from_data'):
+        variable = self.lookup_item('Variable', variable_name)
+        data_name = self.data_link.get(variable_name)
+        if data_name:
+            if update_method in 'from_data':
+                data_item = self.lookup_item('Data', data_name)
+                try:
+                    data_value = data_item.value
+                except AttributeError:
+                    data_value = data_item
+                variable.set(data_value)
+            if update_method in 'to_data':
+                data_value = variable.get()
+                self.set_reference('Data', data_name, data_value)
+        pass
+
+    def update_data(self):
+        for variable_name in self.data_link.keys():
+            self.update_variable(variable_name, 'to_data')
+        pass
+
+    def update_and_run(self, command: Callable, *args, **kwargs)->Callable:
+        self.update_data()
+        command(*args, **kwargs)
 
 
 def main():

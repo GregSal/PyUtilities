@@ -85,9 +85,7 @@
             </xs:choice>
           </xs:complexType>
         </xs:element>
-        <xs:element minOccurs="1"
-                    maxOccurs="1"
-                    name="RootWindow"
+        <xs:element name="RootWindow"
                     type="WindowType" />
       </xs:sequence>
     </xs:complexType>
@@ -108,19 +106,19 @@
     <xs:sequence>
       <xs:element name="function"
                   type="xs:string" />
-      <xs:element minOccurs="1"
-                  maxOccurs="1"
-                  name="PositionalArgs">
+      <xs:element minOccurs="0"
+                  name="update_data"
+                  type="xs:boolean" />
+      <xs:element name="PositionalArgs">
         <xs:complexType>
-          <xs:sequence minOccurs="0">
+          <xs:sequence minOccurs="0"
+                       maxOccurs="unbounded">
             <xs:element name="Arg"
                         type="xs:string" />
           </xs:sequence>
         </xs:complexType>
       </xs:element>
-      <xs:element minOccurs="1"
-                  maxOccurs="1"
-                  name="KeywordArgs">
+      <xs:element name="KeywordArgs">
         <xs:complexType>
           <xs:anyAttribute namespace=""
                            processContents="skip" />

@@ -22,6 +22,9 @@
       <variable_class>tk.StringVar</variable_class>
       <data_reference>selected_templates</data_reference>
     </Variable>
+    <Variable name="ProgressValue">
+      <variable_class>tk.IntVar</variable_class>
+    </Variable>
   </VariableSet>
   <ImageSet>
     <PhotoImage name="file_image"
@@ -60,6 +63,42 @@
       </PositionalArgs>
       <KeywordArgs />
     </Command>
+    <Command name="StatusYview">
+      <function>tk.Text.yview</function>
+      <PositionalArgs>
+        <Arg>W::status</Arg>
+      </PositionalArgs>
+      <KeywordArgs />
+    </Command>
+    <Command name="StatusVScroll">
+      <function>ttk.Scrollbar.set</function>
+      <PositionalArgs>
+        <Arg>W::status_scrollbar_v</Arg>
+      </PositionalArgs>
+      <KeywordArgs />
+    </Command>
+    <Command name="StatusUpdate">
+      <function>gm.status_update</function>
+      <PositionalArgs>
+        <Arg>W::status</Arg>
+      </PositionalArgs>
+      <KeywordArgs/>
+    </Command>
+    <Command name="InitProgress">
+      <function>gm.init_progress</function>
+      <PositionalArgs>
+        <Arg>W::progress</Arg>
+        <Arg>V::ProgressValue</Arg>
+      </PositionalArgs>
+      <KeywordArgs/>
+    </Command>
+    <Command name="ProgressStep">
+      <function>gm.progress_step</function>
+      <PositionalArgs>
+        <Arg>W::progress</Arg>
+      </PositionalArgs>
+      <KeywordArgs/>
+    </Command>
     <Command name="Exit">
       <function>W::root.destroy</function>
       <PositionalArgs />
@@ -90,12 +129,14 @@
                    variable="V::XmlOutputDirectory"/>
     </Command>
     <Command name="BuildTemplates">
-      <function>gm.message_window</function>
+      <function>tp.build_xml</function>
+      <update_data>true</update_data>
       <PositionalArgs>
-        <Arg>W::root</Arg>
+        <Arg>D::*</Arg>
       </PositionalArgs>
-      <KeywordArgs window_text="Message"
-                   variable="V::SelectedTemplates"/>
+      <KeywordArgs status_updater="C::StatusUpdate"
+                   init_progressbar="C::InitProgress"
+                   step_progressbar="C::ProgressStep"/>
     </Command>
     <Command name="ShowSelected">
       <function>gm.message_window</function>
@@ -267,7 +308,7 @@
             <ColumnSet>
               <ItemData>D::TemplateData</ItemData>
               <Column name="StructureTemplates"
-                      data_reference="workbook_name"
+                      data_reference="spreadsheet_name"
                       show="tree">
                 <ColumnDef minwidth="95"
                            anchor="w"
@@ -397,10 +438,10 @@
             </ColumnSet>
             <LevelSet>
               <Level name="File" >
-                <GroupBy>workbook_name</GroupBy>
+                <GroupBy>spreadsheet_name</GroupBy>
                 <Tags>File</Tags>
                 <DisplayValues>
-                  workbook_name
+                  spreadsheet_name
                   modification_date
                   TemplateFileName
                 </DisplayValues>
@@ -642,7 +683,7 @@
             <Settings>
               <Geometry>
                 <Grid column="1"
-                      row="0" />
+                      row="2" />
                 <Padding padx="5"
                          pady="5"/>
               </Geometry>
@@ -651,7 +692,7 @@
           <Widget name="build_templates">
             <widget_class>ttk.Button</widget_class>
             <Configure text="Build the XML Template Files"
-                       command="C::ShowSelected"
+                       command="C::BuildTemplates"
                        width="26"/>
             <Settings>
               <Geometry>
@@ -670,9 +711,84 @@
             <Settings>
               <Geometry>
                 <Grid column="1"
-                      row="2"/>
+                      row="0"/>
                 <Padding padx="5"
                          pady="5"/>
+              </Geometry>
+            </Settings>
+          </Widget>
+        </WidgetSet>
+      </WidgetContainer>
+      <WidgetContainer name="status_group">
+        <widget_class>ttk.Frame</widget_class>
+        <Settings>
+          <Geometry>
+            <Grid column="0"
+                  row="5"
+                  columnspan="2"
+                  sticky="nsew"/>
+            <Padding padx="5"
+                     pady="6"/>
+          </Geometry>
+          <GridConfigure>
+            <ColumnConfigure column="0"
+                             weight="27"/>
+            <ColumnConfigure column="3"
+                             weight="69"/>
+            <RowConfigure row="0"
+                          weight="1"/>
+          </GridConfigure>
+        </Settings>
+        <WidgetSet>
+          <Widget name="status_scrollbar_v">
+            <widget_class>ttk.Scrollbar</widget_class>
+            <Configure orient="vertical"
+                       command="C::StatusYview"/>
+            <Settings>
+              <Geometry>
+                <Grid column="1"
+                      row="0"
+                      sticky="ns"/>
+                <Padding ipadx="0"
+                         ipady="0"
+                         padx="0"
+                         pady="0"/>
+              </Geometry>
+            </Settings>
+          </Widget>
+          <Widget name="status">
+            <widget_class>tk.Text</widget_class>
+            <Configure yscrollcommand="C::StatusVScroll"
+                       takefocus="0"
+                       width="47"
+                       height="4"/>
+            <Settings>
+              <Geometry>
+                <Grid column="0"
+                      row="0"
+                      sticky="nsew"/>
+                <Padding ipadx="0"
+                         ipady="0"
+                         padx="0"
+                         pady="0"/>
+              </Geometry>
+            </Settings>
+          </Widget>
+          <Widget name="progress">
+            <widget_class>ttk.Progressbar</widget_class>
+            <Configure length="120"
+                       mode="determinate"
+                       maximum="10"
+                       variable="V::ProgressValue" />
+            <Settings>
+              <Geometry>
+                <Grid column="3"
+                      row="0"
+                      sticky="nsew"/>
+                <Padding ipadx="11"
+                         ipady="8"
+                         padx="0"
+                         pady="6" />
               </Geometry>
             </Settings>
           </Widget>

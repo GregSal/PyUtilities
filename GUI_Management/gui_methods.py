@@ -5,8 +5,6 @@ Created on Apr 25 2019
 Misc GUI methods
 '''
 
-# Question Do I need the gui_methods module or should this go into other modules>
-
 from typing import Union, List
 import tkinter as tk
 from tkinter import messagebox
@@ -47,3 +45,19 @@ def quick_browse(master=None, path_variable=None, **file_params):
     return selected_path
 
 
+def status_update(status_widget: tk.Widget, status_text: str):
+    status_text = '\n' + status_text
+    status_widget.insert('end', status_text)
+
+
+def init_progress(progress_widget: tk.Widget, progress_variable: tk.IntVar,
+                  max_level: int):
+    progress_widget.configure(maximum=max_level)
+    progress_variable.set(0)
+
+
+def progress_update(progress_variable: tk.IntVar, progress_level):
+    progress_variable.set(progress_level)
+
+def progress_step(progress_widget: tk.Widget, increment: int = 1):
+    progress_widget.step(increment)

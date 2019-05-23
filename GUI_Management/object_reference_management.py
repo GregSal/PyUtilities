@@ -40,6 +40,12 @@ class ReferenceTracker():
     '''
     token = '::'
     ref_pattern = r'^([{id_set}]){token}(.*)$'
+    # TODO look for '.' as attribute separator, ::* for entire lookup group
+    # TODO Goal Resolve multi-attributes:
+    #       TK::ttk.Button.Text(D::action_name[1])
+    #       G::Treeview.column(D::columns[column_name].width)
+    #       C::SaveData(**D::*)
+    # TODO Create merge and update methods that will combine data from 2 ReferenceTracker objects
 
     def __init__(self, identifier_list: List[str] = None,
                  lookup_list: List[LookupDef] = None):
@@ -81,6 +87,20 @@ class ReferenceTracker():
         self.id_list.append(group_id)
         self.build_rx()
 
+
+    def get_lookup_group(self, identifier: str)->LookupDict:
+        '''Return an entire lookup group.
+        Arguments:
+            identifier {str} -- A single character used to identify the group.
+                Only the first character of the supplied string is uses as the
+                identifier.
+        Returns:
+            lookup {LookupDict} -- A dictionary containing names and objects
+                for reference.
+        '''
+        group_id = identifier[0]  # Single character identifiers only
+        return self.lookup_groups[group_id]
+
     def build_rx(self):
         '''Compile a Regular expression search pattern to find references in a
         string.
@@ -89,8 +109,9 @@ class ReferenceTracker():
         full_expression = self.ref_pattern.format(**specs)
         self.ref_rx = re.compile(full_expression)
 
-    def add_item(self, identifier: str, name: str, item: Any):
-        '''Add a new item for reference.
+    def set_item(self, identifier: str, name: str, item: Any):
+        '''Add or update an item for reference.
+            A new item will be created if it does not already exist.
 
         Arguments:
             identifier {str} -- A single character used to identify the
@@ -131,6 +152,8 @@ class ReferenceTracker():
         if matched:
             group_id = matched.group(1)
             item_name = matched.group(2)
+            if item_name == '*':
+                return self.get_lookup_group(group_id)
             return self.lookup_item(group_id, item_name)
         return item_reference
 
@@ -272,8 +295,8 @@ def main():
     test_ref = ReferenceTracker(identifier_list, lookup_list)
     test_ref.add_lookup_group('New', {'T1': 'test1',
                                       'T2': test_module_function})
-    test_ref.add_item('A', 'I1', to1)
-    test_ref.add_item('B', 'I1', test_method)
+    test_ref.set_item('A', 'I1', to1)
+    test_ref.set_item('B', 'I1', test_method)
     fnc = test_ref.match_reference('B::I1')
     fnc()
     atr1 = test_ref.get_attribute('A::I1.atr1')
