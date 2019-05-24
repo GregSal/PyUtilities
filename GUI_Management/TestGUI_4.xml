@@ -778,13 +778,12 @@
             <widget_class>ttk.Progressbar</widget_class>
             <Configure length="120"
                        mode="determinate"
-                       maximum="10"
-                       variable="V::ProgressValue" />
+                       maximum="10" />
             <Settings>
               <Geometry>
                 <Grid column="3"
                       row="0"
-                      sticky="nsew"/>
+                      sticky="ew"/>
                 <Padding ipadx="11"
                          ipady="8"
                          padx="0"

@@ -14,6 +14,11 @@ from tree_view import TreeSelector
 StringValue = Union[tk.StringVar, str]
 
 
+def test_message(message_text):
+    '''Display the sting message or variable content.'''
+    messagebox.showinfo(title='Testing', message=message_text)
+    
+
 def message_window(parent_window: tk.Widget, window_text: StringValue = '',
                    variable: StringValue = 'Nothing to say', **options):
     '''Display the sting message or variable content.'''
@@ -52,12 +57,15 @@ def status_update(status_widget: tk.Widget, status_text: str):
 
 def init_progress(progress_widget: tk.Widget, progress_variable: tk.IntVar,
                   max_level: int):
+    #test_message('Initialize Progress bar Max: %d' %max_level)
     progress_widget.configure(maximum=max_level)
-    progress_variable.set(0)
+    progress_widget["value"]=1
+    progress_variable.set(1)
 
 
 def progress_update(progress_variable: tk.IntVar, progress_level):
     progress_variable.set(progress_level)
 
 def progress_step(progress_widget: tk.Widget, increment: int = 1):
+    #test_message('Step Progress bar by: %d' %increment)
     progress_widget.step(increment)

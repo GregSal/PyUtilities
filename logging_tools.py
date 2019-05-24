@@ -28,6 +28,12 @@ def config_logger(level: str = 'DEBUG', prefix=__name__)->logging.Logger:
     logging.basicConfig(format=format_str)
     logger = logging.getLogger(prefix)
     # Set Level
+    #   logging.DEBUG = 10
+    #   logging.INFO = 20
+    #   logging.WARNING = 30
+    #   logging.ERROR = 40
+    #   logging.CRITICAL = 50
+
     if level == 'DEBUG':
         logger.setLevel(logging.DEBUG)
     elif level == 'INFO':

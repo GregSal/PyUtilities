@@ -21,7 +21,7 @@ from file_utilities import set_base_dir
 from template_gui.StructureData import load_structure_references
 from template_gui.WriteStructureTemplate import build_template
 
-LOGGER = config_logger(level='DEBUG')
+LOGGER = config_logger(level='ERROR')
 
 
 class TemplateSelectionsSet(CustomVariableSet):
@@ -95,6 +95,7 @@ def load_template_list(template_list_pickle_file_path: Path):
     active_templates['Columns'] = active_templates['Columns'].astype('int64')
     split_names = active_templates['workbook_name'].str.split('.', 1)
     active_templates['spreadsheet_name'] = [name[0] for name in split_names]
+    active_templates['title'] = active_templates.TemplateID
     return active_templates
 
 
@@ -149,29 +150,37 @@ def build_xml(template_data: TemplateSelectionsSet,
     '''build a list of templates from a list of template names.
     '''
     selected_templates = template_data['selected_templates']
-    selections_list = selected_templates.split()
-    test_message('Building Templates:\n %s' %selected_templates)
-    LOGGER.debug('Building Templates:\n %s:', selected_templates)
+    selections_list = selected_templates.splitlines()
+
+    #LOGGER.setLevel(10)  # logging.DEBUG
+    #test_message('Building Templates:\n%s' %selected_templates)
+    #LOGGER.debug('Building Templates:\n%s:', selected_templates)
+    #LOGGER.debug('Template List:\n%s:', selections_list)
     if not selections_list:
         return None
 
     structures_pickle_file_path = template_data['structures_pickle']
-    LOGGER.debug('Loading Structures From: %s', str(structures_pickle_file_path))
+
+    #LOGGER.debug('Loading Structures From: %s', str(structures_pickle_file_path))
+
     structures_lookup = load_structure_references(structures_pickle_file_path)
 
-    LOGGER.debug('Getting Template reference data')
-    template_list = template_data['TemplateData']
-    template_list['title'] = template_list.TemplateID
-    template_param = template_list.set_index('TemplateID') 
-    LOGGER.debug(template_list.head())
-    LOGGER.debug(template_list.columns)
+    #LOGGER.debug('Getting Template reference data')
+
+    template_list = template_data['TemplateData']    
+
+    #LOGGER.debug(template_list.head())
+    #LOGGER.debug(template_list.columns)
+
+    template_indxer = template_list['TemplateID'].isin(selections_list)
     column_selection = ['title', 'Columns', 'TemplateFileName',
                         'workbook_name', 'sheet_name']
-    selected_template_data = template_param.loc[selections_list, column_selection]
-    selected_templates = selected_template_data.to_dict(orient='record')
-    LOGGER.debug(selected_template_data.head())
-    test_message('Ready to start building Templates')
-    LOGGER.debug('Ready to start building Templates')
+    selected_templates = template_list.loc[template_indxer, column_selection]
+
+    #LOGGER.debug(selected_templates.head())
+    #test_message('Ready to start building Templates')
+    #LOGGER.debug('Ready to start building Templates')
+
     template_directory = Path(template_data['spreadsheet_directory'])
     output_path = Path(template_data['output_directory'])
     num_templates = len(selections_list)
@@ -179,13 +188,17 @@ def build_xml(template_data: TemplateSelectionsSet,
         status_updater('Building  %d Templates...' %num_templates)
     if init_progressbar is not None:
         init_progressbar(num_templates)
-    for template_def in selected_templates:
-        LOGGER.debug('Building Template: %s', template_def['title'])
+    for template_def in selected_templates.to_dict(orient='record'):
+
+        #LOGGER.debug('Building Template: %s', template_def['title'])
+
         if status_updater is not None:
             status_updater('Building Template: %s' %template_def['title'])
         build_template(template_def, template_directory, output_path,
                        structures_lookup)
-        LOGGER.debug('Done Building Template: %s', template_def['title'])
+
+        #LOGGER.debug('Done Building Template: %s', template_def['title'])
+
         if step_progressbar is not None:
             step_progressbar()
     if status_updater is not None:
