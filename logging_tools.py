@@ -4,6 +4,30 @@ Includes calling references.
 
 import logging
 
+def set_log_level(logger, level):
+    # Set Level
+    #   logging.DEBUG = 10
+    #   logging.INFO = 20
+    #   logging.WARNING = 30
+    #   logging.ERROR = 40
+    #   logging.CRITICAL = 50
+    if level == 'DEBUG':
+        logger.setLevel(logging.DEBUG)
+    elif level == 'INFO':
+        logger.setLevel(logging.INFO)
+    elif level == 'WARNING':
+        logger.setLevel(logging.WARNING)
+    elif level == 'ERROR':
+        logger.setLevel(logging.ERROR)
+    elif level == 'CRITICAL':
+        logger.setLevel(logging.CRITICAL)
+    else:
+        msg_str = 'Level must be one of: {}; got {}'
+        msg = msg_str.format(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], level)
+        raise ValueError(msg)
+    pass
+
+
 def config_logger(level: str = 'DEBUG', prefix=__name__)->logging.Logger:
     '''Configure a basic logger.
     Creates a logger that prints to the standard output with the given level.
@@ -27,27 +51,7 @@ def config_logger(level: str = 'DEBUG', prefix=__name__)->logging.Logger:
     format_str = '%(name)-20s - %(levelname)s: %(message)s'
     logging.basicConfig(format=format_str)
     logger = logging.getLogger(prefix)
-    # Set Level
-    #   logging.DEBUG = 10
-    #   logging.INFO = 20
-    #   logging.WARNING = 30
-    #   logging.ERROR = 40
-    #   logging.CRITICAL = 50
-
-    if level == 'DEBUG':
-        logger.setLevel(logging.DEBUG)
-    elif level == 'INFO':
-        logger.setLevel(logging.INFO)
-    elif level == 'WARNING':
-        logger.setLevel(logging.WARNING)
-    elif level == 'ERROR':
-        logger.setLevel(logging.ERROR)
-    elif level == 'CRITICAL':
-        logger.setLevel(logging.CRITICAL)
-    else:
-        msg_str = 'Level must be one of: {}; got {}'
-        msg = msg_str.format(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], level)
-        raise ValueError(msg)
+    set_log_level(logger, level)
     return logger
 
 
@@ -78,21 +82,7 @@ def file_logger(file_name: str, level: str = 'DEBUG', prefix=__name__)->logging.
     save_mode = 'w'
     logging.basicConfig(format=msg_format, filename=file_name,
                                          filemode=save_mode, datefmt=date_fmt)
-    logger = logging.getLogger(prefix)
-    if level == 'DEBUG':
-        logger.setLevel(logging.DEBUG)
-    elif level == 'INFO':
-        logger.setLevel(logging.INFO)
-    elif level == 'WARNING':
-        logger.setLevel(logging.WARNING)
-    elif level == 'ERROR':
-        logger.setLevel(logging.ERROR)
-    elif level == 'CRITICAL':
-        logger.setLevel(logging.CRITICAL)
-    else:
-        msg_str = 'Level must be one of: {}; got {}'
-        msg = msg_str.format(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], level)
-        raise ValueError(msg)
+    set_log_level(logger, level)
     return logger
 
 def ch_logger(logger: logging.Logger = None, level: str = 'DEBUG', prefix=__name__)->logging.Logger:
@@ -127,21 +117,7 @@ def ch_logger(logger: logging.Logger = None, level: str = 'DEBUG', prefix=__name
     formatter = logging.Formatter('%(name)-20s - %(levelname)s: %(message)s')
     # add formatter to ch
     ch.setFormatter(formatter)
-    # Set Level
-    if level == 'DEBUG':
-        ch.setLevel(logging.DEBUG)
-    elif level == 'INFO':
-        ch.setLevel(logging.INFO)
-    elif level == 'WARNING':
-        ch.setLevel(logging.WARNING)
-    elif level == 'ERROR':
-        ch.setLevel(logging.ERROR)
-    elif level == 'CRITICAL':
-        ch.setLevel(logging.CRITICAL)
-    else:
-        msg_str = 'Level must be one of: {}; got {}'
-        msg = msg_str.format(['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], level)
-        raise ValueError(msg)
+    set_log_level(ch, level)
     # add ch to logger
     logger.addHandler(ch)
     return logger

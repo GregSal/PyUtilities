@@ -8,31 +8,36 @@ Configuration data for Structure templates GUI
 
 from typing import Union, Callable
 from pathlib import Path
-from pickle import load
+from pickle import dump, load
 import tkinter as tk
 from tkinter import messagebox
+import pandas as pd
 
 StringValue = Union[tk.StringVar, str]
 
-from logging_tools import config_logger
+from logging_tools import config_logger, log_dict
 from CustomVariableSet.custom_variable_sets import CustomVariableSet
 from CustomVariableSet.custom_variable_sets import PathV, StringV, StrPathV
 from file_utilities import set_base_dir
+from spreadsheet_tools import open_book, load_definitions, append_data_sheet
 from template_gui.StructureData import load_structure_references
 from template_gui.WriteStructureTemplate import build_template
+from template_gui.StructureData import build_structures_lookup
+from template_gui.manage_template_lists import scan_template_workbook
+from template_gui.manage_template_lists import find_template_files
 
 LOGGER = config_logger(level='ERROR')
 
 
 class TemplateSelectionsSet(CustomVariableSet):
     base_dir = set_base_dir(r'Work\Structure Dictionary')
-    template_directory = base_dir / 'Template Spreadsheets'
+    template_dir = base_dir / 'Template Spreadsheets'
     variable_definitions = [
         {
             'name': 'spreadsheet_directory',
             'variable_type': StrPathV,
             'file_types': 'directory',
-            'default': template_directory,
+            'default': template_dir,
             'required': False
         },
         {
@@ -46,28 +51,28 @@ class TemplateSelectionsSet(CustomVariableSet):
             'name': 'structures_file',
             'variable_type': PathV,
             'file_types': 'Excel Files',
-            'default': template_directory / 'Structure Lookup.xlsx',
+            'default': template_dir / 'Structure Lookup.xlsx',
             'required': False
         },
         {
             'name': 'structures_pickle',
             'variable_type': PathV,
             'file_types': 'Pickle File',
-            'default': template_directory / 'StructureData.pkl',
+            'default': template_dir / 'StructureData.pkl',
             'required': False
         },
         {
             'name': 'template_list_file',
             'variable_type': PathV,
             'file_types': 'Excel Files',
-            'default': template_directory / 'Template List.xlsx',
+            'default': template_dir / 'Template List.xlsx',
             'required': False
         },
         {
             'name': 'template_pickle',
             'variable_type': PathV,
             'file_types': 'Pickle File',
-            'default': template_directory / 'TemplateData.pkl',
+            'default': template_dir / 'TemplateData.pkl',
             'required': False
         },
         {
@@ -159,15 +164,15 @@ def build_xml(template_data: TemplateSelectionsSet,
     if not selections_list:
         return None
 
-    structures_pickle_file_path = template_data['structures_pickle']
+    strc_pickle = template_data['structures_pickle'].value
 
-    #LOGGER.debug('Loading Structures From: %s', str(structures_pickle_file_path))
+    #LOGGER.debug('Loading Structures From: %s', str(strc_pickle))
 
-    structures_lookup = load_structure_references(structures_pickle_file_path)
+    strc_lu = load_structure_references(strc_pickle)
 
     #LOGGER.debug('Getting Template reference data')
 
-    template_list = template_data['TemplateData']    
+    template_list = template_data['TemplateData']
 
     #LOGGER.debug(template_list.head())
     #LOGGER.debug(template_list.columns)
@@ -181,7 +186,7 @@ def build_xml(template_data: TemplateSelectionsSet,
     #test_message('Ready to start building Templates')
     #LOGGER.debug('Ready to start building Templates')
 
-    template_directory = Path(template_data['spreadsheet_directory'])
+    template_dir = Path(template_data['spreadsheet_directory'])
     output_path = Path(template_data['output_directory'])
     num_templates = len(selections_list)
     if status_updater is not None:
@@ -194,8 +199,8 @@ def build_xml(template_data: TemplateSelectionsSet,
 
         if status_updater is not None:
             status_updater('Building Template: %s' %template_def['title'])
-        build_template(template_def, template_directory, output_path,
-                       structures_lookup)
+        build_template(template_def, template_dir, output_path,
+                       strc_lu)
 
         #LOGGER.debug('Done Building Template: %s', template_def['title'])
 
@@ -203,4 +208,91 @@ def build_xml(template_data: TemplateSelectionsSet,
             step_progressbar()
     if status_updater is not None:
         status_updater('Done!')
+    pass
 
+def update_template_data(template_data: TemplateSelectionsSet,
+              status_updater: Callable = None,
+              init_progressbar: Callable = None,
+              step_progressbar: Callable = None):
+
+    def show_types(var_names):
+        for var in var_names:
+            log_str = '{} is type {}'.format(var, type(globals()[var]))
+            LOGGER.debug(log_str)
+
+    #LOGGER.setLevel(10)  # logging.DEBUG
+    LOGGER.debug('Updating Template Lists')
+    #test_message('Updating Template Lists')
+    template_dir = Path(template_data['spreadsheet_directory'])
+
+    template_file = template_data['template_list_file']
+    template_pkl = template_data['template_pickle']
+
+    strc_path = template_data['structures_file'].value
+    strc_pickle = template_data['structures_pickle']
+
+    log_dict(LOGGER, globals())
+    tmpl_tbl_def = dict(file_name=template_file,
+                                sheet_name='templates',
+                                new_file=True, new_sheet=True, replace=True)
+    strc_tbl_def = tmpl_tbl_def.copy()
+    strc_tbl_def['sheet_name'] = 'structures'
+
+    LOGGER.debug('Opening Structures reference spreadsheet: %s', str(strc_path))
+    #test_message('Opening Structures reference spreadsheet: %s' %str(strc_path))
+    open_book(strc_path)
+
+    LOGGER.debug('Building Structures reference')
+    #test_message('Building Structures reference')
+    if status_updater is not None:
+        status_updater('Building Structures reference...')
+    if init_progressbar is not None:
+        init_progressbar(10)
+
+    strc_lu = build_structures_lookup(strc_path)
+    file = open(str(strc_pickle), 'wb')
+    dump(strc_lu, file)
+    file.close()
+
+    LOGGER.debug('Updating list of templates')
+    #test_message('Updating list of templates')
+    if status_updater is not None:
+        status_updater('Updating list of templates...')
+
+    template_files = find_template_files(template_dir)
+    num_files = len(template_files)
+    LOGGER.debug('Found %d template files', num_files)
+    #test_message('Found %d template files' %num_files)
+    if status_updater is not None:
+        status_updater('Found  %d template files...' %num_files)
+    if init_progressbar is not None:
+        init_progressbar(num_files)
+
+    template_data = pd.DataFrame()
+    structure_data = pd.DataFrame()
+
+    for file in template_files:
+
+        if status_updater is not None:
+            file_name = file.stem
+            status_updater('Scanning template file: %s' %file_name)
+
+        structure_data, template_data = scan_template_workbook(
+            file, structure_data, strc_lu, template_data)
+
+        if step_progressbar is not None:
+            step_progressbar()
+
+    LOGGER.debug('Saving updated list of templates')
+    #test_message('Saving updated list of templates')
+    if status_updater is not None:
+        status_updater('Saving updated list of templates')
+
+    append_data_sheet(template_data, **tmpl_tbl_def)
+    append_data_sheet(structure_data, **strc_tbl_def)
+    file = open(str(template_pkl), 'wb')
+    dump(template_data, file)
+    file.close()
+
+    if status_updater is not None:
+        status_updater('Done!')

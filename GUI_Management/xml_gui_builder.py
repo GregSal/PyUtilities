@@ -15,7 +15,7 @@ import tkinter.font as tkFont
 import tkinter.ttk as ttk
 from tkinter import scrolledtext
 
-
+from logging_tools import config_logger, log_dict
 import GUI_Management.gui_methods as gm
 import GUI_Management.template_config as tp
 from GUI_Management.object_reference_management import ReferenceTracker
@@ -24,6 +24,7 @@ from GUI_Management.object_reference_management import ObjectSet
 from CustomVariableSet.custom_variable_sets import StringV
 from CustomVariableSet.custom_variable_sets import CustomVariableSet
 
+LOGGER = config_logger(level='DEBUG')
 
 ObjectDef = Union[Callable, type]
 StringValue = Union[tk.StringVar, str]
@@ -228,6 +229,7 @@ class GuiManager():
             options = self.resolve(configuration.attrib)
             if options:
                 tk_item.configure(**options)
+                log_dict(LOGGER, options, 'Configuring {}'.format(tk_item._name))
             for config_def in configuration.findall('Set'):
                 item_method_name = str(config_def.text)
                 item_method = getattr(tk_item, item_method_name)
@@ -370,11 +372,14 @@ class GuiManager():
 
     def update_data(self):
         for variable_name in self.data_link.keys():
+            LOGGER.debug('\tUpdating Data from %s', variable_name)
             self.update_variable(variable_name, 'to_data')
         pass
 
     def update_and_run(self, command: Callable, *args, **kwargs)->Callable:
+        LOGGER.debug('Updating Data from GUI')
         self.update_data()
+        LOGGER.debug('Calling %s', command.__name__)
         command(*args, **kwargs)
 
 

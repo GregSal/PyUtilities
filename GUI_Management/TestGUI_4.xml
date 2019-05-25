@@ -2,10 +2,6 @@
 <GuiDefinition xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                xsi:noNamespaceSchemaLocation="file:./GUI_Builder.xsd">
   <VariableSet>
-    <Variable name="Output">
-      <variable_class>tk.StringVar</variable_class>
-      <data_reference>test_string</data_reference>
-    </Variable>
     <Variable name="TemplateListFilename">
       <variable_class>tk.StringVar</variable_class>
       <data_reference>template_list_file</data_reference>
@@ -21,9 +17,6 @@
     <Variable name="SelectedTemplates">
       <variable_class>tk.StringVar</variable_class>
       <data_reference>selected_templates</data_reference>
-    </Variable>
-    <Variable name="ProgressValue">
-      <variable_class>tk.IntVar</variable_class>
     </Variable>
   </VariableSet>
   <ImageSet>
@@ -88,7 +81,6 @@
       <function>gm.init_progress</function>
       <PositionalArgs>
         <Arg>W::progress</Arg>
-        <Arg>V::ProgressValue</Arg>
       </PositionalArgs>
       <KeywordArgs/>
     </Command>
@@ -104,30 +96,6 @@
       <PositionalArgs />
       <KeywordArgs />
     </Command>
-    <Command name="Show_TemplateListFilename">
-      <function>gm.message_window</function>
-      <PositionalArgs>
-        <Arg>W::root</Arg>
-      </PositionalArgs>
-      <KeywordArgs window_text="Template List File"
-                   variable="V::TemplateListFilename"/>
-    </Command>
-    <Command name="Show_TemplateExcelDirectory">
-      <function>gm.message_window</function>
-      <PositionalArgs>
-        <Arg>W::root</Arg>
-      </PositionalArgs>
-      <KeywordArgs window_text="Template Excel Directory"
-                   variable="V::TemplateExcelDirectory"/>
-    </Command>
-    <Command name="Show_XmlOutputDirectory">
-      <function>gm.message_window</function>
-      <PositionalArgs>
-        <Arg>W::root</Arg>
-      </PositionalArgs>
-      <KeywordArgs window_text="Xml Output Directory"
-                   variable="V::XmlOutputDirectory"/>
-    </Command>
     <Command name="BuildTemplates">
       <function>tp.build_xml</function>
       <update_data>true</update_data>
@@ -138,13 +106,15 @@
                    init_progressbar="C::InitProgress"
                    step_progressbar="C::ProgressStep"/>
     </Command>
-    <Command name="ShowSelected">
-      <function>gm.message_window</function>
+    <Command name="UpdateTempateList">
+      <function>tp.update_template_data</function>
+      <update_data>true</update_data>
       <PositionalArgs>
-        <Arg>W::root</Arg>
+        <Arg>D::*</Arg>
       </PositionalArgs>
-      <KeywordArgs window_text="Selected Templates"
-                   variable="V::SelectedTemplates"/>
+      <KeywordArgs status_updater="C::StatusUpdate"
+                   init_progressbar="C::InitProgress"
+                   step_progressbar="C::ProgressStep"/>
     </Command>
     <Command name="UpdateSelected">
       <function>tp.update_selection</function>
@@ -706,7 +676,7 @@
           <Widget name="refresh_template_list">
             <widget_class>ttk.Button</widget_class>
             <Configure text="Refresh Template List"
-                       command="C::Show_TemplateListFilename"
+                       command="C::UpdateTempateList"
                        width="26"/>
             <Settings>
               <Geometry>

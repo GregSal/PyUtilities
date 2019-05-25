@@ -1,0 +1,15 @@
+variable_definitions
+	spreadsheet_directory 	StrPathV 	directory  	default 	template_directory
+	output_directory 		StrPathV 	directory 	default 	base_dir / 'Template XML Files
+	structures_file 		PathV 		Excel Files default 	template_directory / 'Structure Lookup.xlsx
+	structures_pickle 		PathV 		Pickle File default 	template_directory / 'StructureData.pkl
+	template_list_file 		PathV 		Excel Files default 	template_directory / 'Template List.xlsx
+	template_pickle 		PathV 		Pickle File default 	template_directory / 'TemplateData.pkl
+	selected_templates 		StringV 				default 	''
+	status 					StringV 				default 	''
+	
+GUI Variables
+	TemplateListFilename 	StringVar 	template_list_file
+	TemplateExcelDirectory 	StringVar 	spreadsheet_directory
+	XmlOutputDirectory 		StringVar 	output_directory
+	SelectedTemplates 		StringVar 	selected_templates
