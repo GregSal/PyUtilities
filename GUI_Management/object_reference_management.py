@@ -21,7 +21,7 @@ LookupDef = Tuple[str, LookupDict]
 ReferenceDict = Dict[str, str]
 ReferenceList = List[str]
 ReferenceSet = TypeVar('ReferenceSet', ReferenceList, ReferenceDict, str)
-ObjectList = List
+ObjectList = List[Any]
 ObjectDict = Dict[str, Any]
 ObjectSet = TypeVar('ObjectSet', ObjectList, ObjectDict, Any)
 
@@ -50,7 +50,6 @@ class ReferenceTracker():
     def __init__(self, identifier_list: List[str] = None,
                  lookup_list: List[LookupDef] = None):
         '''ReferenceTracker object creation.
-
         Keyword Arguments:
             identifier_list {List[str]} -- A list of 1 character stings.
                 Only the first character of each string is uses as the
@@ -72,7 +71,6 @@ class ReferenceTracker():
 
     def add_lookup_group(self, identifier: str, lookup: LookupDict = None):
         '''Create a new lookup group and assign an identifier.
-
         Arguments:
             identifier {str} -- A single character used to identify the group.
                 Only the first character of the supplied string is uses as the
@@ -112,7 +110,6 @@ class ReferenceTracker():
     def set_item(self, identifier: str, name: str, item: Any):
         '''Add or update an item for reference.
             A new item will be created if it does not already exist.
-
         Arguments:
             identifier {str} -- A single character used to identify the
                 reference group. Only the first character of the supplied
@@ -125,13 +122,11 @@ class ReferenceTracker():
 
     def lookup_item(self, identifier: str, item_name: str)->Any:
         '''Fetch an object reference.
-
         Arguments:
             group_id {str} -- A single character used to identify the
                 reference group. Only the first character of the supplied
                 string is uses as the identifier.
             item_name {str} -- The reference name of the group item.
-
         Returns:
             {Any} -- The object referenced.
         '''
@@ -141,10 +136,8 @@ class ReferenceTracker():
     def match_reference(self, item_reference: str)-> Any:
         '''Replace string references with object being referred to.
         If no valid reference is found return the original string.
-
         Arguments:
             item_reference {str} -- A string containing an object reference.
-
         Returns:
             {Any} -- The object referenced or the original string.
         '''
@@ -159,11 +152,9 @@ class ReferenceTracker():
 
     def resolve_arg_references(self, arg_set: ReferenceList)->ObjectList:
         '''Convert a list of reference strings to their corresponding objects.
-
         Arguments:
             arg_set {ReferenceList} -- A list of strings containing object
                 references.
-
         Returns:
             {ObjectList} -- A list in the same order as the original list
                 with each element containing The object referenced or the
@@ -178,11 +169,9 @@ class ReferenceTracker():
     def resolve_kwarg_references(self, kwarg_set: ReferenceDict)->ObjectDict:
         '''Convert a dictionary of reference strings to their corresponding
             objects.
-
         Arguments:
             kwarg_set {List[str]} -- A dictionary of strings containing object
                 references.
-
         Returns:
             {ObjectDict} -- A dictionary with the same keys as kwarg_set
                 with the values being the object referenced or the
@@ -236,15 +225,13 @@ class ReferenceTracker():
         # TODO Add method to call function reference
         raise NotImplementedError
 
-    def lookup_references(self, ref_set: ReferenceSet)->ObjectSet:
+    def resolve(self, ref_set: ReferenceSet)->ObjectSet:
         '''Convert a one or more reference strings to their corresponding
             objects.  The return container type will match the input container
             type.
-
         Arguments:
             ref_set {ReferenceSet} -- A dictionary, sequence or individual
             string containing object references.
-
         Returns:
             {ObjectDict} -- An object or container with the same structure as
                 the input, with all string references replaced by the object
@@ -277,7 +264,6 @@ class TestModuleClass():
     def test_method(self):
         print('This is test method')
 
-#%%
 
 def main():
     def test_method():
@@ -291,7 +277,7 @@ def main():
     identifier_list = ['A', 'B']
     lookup_list = [test_lookup]
     to1 = TestObject()
-     #%%
+
     test_ref = ReferenceTracker(identifier_list, lookup_list)
     test_ref.add_lookup_group('New', {'T1': 'test1',
                                       'T2': test_module_function})
@@ -301,7 +287,7 @@ def main():
     fnc()
     atr1 = test_ref.get_attribute('A::I1.atr1')
     print(atr1)
-    fnc1 = test_ref.lookup_references('N::T2')
+    fnc1 = test_ref.resolve('N::T2')
     fnc1()
 
 
