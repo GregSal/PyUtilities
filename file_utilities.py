@@ -22,13 +22,13 @@ Classes
 import time
 from pathlib import Path
 from collections.abc import Iterable
-from typing import Dict, Union
+from typing import Dict, List, Union, Iterator
 import pandas as pd
 
 
 Data = pd.DataFrame
 PathInput = Union[Path, str]
-
+FileType = Union[FileTypes, str, List[str]]
 
 def set_base_dir(sub_dir: str = None,
                  base_options: Dict[str, str] = None)-> Path:
@@ -297,3 +297,32 @@ def get_file_mod_time(file:Path, date_format='%Y-%m-%d %H:%M:%S')->str:
     modification_date=time.strftime(date_format,
                                     time.localtime(modification_time))
     return modification_date
+
+FileType = Union[FileTypes, str, List[str]]
+
+def dir_iter(directory_to_scan: Path,
+             file_type: FileType = None)->Iterator[Path]:
+    '''Returns an iterator which scans a dictionary tree and returns files of
+    a given type.
+    Arguments:
+        directory_to_scan {Path} -- The top directory to scan for files.
+        file_type {Optional, FileType} -- The suffix or list of suffixes of
+        the file types to return.
+    Returns {Iterator[Path]}:
+        An iterator through the files of the specified types in
+        directory_to_scan or a sub directory.
+    '''
+    for file_item in directory_to_scan.iterdir():
+        # if the item is a file generate a FileStat object with it
+        if file_item.is_file():
+            if file_type is None:
+                yield file_item
+            elif isinstance(file_type, FileTypes):
+                if file_type.valid_extension(file_item.suffix):
+                    yield file_item
+            elif file_item.suffix in file_type:
+                yield file_item
+        elif file_item.is_dir():
+            # recursively scan sub-directories
+            for sub_file_item in dir_xml_iter(file_item, file_type):
+                yield sub_file_item
