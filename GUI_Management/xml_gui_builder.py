@@ -125,14 +125,14 @@ class GuiManager():
 
     def __init__(self, data_set: CustomVariableSet, xml_file: Path):
         '''Build a Tkinter GUI from an XML file.
-        Its Main role is to create the widgest and provide an interface to it
+        Its Main role is to create the widgets and provide an interface to it
         through the references attribute.
         Arguments:
             data_set {CustomVariableSet, Dict[str, Any]} -- Variables passed to
                 or from the GUI.
             xml_file {Path} -- The primary XML file describing the GUI.
         '''
-        # TODO add ability to pass a prebuilt ReferenceTracker
+        # TODO add ability to pass a pre-built ReferenceTracker
         self.reference = ReferenceTracker(self.identifier_list,
                                           self.lookup_list)
         self.reference.add_lookup_group('Data', data_set)
@@ -175,7 +175,7 @@ class GuiManager():
         return self.reference.resolve(object_str)
 
     def get_parent(self, name: str)->tk.Widget:
-        '''Return the parent widget of teh widget with the given name.
+        '''Return the parent widget of the widget with the given name.
             The parent is based on the parent element in the XML file.
             The parent must have already been initialized.
         Arguments:

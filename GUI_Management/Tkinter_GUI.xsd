@@ -8,12 +8,1850 @@
       <xs:enumeration value="withdrawn" />
     </xs:restriction>
   </xs:simpleType>
+
+  <xs:simpleType name="JustifyType">
+    <!--Text justification on a given line.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="left" />
+      <xs:enumeration value="center" />
+      <xs:enumeration value="right" />
+      <xs:enumeration value="fill" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ReliefType">
+    <!--The border style of a widget.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="raised" />
+      <xs:enumeration value="sunken" />
+      <xs:enumeration value="flat" />
+      <xs:enumeration value="groove" />
+      <xs:enumeration value="ridge" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="WrapType">
+    <!--Text wrapping options for multi-line text widgets.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="none" />
+      <xs:enumeration value="char" />
+      <xs:enumeration value="word" />
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:simpleType name="StickyType">
     <xs:restriction base="xs:string">
       <xs:pattern value="[nsew]{1,4}" />
     </xs:restriction>
   </xs:simpleType>
+
+  <xs:simpleType name="BitmapType">
+    <!--There are eight built-in, named bitmaps.
+  To specify an X bitmap file name, give the full path to the file, preceded with an @, as in "@/bitmap/gumby.bit".-->
+    <xs:union memberTypes="NamedBitmaps BitmapFileName" />
+  </xs:simpleType>
+  <xs:simpleType name="BitmapFileName">
+    <!--The eight built-in, named bitmaps.-->
+    <xs:restriction base="xs:string">
+      <xs:pattern value="@.*" />
+    </xs:restriction>
+
+  </xs:simpleType>
+  <xs:simpleType name="NamedBitmaps">
+    <!--To specify an X bitmap filename, give the full path to the file, preceded with an @, as in "@/usr/contrib/bitmap/gumby.bit".-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="error" />
+      <xs:enumeration value="gray25" />
+      <xs:enumeration value="gray50" />
+      <xs:enumeration value="hourglass" />
+      <xs:enumeration value="info" />
+      <xs:enumeration value="question" />
+      <xs:enumeration value="warning" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="BooleanType">
+    <!--You can pass integers 0 or 1 or the strings "yes" or "no".-->
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="yes" />
+          <xs:enumeration value="no" />
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base="xs:unsignedByte">
+          <xs:minInclusive value="0"/>
+          <xs:maxInclusive value="1"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
+  <xs:simpleType name="ColorType">
+    <!--Colours can be given as strings representing RGB values or as symbolic names.-->
+    <xs:union memberTypes="ColorRGBHex ColorNameTypes" />
+  </xs:simpleType>
+  <xs:simpleType name="ColorRGBHex">
+    <!--Colours can be given as strings representing RGB values in
+      4 bit: "#RGB",
+      8 bit: "#RRGGBB",
+      12 bit” "#RRRGGGBBB", or
+      16 bit "#RRRRGGGGBBBB" ranges,
+      where R,G,B here represent any legal hex digit..-->
+    <xs:union memberTypes="RGB4BitHex RGB8BitHex RGB12BitHex RGB16BitHex" />
+  </xs:simpleType>
+  <xs:simpleType name="RGB4BitHex">
+    <!--RGB values in 4 bit: #RGB.-->
+    <xs:restriction base="xs:string">
+      <xs:pattern value="#[0-9a-fA-F]{3}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="RGB8BitHex">
+    <!--RGB values in 8 bit: #RRGGBB.-->
+    <xs:restriction base="xs:string">
+      <xs:pattern value="#[0-9a-fA-F]{6}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="RGB12BitHex">
+    <!--RGB values in 12 bit #RRRGGGBBB".-->
+    <xs:restriction base="xs:string">
+      <xs:pattern value="#[0-9a-fA-F]{9}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="RGB16BitHex">
+    <!--RGB values in 16 bit #RRRRGGGGBBBB.-->
+    <xs:restriction base="xs:string">
+      <xs:pattern value="#[0-9a-fA-F]{12}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="ColorNameTypes">
+    <!--Internet Standard Color names and Windows THeme based Names.-->
+    <xs:union memberTypes="ColorSymbolicNames WindowsThemeColors" />
+  </xs:simpleType>
+  <xs:simpleType name="ColorSymbolicNames">
+    <!--Symbolic color names recognized by Tk and their 8-bit-per-channel RGB values.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="alice blue" />
+      <!-- RGB:240,248,255-->
+      <xs:enumeration value="AliceBlue" />
+      <!-- RGB:240,248,255-->
+      <xs:enumeration value="antique white" />
+      <!-- RGB:250,235,215-->
+      <xs:enumeration value="AntiqueWhite" />
+      <!-- RGB:250,235,215-->
+      <xs:enumeration value="AntiqueWhite1" />
+      <!-- RGB:255,239,219-->
+      <xs:enumeration value="AntiqueWhite2" />
+      <!-- RGB:238,223,204-->
+      <xs:enumeration value="AntiqueWhite3" />
+      <!-- RGB:205,192,176-->
+      <xs:enumeration value="AntiqueWhite4" />
+      <!-- RGB:139,131,120-->
+      <xs:enumeration value="agua" />
+      <!-- RGB:0,255,255-->
+      <xs:enumeration value="aquamarine" />
+      <!-- RGB:127,255,212-->
+      <xs:enumeration value="aquamarine1" />
+      <!-- RGB:127,255,212-->
+      <xs:enumeration value="aquamarine2" />
+      <!-- RGB:118,238,198-->
+      <xs:enumeration value="aquamarine3" />
+      <!-- RGB:102,205,170-->
+      <xs:enumeration value="aquamarine4" />
+      <!-- RGB:69,139,116-->
+      <xs:enumeration value="azure" />
+      <!-- RGB:240,255,255-->
+      <xs:enumeration value="azure1" />
+      <!-- RGB:240,255,255-->
+      <xs:enumeration value="azure2" />
+      <!-- RGB:224,238,238-->
+      <xs:enumeration value="azure3" />
+      <!-- RGB:193,205,205-->
+      <xs:enumeration value="azure4" />
+      <!-- RGB:131,139,139-->
+      <xs:enumeration value="beige" />
+      <!-- RGB:245,245,220-->
+      <xs:enumeration value="bisque" />
+      <!-- RGB:255,228,196-->
+      <xs:enumeration value="bisque1" />
+      <!-- RGB:255,228,196-->
+      <xs:enumeration value="bisque2" />
+      <!-- RGB:238,213,183-->
+      <xs:enumeration value="bisque3" />
+      <!-- RGB:205,183,158-->
+      <xs:enumeration value="bisque4" />
+      <!-- RGB:139,125,107-->
+      <xs:enumeration value="black" />
+      <!-- RGB:0,0,0-->
+      <xs:enumeration value="blanched almond" />
+      <!-- RGB:255,235,205-->
+      <xs:enumeration value="BlanchedAlmond" />
+      <!-- RGB:255,235,205-->
+      <xs:enumeration value="blue" />
+      <!-- RGB:0,0,255-->
+      <xs:enumeration value="blue violet" />
+      <!-- RGB:138,43,226-->
+      <xs:enumeration value="blue1" />
+      <!-- RGB:0,0,255-->
+      <xs:enumeration value="blue2" />
+      <!-- RGB:0,0,238-->
+      <xs:enumeration value="blue3" />
+      <!-- RGB:0,0,205-->
+      <xs:enumeration value="blue4" />
+      <!-- RGB:0,0,139-->
+      <xs:enumeration value="BlueViolet" />
+      <!-- RGB:138,43,226-->
+      <xs:enumeration value="brown" />
+      <!-- RGB:165,42,42-->
+      <xs:enumeration value="brown1" />
+      <!-- RGB:255,64,64-->
+      <xs:enumeration value="brown2" />
+      <!-- RGB:238,59,59-->
+      <xs:enumeration value="brown3" />
+      <!-- RGB:205,51,51-->
+      <xs:enumeration value="brown4" />
+      <!-- RGB:139,35,35-->
+      <xs:enumeration value="burlywood" />
+      <!-- RGB:222,184,135-->
+      <xs:enumeration value="burlywood1" />
+      <!-- RGB:255,211,155-->
+      <xs:enumeration value="burlywood2" />
+      <!-- RGB:238,197,145-->
+      <xs:enumeration value="burlywood3" />
+      <!-- RGB:205,170,125-->
+      <xs:enumeration value="burlywood4" />
+      <!-- RGB:139,115,85-->
+      <xs:enumeration value="cadet blue" />
+      <!-- RGB:95,158,160-->
+      <xs:enumeration value="CadetBlue" />
+      <!-- RGB:95,158,160-->
+      <xs:enumeration value="CadetBlue1" />
+      <!-- RGB:152,245,255-->
+      <xs:enumeration value="CadetBlue2" />
+      <!-- RGB:142,229,238-->
+      <xs:enumeration value="CadetBlue3" />
+      <!-- RGB:122,197,205-->
+      <xs:enumeration value="CadetBlue4" />
+      <!-- RGB:83,134,139-->
+      <xs:enumeration value="chartreuse" />
+      <!-- RGB:127,255,0-->
+      <xs:enumeration value="chartreuse1" />
+      <!-- RGB:127,255,0-->
+      <xs:enumeration value="chartreuse2" />
+      <!-- RGB:118,238,0-->
+      <xs:enumeration value="chartreuse3" />
+      <!-- RGB:102,205,0-->
+      <xs:enumeration value="chartreuse4" />
+      <!-- RGB:69,139,0-->
+      <xs:enumeration value="chocolate" />
+      <!-- RGB:210,105,30-->
+      <xs:enumeration value="chocolate1" />
+      <!-- RGB:255,127,36-->
+      <xs:enumeration value="chocolate2" />
+      <!-- RGB:238,118,33-->
+      <xs:enumeration value="chocolate3" />
+      <!-- RGB:205,102,29-->
+      <xs:enumeration value="chocolate4" />
+      <!-- RGB:139,69,19-->
+      <xs:enumeration value="coral" />
+      <!-- RGB:255,127,80-->
+      <xs:enumeration value="coral1" />
+      <!-- RGB:255,114,86-->
+      <xs:enumeration value="coral2" />
+      <!-- RGB:238,106,80-->
+      <xs:enumeration value="coral3" />
+      <!-- RGB:205,91,69-->
+      <xs:enumeration value="coral4" />
+      <!-- RGB:139,62,47-->
+      <xs:enumeration value="cornflower blue" />
+      <!-- RGB:100,149,237-->
+      <xs:enumeration value="CornflowerBlue" />
+      <!-- RGB:100,149,237-->
+      <xs:enumeration value="cornsilk" />
+      <!-- RGB:255,248,220-->
+      <xs:enumeration value="cornsilk1" />
+      <!-- RGB:255,248,220-->
+      <xs:enumeration value="cornsilk2" />
+      <!-- RGB:238,232,205-->
+      <xs:enumeration value="cornsilk3" />
+      <!-- RGB:205,200,177-->
+      <xs:enumeration value="cornsilk4" />
+      <!-- RGB:139,136,120-->
+      <xs:enumeration value="crymson" />
+      <!-- RGB:220,20,60-->
+      <xs:enumeration value="cyan" />
+      <!-- RGB:0,255,255-->
+      <xs:enumeration value="cyan1" />
+      <!-- RGB:0,255,255-->
+      <xs:enumeration value="cyan2" />
+      <!-- RGB:0,238,238-->
+      <xs:enumeration value="cyan3" />
+      <!-- RGB:0,205,205-->
+      <xs:enumeration value="cyan4" />
+      <!-- RGB:0,139,139-->
+      <xs:enumeration value="dark blue" />
+      <!-- RGB:0,0,139-->
+      <xs:enumeration value="dark cyan" />
+      <!-- RGB:0,139,139-->
+      <xs:enumeration value="dark goldenrod" />
+      <!-- RGB:184,134,11-->
+      <xs:enumeration value="dark gray" />
+      <!-- RGB:169,169,169-->
+      <xs:enumeration value="dark green" />
+      <!-- RGB:0,100,0-->
+      <xs:enumeration value="dark grey" />
+      <!-- RGB:169,169,169-->
+      <xs:enumeration value="dark khaki" />
+      <!-- RGB:189,183,107-->
+      <xs:enumeration value="dark magenta" />
+      <!-- RGB:139,0,139-->
+      <xs:enumeration value="dark olive green" />
+      <!-- RGB:85,107,47-->
+      <xs:enumeration value="dark orange" />
+      <!-- RGB:255,140,0-->
+      <xs:enumeration value="dark orchid" />
+      <!-- RGB:153,50,204-->
+      <xs:enumeration value="dark red" />
+      <!-- RGB:139,0,0-->
+      <xs:enumeration value="dark salmon" />
+      <!-- RGB:233,150,122-->
+      <xs:enumeration value="dark sea green" />
+      <!-- RGB:143,188,143-->
+      <xs:enumeration value="dark slate blue" />
+      <!-- RGB:72,61,139-->
+      <xs:enumeration value="dark slate gray" />
+      <!-- RGB:47,79,79-->
+      <xs:enumeration value="dark slate grey" />
+      <!-- RGB:47,79,79-->
+      <xs:enumeration value="dark turquoise" />
+      <!-- RGB:0,206,209-->
+      <xs:enumeration value="dark violet" />
+      <!-- RGB:148,0,211-->
+      <xs:enumeration value="DarkBlue" />
+      <!-- RGB:0,0,139-->
+      <xs:enumeration value="DarkCyan" />
+      <!-- RGB:0,139,139-->
+      <xs:enumeration value="DarkGoldenrod" />
+      <!-- RGB:184,134,11-->
+      <xs:enumeration value="DarkGoldenrod1" />
+      <!-- RGB:255,185,15-->
+      <xs:enumeration value="DarkGoldenrod2" />
+      <!-- RGB:238,173,14-->
+      <xs:enumeration value="DarkGoldenrod3" />
+      <!-- RGB:205,149,12-->
+      <xs:enumeration value="DarkGoldenrod4" />
+      <!-- RGB:139,101,8-->
+      <xs:enumeration value="DarkGray" />
+      <!-- RGB:169,169,169-->
+      <xs:enumeration value="DarkGreen" />
+      <!-- RGB:0,100,0-->
+      <xs:enumeration value="DarkGrey" />
+      <!-- RGB:169,169,169-->
+      <xs:enumeration value="DarkKhaki" />
+      <!-- RGB:189,183,107-->
+      <xs:enumeration value="DarkMagenta" />
+      <!-- RGB:139,0,139-->
+      <xs:enumeration value="DarkOliveGreen" />
+      <!-- RGB:85,107,47-->
+      <xs:enumeration value="DarkOliveGreen1" />
+      <!-- RGB:202,255,112-->
+      <xs:enumeration value="DarkOliveGreen2" />
+      <!-- RGB:188,238,104-->
+      <xs:enumeration value="DarkOliveGreen3" />
+      <!-- RGB:162,205,90-->
+      <xs:enumeration value="DarkOliveGreen4" />
+      <!-- RGB:110,139,61-->
+      <xs:enumeration value="DarkOrange" />
+      <!-- RGB:255,140,0-->
+      <xs:enumeration value="DarkOrange1" />
+      <!-- RGB:255,127,0-->
+      <xs:enumeration value="DarkOrange2" />
+      <!-- RGB:238,118,0-->
+      <xs:enumeration value="DarkOrange3" />
+      <!-- RGB:205,102,0-->
+      <xs:enumeration value="DarkOrange4" />
+      <!-- RGB:139,69,0-->
+      <xs:enumeration value="DarkOrchid" />
+      <!-- RGB:153,50,204-->
+      <xs:enumeration value="DarkOrchid1" />
+      <!-- RGB:191,62,255-->
+      <xs:enumeration value="DarkOrchid2" />
+      <!-- RGB:178,58,238-->
+      <xs:enumeration value="DarkOrchid3" />
+      <!-- RGB:154,50,205-->
+      <xs:enumeration value="DarkOrchid4" />
+      <!-- RGB:104,34,139-->
+      <xs:enumeration value="DarkRed" />
+      <!-- RGB:139,0,0-->
+      <xs:enumeration value="DarkSalmon" />
+      <!-- RGB:233,150,122-->
+      <xs:enumeration value="DarkSeaGreen" />
+      <!-- RGB:143,188,143-->
+      <xs:enumeration value="DarkSeaGreen1" />
+      <!-- RGB:193,255,193-->
+      <xs:enumeration value="DarkSeaGreen2" />
+      <!-- RGB:180,238,180-->
+      <xs:enumeration value="DarkSeaGreen3" />
+      <!-- RGB:155,205,155-->
+      <xs:enumeration value="DarkSeaGreen4" />
+      <!-- RGB:105,139,105-->
+      <xs:enumeration value="DarkSlateBlue" />
+      <!-- RGB:72,61,139-->
+      <xs:enumeration value="DarkSlateGray" />
+      <!-- RGB:47,79,79-->
+      <xs:enumeration value="DarkSlateGray1" />
+      <!-- RGB:151,255,255-->
+      <xs:enumeration value="DarkSlateGray2" />
+      <!-- RGB:141,238,238-->
+      <xs:enumeration value="DarkSlateGray3" />
+      <!-- RGB:121,205,205-->
+      <xs:enumeration value="DarkSlateGray4" />
+      <!-- RGB:82,139,139-->
+      <xs:enumeration value="DarkSlateGrey" />
+      <!-- RGB:47,79,79-->
+      <xs:enumeration value="DarkTurquoise" />
+      <!-- RGB:0,206,209-->
+      <xs:enumeration value="DarkViolet" />
+      <!-- RGB:148,0,211-->
+      <xs:enumeration value="deep pink" />
+      <!-- RGB:255,20,147-->
+      <xs:enumeration value="deep sky blue" />
+      <!-- RGB:0,191,255-->
+      <xs:enumeration value="DeepPink" />
+      <!-- RGB:255,20,147-->
+      <xs:enumeration value="DeepPink1" />
+      <!-- RGB:255,20,147-->
+      <xs:enumeration value="DeepPink2" />
+      <!-- RGB:238,18,137-->
+      <xs:enumeration value="DeepPink3" />
+      <!-- RGB:205,16,118-->
+      <xs:enumeration value="DeepPink4" />
+      <!-- RGB:139,10,80-->
+      <xs:enumeration value="DeepSkyBlue" />
+      <!-- RGB:0,191,255-->
+      <xs:enumeration value="DeepSkyBlue1" />
+      <!-- RGB:0,191,255-->
+      <xs:enumeration value="DeepSkyBlue2" />
+      <!-- RGB:0,178,238-->
+      <xs:enumeration value="DeepSkyBlue3" />
+      <!-- RGB:0,154,205-->
+      <xs:enumeration value="DeepSkyBlue4" />
+      <!-- RGB:0,104,139-->
+      <xs:enumeration value="dim gray" />
+      <!-- RGB:105,105,105-->
+      <xs:enumeration value="dim grey" />
+      <!-- RGB:105,105,105-->
+      <xs:enumeration value="DimGray" />
+      <!-- RGB:105,105,105-->
+      <xs:enumeration value="DimGrey" />
+      <!-- RGB:105,105,105-->
+      <xs:enumeration value="dodger blue" />
+      <!-- RGB:30,144,255-->
+      <xs:enumeration value="DodgerBlue" />
+      <!-- RGB:30,144,255-->
+      <xs:enumeration value="DodgerBlue1" />
+      <!-- RGB:30,144,255-->
+      <xs:enumeration value="DodgerBlue2" />
+      <!-- RGB:28,134,238-->
+      <xs:enumeration value="DodgerBlue3" />
+      <!-- RGB:24,116,205-->
+      <xs:enumeration value="DodgerBlue4" />
+      <!-- RGB:16,78,139-->
+      <xs:enumeration value="firebrick" />
+      <!-- RGB:178,34,34-->
+      <xs:enumeration value="firebrick1" />
+      <!-- RGB:255,48,48-->
+      <xs:enumeration value="firebrick2" />
+      <!-- RGB:238,44,44-->
+      <xs:enumeration value="firebrick3" />
+      <!-- RGB:205,38,38-->
+      <xs:enumeration value="firebrick4" />
+      <!-- RGB:139,26,26-->
+      <xs:enumeration value="floral white" />
+      <!-- RGB:255,250,240-->
+      <xs:enumeration value="FloralWhite" />
+      <!-- RGB:255,250,240-->
+      <xs:enumeration value="forest green" />
+      <!-- RGB:34,139,34-->
+      <xs:enumeration value="ForestGreen" />
+      <!-- RGB:34,139,34-->
+      <xs:enumeration value="fuchsia" />
+      <!-- RGB:255,0,255-->
+      <xs:enumeration value="gainsboro" />
+      <!-- RGB:220,220,220-->
+      <xs:enumeration value="ghost white" />
+      <!-- RGB:248,248,255-->
+      <xs:enumeration value="GhostWhite" />
+      <!-- RGB:248,248,255-->
+      <xs:enumeration value="gold" />
+      <!-- RGB:255,215,0-->
+      <xs:enumeration value="gold1" />
+      <!-- RGB:255,215,0-->
+      <xs:enumeration value="gold2" />
+      <!-- RGB:238,201,0-->
+      <xs:enumeration value="gold3" />
+      <!-- RGB:205,173,0-->
+      <xs:enumeration value="gold4" />
+      <!-- RGB:139,117,0-->
+      <xs:enumeration value="goldenrod" />
+      <!-- RGB:218,165,32-->
+      <xs:enumeration value="goldenrod1" />
+      <!-- RGB:255,193,37-->
+      <xs:enumeration value="goldenrod2" />
+      <!-- RGB:238,180,34-->
+      <xs:enumeration value="goldenrod3" />
+      <!-- RGB:205,155,29-->
+      <xs:enumeration value="goldenrod4" />
+      <!-- RGB:139,105,20-->
+      <xs:enumeration value="gray" />
+      <!-- RGB:190,190,190-->
+      <xs:enumeration value="gray0" />
+      <!-- RGB:0,0,0-->
+      <xs:enumeration value="gray1" />
+      <!-- RGB:3,3,3-->
+      <xs:enumeration value="gray2" />
+      <!-- RGB:5,5,5-->
+      <xs:enumeration value="gray3" />
+      <!-- RGB:8,8,8-->
+      <xs:enumeration value="gray4" />
+      <!-- RGB:10,10,10-->
+      <xs:enumeration value="gray5" />
+      <!-- RGB:13,13,13-->
+      <xs:enumeration value="gray6" />
+      <!-- RGB:15,15,15-->
+      <xs:enumeration value="gray7" />
+      <!-- RGB:18,18,18-->
+      <xs:enumeration value="gray8" />
+      <!-- RGB:20,20,20-->
+      <xs:enumeration value="gray9" />
+      <!-- RGB:23,23,23-->
+      <xs:enumeration value="gray10" />
+      <!-- RGB:26,26,26-->
+      <xs:enumeration value="gray11" />
+      <!-- RGB:28,28,28-->
+      <xs:enumeration value="gray12" />
+      <!-- RGB:31,31,31-->
+      <xs:enumeration value="gray13" />
+      <!-- RGB:33,33,33-->
+      <xs:enumeration value="gray14" />
+      <!-- RGB:36,36,36-->
+      <xs:enumeration value="gray15" />
+      <!-- RGB:38,38,38-->
+      <xs:enumeration value="gray16" />
+      <!-- RGB:41,41,41-->
+      <xs:enumeration value="gray17" />
+      <!-- RGB:43,43,43-->
+      <xs:enumeration value="gray18" />
+      <!-- RGB:46,46,46-->
+      <xs:enumeration value="gray19" />
+      <!-- RGB:48,48,48-->
+      <xs:enumeration value="gray20" />
+      <!-- RGB:51,51,51-->
+      <xs:enumeration value="gray21" />
+      <!-- RGB:54,54,54-->
+      <xs:enumeration value="gray22" />
+      <!-- RGB:56,56,56-->
+      <xs:enumeration value="gray23" />
+      <!-- RGB:59,59,59-->
+      <xs:enumeration value="gray24" />
+      <!-- RGB:61,61,61-->
+      <xs:enumeration value="gray25" />
+      <!-- RGB:64,64,64-->
+      <xs:enumeration value="gray26" />
+      <!-- RGB:66,66,66-->
+      <xs:enumeration value="gray27" />
+      <!-- RGB:69,69,69-->
+      <xs:enumeration value="gray28" />
+      <!-- RGB:71,71,71-->
+      <xs:enumeration value="gray29" />
+      <!-- RGB:74,74,74-->
+      <xs:enumeration value="gray30" />
+      <!-- RGB:77,77,77-->
+      <xs:enumeration value="gray31" />
+      <!-- RGB:79,79,79-->
+      <xs:enumeration value="gray32" />
+      <!-- RGB:82,82,82-->
+      <xs:enumeration value="gray33" />
+      <!-- RGB:84,84,84-->
+      <xs:enumeration value="gray34" />
+      <!-- RGB:87,87,87-->
+      <xs:enumeration value="gray35" />
+      <!-- RGB:89,89,89-->
+      <xs:enumeration value="gray36" />
+      <!-- RGB:92,92,92-->
+      <xs:enumeration value="gray37" />
+      <!-- RGB:94,94,94-->
+      <xs:enumeration value="gray38" />
+      <!-- RGB:97,97,97-->
+      <xs:enumeration value="gray39" />
+      <!-- RGB:99,99,99-->
+      <xs:enumeration value="gray40" />
+      <!-- RGB:102,102,102-->
+      <xs:enumeration value="gray41" />
+      <!-- RGB:105,105,105-->
+      <xs:enumeration value="gray42" />
+      <!-- RGB:107,107,107-->
+      <xs:enumeration value="gray43" />
+      <!-- RGB:110,110,110-->
+      <xs:enumeration value="gray44" />
+      <!-- RGB:112,112,112-->
+      <xs:enumeration value="gray45" />
+      <!-- RGB:115,115,115-->
+      <xs:enumeration value="gray46" />
+      <!-- RGB:117,117,117-->
+      <xs:enumeration value="gray47" />
+      <!-- RGB:120,120,120-->
+      <xs:enumeration value="gray48" />
+      <!-- RGB:122,122,122-->
+      <xs:enumeration value="gray49" />
+      <!-- RGB:125,125,125-->
+      <xs:enumeration value="gray50" />
+      <!-- RGB:127,127,127-->
+      <xs:enumeration value="gray51" />
+      <!-- RGB:130,130,130-->
+      <xs:enumeration value="gray52" />
+      <!-- RGB:133,133,133-->
+      <xs:enumeration value="gray53" />
+      <!-- RGB:135,135,135-->
+      <xs:enumeration value="gray54" />
+      <!-- RGB:138,138,138-->
+      <xs:enumeration value="gray55" />
+      <!-- RGB:140,140,140-->
+      <xs:enumeration value="gray56" />
+      <!-- RGB:143,143,143-->
+      <xs:enumeration value="gray57" />
+      <!-- RGB:145,145,145-->
+      <xs:enumeration value="gray58" />
+      <!-- RGB:148,148,148-->
+      <xs:enumeration value="gray59" />
+      <!-- RGB:150,150,150-->
+      <xs:enumeration value="gray60" />
+      <!-- RGB:153,153,153-->
+      <xs:enumeration value="gray61" />
+      <!-- RGB:156,156,156-->
+      <xs:enumeration value="gray62" />
+      <!-- RGB:158,158,158-->
+      <xs:enumeration value="gray63" />
+      <!-- RGB:161,161,161-->
+      <xs:enumeration value="gray64" />
+      <!-- RGB:163,163,163-->
+      <xs:enumeration value="gray65" />
+      <!-- RGB:166,166,166-->
+      <xs:enumeration value="gray66" />
+      <!-- RGB:168,168,168-->
+      <xs:enumeration value="gray67" />
+      <!-- RGB:171,171,171-->
+      <xs:enumeration value="gray68" />
+      <!-- RGB:173,173,173-->
+      <xs:enumeration value="gray69" />
+      <!-- RGB:176,176,176-->
+      <xs:enumeration value="gray70" />
+      <!-- RGB:179,179,179-->
+      <xs:enumeration value="gray71" />
+      <!-- RGB:181,181,181-->
+      <xs:enumeration value="gray72" />
+      <!-- RGB:184,184,184-->
+      <xs:enumeration value="gray73" />
+      <!-- RGB:186,186,186-->
+      <xs:enumeration value="gray74" />
+      <!-- RGB:189,189,189-->
+      <xs:enumeration value="gray75" />
+      <!-- RGB:191,191,191-->
+      <xs:enumeration value="gray76" />
+      <!-- RGB:194,194,194-->
+      <xs:enumeration value="gray77" />
+      <!-- RGB:196,196,196-->
+      <xs:enumeration value="gray78" />
+      <!-- RGB:199,199,199-->
+      <xs:enumeration value="gray79" />
+      <!-- RGB:201,201,201-->
+      <xs:enumeration value="gray80" />
+      <!-- RGB:204,204,204-->
+      <xs:enumeration value="gray81" />
+      <!-- RGB:207,207,207-->
+      <xs:enumeration value="gray82" />
+      <!-- RGB:209,209,209-->
+      <xs:enumeration value="gray83" />
+      <!-- RGB:212,212,212-->
+      <xs:enumeration value="gray84" />
+      <!-- RGB:214,214,214-->
+      <xs:enumeration value="gray85" />
+      <!-- RGB:217,217,217-->
+      <xs:enumeration value="gray86" />
+      <!-- RGB:219,219,219-->
+      <xs:enumeration value="gray87" />
+      <!-- RGB:222,222,222-->
+      <xs:enumeration value="gray88" />
+      <!-- RGB:224,224,224-->
+      <xs:enumeration value="gray89" />
+      <!-- RGB:227,227,227-->
+      <xs:enumeration value="gray90" />
+      <!-- RGB:229,229,229-->
+      <xs:enumeration value="gray91" />
+      <!-- RGB:232,232,232-->
+      <xs:enumeration value="gray92" />
+      <!-- RGB:235,235,235-->
+      <xs:enumeration value="gray93" />
+      <!-- RGB:237,237,237-->
+      <xs:enumeration value="gray94" />
+      <!-- RGB:240,240,240-->
+      <xs:enumeration value="gray95" />
+      <!-- RGB:242,242,242-->
+      <xs:enumeration value="gray96" />
+      <!-- RGB:245,245,245-->
+      <xs:enumeration value="gray97" />
+      <!-- RGB:247,247,247-->
+      <xs:enumeration value="gray98" />
+      <!-- RGB:250,250,250-->
+      <xs:enumeration value="gray99" />
+      <!-- RGB:252,252,252-->
+      <xs:enumeration value="gray100" />
+      <!-- RGB:255,255,255-->
+      <xs:enumeration value="green" />
+      <!-- RGB:0,255,0-->
+      <xs:enumeration value="green yellow" />
+      <!-- RGB:173,255,47-->
+      <xs:enumeration value="green1" />
+      <!-- RGB:0,255,0-->
+      <xs:enumeration value="green2" />
+      <!-- RGB:0,238,0-->
+      <xs:enumeration value="green3" />
+      <!-- RGB:0,205,0-->
+      <xs:enumeration value="green4" />
+      <!-- RGB:0,139,0-->
+      <xs:enumeration value="GreenYellow" />
+      <!-- RGB:173,255,47-->
+      <xs:enumeration value="grey" />
+      <!-- RGB:190,190,190-->
+      <xs:enumeration value="grey0" />
+      <!-- RGB:0,0,0-->
+      <xs:enumeration value="grey1" />
+      <!-- RGB:3,3,3-->
+      <xs:enumeration value="grey2" />
+      <!-- RGB:5,5,5-->
+      <xs:enumeration value="grey3" />
+      <!-- RGB:8,8,8-->
+      <xs:enumeration value="grey4" />
+      <!-- RGB:10,10,10-->
+      <xs:enumeration value="grey5" />
+      <!-- RGB:13,13,13-->
+      <xs:enumeration value="grey6" />
+      <!-- RGB:15,15,15-->
+      <xs:enumeration value="grey7" />
+      <!-- RGB:18,18,18-->
+      <xs:enumeration value="grey8" />
+      <!-- RGB:20,20,20-->
+      <xs:enumeration value="grey9" />
+      <!-- RGB:23,23,23-->
+      <xs:enumeration value="grey10" />
+      <!-- RGB:26,26,26-->
+      <xs:enumeration value="grey11" />
+      <!-- RGB:28,28,28-->
+      <xs:enumeration value="grey12" />
+      <!-- RGB:31,31,31-->
+      <xs:enumeration value="grey13" />
+      <!-- RGB:33,33,33-->
+      <xs:enumeration value="grey14" />
+      <!-- RGB:36,36,36-->
+      <xs:enumeration value="grey15" />
+      <!-- RGB:38,38,38-->
+      <xs:enumeration value="grey16" />
+      <!-- RGB:41,41,41-->
+      <xs:enumeration value="grey17" />
+      <!-- RGB:43,43,43-->
+      <xs:enumeration value="grey18" />
+      <!-- RGB:46,46,46-->
+      <xs:enumeration value="grey19" />
+      <!-- RGB:48,48,48-->
+      <xs:enumeration value="grey20" />
+      <!-- RGB:51,51,51-->
+      <xs:enumeration value="grey21" />
+      <!-- RGB:54,54,54-->
+      <xs:enumeration value="grey22" />
+      <!-- RGB:56,56,56-->
+      <xs:enumeration value="grey23" />
+      <!-- RGB:59,59,59-->
+      <xs:enumeration value="grey24" />
+      <!-- RGB:61,61,61-->
+      <xs:enumeration value="grey25" />
+      <!-- RGB:64,64,64-->
+      <xs:enumeration value="grey26" />
+      <!-- RGB:66,66,66-->
+      <xs:enumeration value="grey27" />
+      <!-- RGB:69,69,69-->
+      <xs:enumeration value="grey28" />
+      <!-- RGB:71,71,71-->
+      <xs:enumeration value="grey29" />
+      <!-- RGB:74,74,74-->
+      <xs:enumeration value="grey30" />
+      <!-- RGB:77,77,77-->
+      <xs:enumeration value="grey31" />
+      <!-- RGB:79,79,79-->
+      <xs:enumeration value="grey32" />
+      <!-- RGB:82,82,82-->
+      <xs:enumeration value="grey33" />
+      <!-- RGB:84,84,84-->
+      <xs:enumeration value="grey34" />
+      <!-- RGB:87,87,87-->
+      <xs:enumeration value="grey35" />
+      <!-- RGB:89,89,89-->
+      <xs:enumeration value="grey36" />
+      <!-- RGB:92,92,92-->
+      <xs:enumeration value="grey37" />
+      <!-- RGB:94,94,94-->
+      <xs:enumeration value="grey38" />
+      <!-- RGB:97,97,97-->
+      <xs:enumeration value="grey39" />
+      <!-- RGB:99,99,99-->
+      <xs:enumeration value="grey40" />
+      <!-- RGB:102,102,102-->
+      <xs:enumeration value="grey41" />
+      <!-- RGB:105,105,105-->
+      <xs:enumeration value="grey42" />
+      <!-- RGB:107,107,107-->
+      <xs:enumeration value="grey43" />
+      <!-- RGB:110,110,110-->
+      <xs:enumeration value="grey44" />
+      <!-- RGB:112,112,112-->
+      <xs:enumeration value="grey45" />
+      <!-- RGB:115,115,115-->
+      <xs:enumeration value="grey46" />
+      <!-- RGB:117,117,117-->
+      <xs:enumeration value="grey47" />
+      <!-- RGB:120,120,120-->
+      <xs:enumeration value="grey48" />
+      <!-- RGB:122,122,122-->
+      <xs:enumeration value="grey49" />
+      <!-- RGB:125,125,125-->
+      <xs:enumeration value="grey50" />
+      <!-- RGB:127,127,127-->
+      <xs:enumeration value="grey51" />
+      <!-- RGB:130,130,130-->
+      <xs:enumeration value="grey52" />
+      <!-- RGB:133,133,133-->
+      <xs:enumeration value="grey53" />
+      <!-- RGB:135,135,135-->
+      <xs:enumeration value="grey54" />
+      <!-- RGB:138,138,138-->
+      <xs:enumeration value="grey55" />
+      <!-- RGB:140,140,140-->
+      <xs:enumeration value="grey56" />
+      <!-- RGB:143,143,143-->
+      <xs:enumeration value="grey57" />
+      <!-- RGB:145,145,145-->
+      <xs:enumeration value="grey58" />
+      <!-- RGB:148,148,148-->
+      <xs:enumeration value="grey59" />
+      <!-- RGB:150,150,150-->
+      <xs:enumeration value="grey60" />
+      <!-- RGB:153,153,153-->
+      <xs:enumeration value="grey61" />
+      <!-- RGB:156,156,156-->
+      <xs:enumeration value="grey62" />
+      <!-- RGB:158,158,158-->
+      <xs:enumeration value="grey63" />
+      <!-- RGB:161,161,161-->
+      <xs:enumeration value="grey64" />
+      <!-- RGB:163,163,163-->
+      <xs:enumeration value="grey65" />
+      <!-- RGB:166,166,166-->
+      <xs:enumeration value="grey66" />
+      <!-- RGB:168,168,168-->
+      <xs:enumeration value="grey67" />
+      <!-- RGB:171,171,171-->
+      <xs:enumeration value="grey68" />
+      <!-- RGB:173,173,173-->
+      <xs:enumeration value="grey69" />
+      <!-- RGB:176,176,176-->
+      <xs:enumeration value="grey70" />
+      <!-- RGB:179,179,179-->
+      <xs:enumeration value="grey71" />
+      <!-- RGB:181,181,181-->
+      <xs:enumeration value="grey72" />
+      <!-- RGB:184,184,184-->
+      <xs:enumeration value="grey73" />
+      <!-- RGB:186,186,186-->
+      <xs:enumeration value="grey74" />
+      <!-- RGB:189,189,189-->
+      <xs:enumeration value="grey75" />
+      <!-- RGB:191,191,191-->
+      <xs:enumeration value="grey76" />
+      <!-- RGB:194,194,194-->
+      <xs:enumeration value="grey77" />
+      <!-- RGB:196,196,196-->
+      <xs:enumeration value="grey78" />
+      <!-- RGB:199,199,199-->
+      <xs:enumeration value="grey79" />
+      <!-- RGB:201,201,201-->
+      <xs:enumeration value="grey80" />
+      <!-- RGB:204,204,204-->
+      <xs:enumeration value="grey81" />
+      <!-- RGB:207,207,207-->
+      <xs:enumeration value="grey82" />
+      <!-- RGB:209,209,209-->
+      <xs:enumeration value="grey83" />
+      <!-- RGB:212,212,212-->
+      <xs:enumeration value="grey84" />
+      <!-- RGB:214,214,214-->
+      <xs:enumeration value="grey85" />
+      <!-- RGB:217,217,217-->
+      <xs:enumeration value="grey86" />
+      <!-- RGB:219,219,219-->
+      <xs:enumeration value="grey87" />
+      <!-- RGB:222,222,222-->
+      <xs:enumeration value="grey88" />
+      <!-- RGB:224,224,224-->
+      <xs:enumeration value="grey89" />
+      <!-- RGB:227,227,227-->
+      <xs:enumeration value="grey90" />
+      <!-- RGB:229,229,229-->
+      <xs:enumeration value="grey91" />
+      <!-- RGB:232,232,232-->
+      <xs:enumeration value="grey92" />
+      <!-- RGB:235,235,235-->
+      <xs:enumeration value="grey93" />
+      <!-- RGB:237,237,237-->
+      <xs:enumeration value="grey94" />
+      <!-- RGB:240,240,240-->
+      <xs:enumeration value="grey95" />
+      <!-- RGB:242,242,242-->
+      <xs:enumeration value="grey96" />
+      <!-- RGB:245,245,245-->
+      <xs:enumeration value="grey97" />
+      <!-- RGB:247,247,247-->
+      <xs:enumeration value="grey98" />
+      <!-- RGB:250,250,250-->
+      <xs:enumeration value="grey99" />
+      <!-- RGB:252,252,252-->
+      <xs:enumeration value="grey100" />
+      <!-- RGB:255,255,255-->
+      <xs:enumeration value="honeydew" />
+      <!-- RGB:240,255,240-->
+      <xs:enumeration value="honeydew1" />
+      <!-- RGB:240,255,240-->
+      <xs:enumeration value="honeydew2" />
+      <!-- RGB:224,238,224-->
+      <xs:enumeration value="honeydew3" />
+      <!-- RGB:193,205,193-->
+      <xs:enumeration value="honeydew4" />
+      <!-- RGB:131,139,131-->
+      <xs:enumeration value="hot pink" />
+      <!-- RGB:255,105,180-->
+      <xs:enumeration value="HotPink" />
+      <!-- RGB:255,105,180-->
+      <xs:enumeration value="HotPink1" />
+      <!-- RGB:255,110,180-->
+      <xs:enumeration value="HotPink2" />
+      <!-- RGB:238,106,167-->
+      <xs:enumeration value="HotPink3" />
+      <!-- RGB:205,96,144-->
+      <xs:enumeration value="HotPink4" />
+      <!-- RGB:139,58,98-->
+      <xs:enumeration value="indian red" />
+      <!-- RGB:205,92,92-->
+      <xs:enumeration value="IndianRed" />
+      <!-- RGB:205,92,92-->
+      <xs:enumeration value="IndianRed1" />
+      <!-- RGB:255,106,106-->
+      <xs:enumeration value="IndianRed2" />
+      <!-- RGB:238,99,99-->
+      <xs:enumeration value="IndianRed3" />
+      <!-- RGB:205,85,85-->
+      <xs:enumeration value="IndianRed4" />
+      <!-- RGB:139,58,58-->
+      <xs:enumeration value="indigo" />
+      <!-- RGB:75,0,130-->
+      <xs:enumeration value="ivory" />
+      <!-- RGB:255,255,240-->
+      <xs:enumeration value="ivory1" />
+      <!-- RGB:255,255,240-->
+      <xs:enumeration value="ivory2" />
+      <!-- RGB:238,238,224-->
+      <xs:enumeration value="ivory3" />
+      <!-- RGB:205,205,193-->
+      <xs:enumeration value="ivory4" />
+      <!-- RGB:139,139,131-->
+      <xs:enumeration value="khaki" />
+      <!-- RGB:240,230,140-->
+      <xs:enumeration value="khaki1" />
+      <!-- RGB:255,246,143-->
+      <xs:enumeration value="khaki2" />
+      <!-- RGB:238,230,133-->
+      <xs:enumeration value="khaki3" />
+      <!-- RGB:205,198,115-->
+      <xs:enumeration value="khaki4" />
+      <!-- RGB:139,134,78-->
+      <xs:enumeration value="lavender" />
+      <!-- RGB:230,230,250-->
+      <xs:enumeration value="lavender blush" />
+      <!-- RGB:255,240,245-->
+      <xs:enumeration value="LavenderBlush" />
+      <!-- RGB:255,240,245-->
+      <xs:enumeration value="LavenderBlush1" />
+      <!-- RGB:255,240,245-->
+      <xs:enumeration value="LavenderBlush2" />
+      <!-- RGB:238,224,229-->
+      <xs:enumeration value="LavenderBlush3" />
+      <!-- RGB:205,193,197-->
+      <xs:enumeration value="LavenderBlush4" />
+      <!-- RGB:139,131,134-->
+      <xs:enumeration value="lawn green" />
+      <!-- RGB:124,252,0-->
+      <xs:enumeration value="LawnGreen" />
+      <!-- RGB:124,252,0-->
+      <xs:enumeration value="lemon chiffon" />
+      <!-- RGB:255,250,205-->
+      <xs:enumeration value="LemonChiffon" />
+      <!-- RGB:255,250,205-->
+      <xs:enumeration value="LemonChiffon1" />
+      <!-- RGB:255,250,205-->
+      <xs:enumeration value="LemonChiffon2" />
+      <!-- RGB:238,233,191-->
+      <xs:enumeration value="LemonChiffon3" />
+      <!-- RGB:205,201,165-->
+      <xs:enumeration value="LemonChiffon4" />
+      <!-- RGB:139,137,112-->
+      <xs:enumeration value="light blue" />
+      <!-- RGB:173,216,230-->
+      <xs:enumeration value="light coral" />
+      <!-- RGB:240,128,128-->
+      <xs:enumeration value="light cyan" />
+      <!-- RGB:224,255,255-->
+      <xs:enumeration value="light goldenrod" />
+      <!-- RGB:238,221,130-->
+      <xs:enumeration value="light goldenrod yellow" />
+      <!-- RGB:250,250,210-->
+      <xs:enumeration value="light gray" />
+      <!-- RGB:211,211,211-->
+      <xs:enumeration value="light green" />
+      <!-- RGB:144,238,144-->
+      <xs:enumeration value="light grey" />
+      <!-- RGB:211,211,211-->
+      <xs:enumeration value="light pink" />
+      <!-- RGB:255,182,193-->
+      <xs:enumeration value="light salmon" />
+      <!-- RGB:255,160,122-->
+      <xs:enumeration value="light sea green" />
+      <!-- RGB:32,178,170-->
+      <xs:enumeration value="light sky blue" />
+      <!-- RGB:135,206,250-->
+      <xs:enumeration value="light slate blue" />
+      <!-- RGB:132,112,255-->
+      <xs:enumeration value="light slate gray" />
+      <!-- RGB:119,136,153-->
+      <xs:enumeration value="light slate grey" />
+      <!-- RGB:119,136,153-->
+      <xs:enumeration value="light steel blue" />
+      <!-- RGB:176,196,222-->
+      <xs:enumeration value="light yellow" />
+      <!-- RGB:255,255,224-->
+      <xs:enumeration value="LightBlue" />
+      <!-- RGB:173,216,230-->
+      <xs:enumeration value="LightBlue1" />
+      <!-- RGB:191,239,255-->
+      <xs:enumeration value="LightBlue2" />
+      <!-- RGB:178,223,238-->
+      <xs:enumeration value="LightBlue3" />
+      <!-- RGB:154,192,205-->
+      <xs:enumeration value="LightBlue4" />
+      <!-- RGB:104,131,139-->
+      <xs:enumeration value="LightCoral" />
+      <!-- RGB:240,128,128-->
+      <xs:enumeration value="LightCyan" />
+      <!-- RGB:224,255,255-->
+      <xs:enumeration value="LightCyan1" />
+      <!-- RGB:224,255,255-->
+      <xs:enumeration value="LightCyan2" />
+      <!-- RGB:209,238,238-->
+      <xs:enumeration value="LightCyan3" />
+      <!-- RGB:180,205,205-->
+      <xs:enumeration value="LightCyan4" />
+      <!-- RGB:122,139,139-->
+      <xs:enumeration value="LightGoldenrod" />
+      <!-- RGB:238,221,130-->
+      <xs:enumeration value="LightGoldenrod1" />
+      <!-- RGB:255,236,139-->
+      <xs:enumeration value="LightGoldenrod2" />
+      <!-- RGB:238,220,130-->
+      <xs:enumeration value="LightGoldenrod3" />
+      <!-- RGB:205,190,112-->
+      <xs:enumeration value="LightGoldenrod4" />
+      <!-- RGB:139,129,76-->
+      <xs:enumeration value="LightGoldenrodYellow" />
+      <!-- RGB:250,250,210-->
+      <xs:enumeration value="LightGray" />
+      <!-- RGB:211,211,211-->
+      <xs:enumeration value="LightGreen" />
+      <!-- RGB:144,238,144-->
+      <xs:enumeration value="LightGrey" />
+      <!-- RGB:211,211,211-->
+      <xs:enumeration value="LightPink" />
+      <!-- RGB:255,182,193-->
+      <xs:enumeration value="LightPink1" />
+      <!-- RGB:255,174,185-->
+      <xs:enumeration value="LightPink2" />
+      <!-- RGB:238,162,173-->
+      <xs:enumeration value="LightPink3" />
+      <!-- RGB:205,140,149-->
+      <xs:enumeration value="LightPink4" />
+      <!-- RGB:139,95,101-->
+      <xs:enumeration value="LightSalmon" />
+      <!-- RGB:255,160,122-->
+      <xs:enumeration value="LightSalmon1" />
+      <!-- RGB:255,160,122-->
+      <xs:enumeration value="LightSalmon2" />
+      <!-- RGB:238,149,114-->
+      <xs:enumeration value="LightSalmon3" />
+      <!-- RGB:205,129,98-->
+      <xs:enumeration value="LightSalmon4" />
+      <!-- RGB:139,87,66-->
+      <xs:enumeration value="LightSeaGreen" />
+      <!-- RGB:32,178,170-->
+      <xs:enumeration value="LightSkyBlue" />
+      <!-- RGB:135,206,250-->
+      <xs:enumeration value="LightSkyBlue1" />
+      <!-- RGB:176,226,255-->
+      <xs:enumeration value="LightSkyBlue2" />
+      <!-- RGB:164,211,238-->
+      <xs:enumeration value="LightSkyBlue3" />
+      <!-- RGB:141,182,205-->
+      <xs:enumeration value="LightSkyBlue4" />
+      <!-- RGB:96,123,139-->
+      <xs:enumeration value="LightSlateBlue" />
+      <!-- RGB:132,112,255-->
+      <xs:enumeration value="LightSlateGray" />
+      <!-- RGB:119,136,153-->
+      <xs:enumeration value="LightSlateGrey" />
+      <!-- RGB:119,136,153-->
+      <xs:enumeration value="LightSteelBlue" />
+      <!-- RGB:176,196,222-->
+      <xs:enumeration value="LightSteelBlue1" />
+      <!-- RGB:202,225,255-->
+      <xs:enumeration value="LightSteelBlue2" />
+      <!-- RGB:188,210,238-->
+      <xs:enumeration value="LightSteelBlue3" />
+      <!-- RGB:162,181,205-->
+      <xs:enumeration value="LightSteelBlue4" />
+      <!-- RGB:110,123,139-->
+      <xs:enumeration value="LightYellow" />
+      <!-- RGB:255,255,224-->
+      <xs:enumeration value="LightYellow1" />
+      <!-- RGB:255,255,224-->
+      <xs:enumeration value="LightYellow2" />
+      <!-- RGB:238,238,209-->
+      <xs:enumeration value="LightYellow3" />
+      <!-- RGB:205,205,180-->
+      <xs:enumeration value="LightYellow4" />
+      <!-- RGB:139,139,122-->
+      <xs:enumeration value="lime" />
+      <!-- RGB:0,255,0-->
+      <xs:enumeration value="lime green" />
+      <!-- RGB:50,205,50-->
+      <xs:enumeration value="LimeGreen" />
+      <!-- RGB:50,205,50-->
+      <xs:enumeration value="linen" />
+      <!-- RGB:250,240,230-->
+      <xs:enumeration value="magenta" />
+      <!-- RGB:255,0,255-->
+      <xs:enumeration value="magenta1" />
+      <!-- RGB:255,0,255-->
+      <xs:enumeration value="magenta2" />
+      <!-- RGB:238,0,238-->
+      <xs:enumeration value="magenta3" />
+      <!-- RGB:205,0,205-->
+      <xs:enumeration value="magenta4" />
+      <!-- RGB:139,0,139-->
+      <xs:enumeration value="maroon" />
+      <!-- RGB:176,48,96-->
+      <xs:enumeration value="maroon1" />
+      <!-- RGB:255,52,179-->
+      <xs:enumeration value="maroon2" />
+      <!-- RGB:238,48,167-->
+      <xs:enumeration value="maroon3" />
+      <!-- RGB:205,41,144-->
+      <xs:enumeration value="maroon4" />
+      <!-- RGB:139,28,98-->
+      <xs:enumeration value="medium aquamarine" />
+      <!-- RGB:102,205,170-->
+      <xs:enumeration value="medium blue" />
+      <!-- RGB:0,0,205-->
+      <xs:enumeration value="medium orchid" />
+      <!-- RGB:186,85,211-->
+      <xs:enumeration value="medium purple" />
+      <!-- RGB:147,112,219-->
+      <xs:enumeration value="medium sea green" />
+      <!-- RGB:60,179,113-->
+      <xs:enumeration value="medium slate blue" />
+      <!-- RGB:123,104,238-->
+      <xs:enumeration value="medium spring green" />
+      <!-- RGB:0,250,154-->
+      <xs:enumeration value="medium turquoise" />
+      <!-- RGB:72,209,204-->
+      <xs:enumeration value="medium violet red" />
+      <!-- RGB:199,21,133-->
+      <xs:enumeration value="MediumAquamarine" />
+      <!-- RGB:102,205,170-->
+      <xs:enumeration value="MediumBlue" />
+      <!-- RGB:0,0,205-->
+      <xs:enumeration value="MediumOrchid" />
+      <!-- RGB:186,85,211-->
+      <xs:enumeration value="MediumOrchid1" />
+      <!-- RGB:224,102,255-->
+      <xs:enumeration value="MediumOrchid2" />
+      <!-- RGB:209,95,238-->
+      <xs:enumeration value="MediumOrchid3" />
+      <!-- RGB:180,82,205-->
+      <xs:enumeration value="MediumOrchid4" />
+      <!-- RGB:122,55,139-->
+      <xs:enumeration value="MediumPurple" />
+      <!-- RGB:147,112,219-->
+      <xs:enumeration value="MediumPurple1" />
+      <!-- RGB:171,130,255-->
+      <xs:enumeration value="MediumPurple2" />
+      <!-- RGB:159,121,238-->
+      <xs:enumeration value="MediumPurple3" />
+      <!-- RGB:137,104,205-->
+      <xs:enumeration value="MediumPurple4" />
+      <!-- RGB:93,71,139-->
+      <xs:enumeration value="MediumSeaGreen" />
+      <!-- RGB:60,179,113-->
+      <xs:enumeration value="MediumSlateBlue" />
+      <!-- RGB:123,104,238-->
+      <xs:enumeration value="MediumSpringGreen" />
+      <!-- RGB:0,250,154-->
+      <xs:enumeration value="MediumTurquoise" />
+      <!-- RGB:72,209,204-->
+      <xs:enumeration value="MediumVioletRed" />
+      <!-- RGB:199,21,133-->
+      <xs:enumeration value="midnight blue" />
+      <!-- RGB:25,25,112-->
+      <xs:enumeration value="MidnightBlue" />
+      <!-- RGB:25,25,112-->
+      <xs:enumeration value="mint cream" />
+      <!-- RGB:245,255,250-->
+      <xs:enumeration value="MintCream" />
+      <!-- RGB:245,255,250-->
+      <xs:enumeration value="misty rose" />
+      <!-- RGB:255,228,225-->
+      <xs:enumeration value="MistyRose" />
+      <!-- RGB:255,228,225-->
+      <xs:enumeration value="MistyRose1" />
+      <!-- RGB:255,228,225-->
+      <xs:enumeration value="MistyRose2" />
+      <!-- RGB:238,213,210-->
+      <xs:enumeration value="MistyRose3" />
+      <!-- RGB:205,183,181-->
+      <xs:enumeration value="MistyRose4" />
+      <!-- RGB:139,125,123-->
+      <xs:enumeration value="moccasin" />
+      <!-- RGB:255,228,181-->
+      <xs:enumeration value="navajo white" />
+      <!-- RGB:255,222,173-->
+      <xs:enumeration value="NavajoWhite" />
+      <!-- RGB:255,222,173-->
+      <xs:enumeration value="NavajoWhite1" />
+      <!-- RGB:255,222,173-->
+      <xs:enumeration value="NavajoWhite2" />
+      <!-- RGB:238,207,161-->
+      <xs:enumeration value="NavajoWhite3" />
+      <!-- RGB:205,179,139-->
+      <xs:enumeration value="NavajoWhite4" />
+      <!-- RGB:139,121,94-->
+      <xs:enumeration value="navy" />
+      <!-- RGB:0,0,128-->
+      <xs:enumeration value="navy blue" />
+      <!-- RGB:0,0,128-->
+      <xs:enumeration value="NavyBlue" />
+      <!-- RGB:0,0,128-->
+      <xs:enumeration value="old lace" />
+      <!-- RGB:253,245,230-->
+      <xs:enumeration value="OldLace" />
+      <!-- RGB:253,245,230-->
+      <xs:enumeration value="olive" />
+      <!-- RGB:128,128,0-->
+      <xs:enumeration value="olive drab" />
+      <!-- RGB:107,142,35-->
+      <xs:enumeration value="OliveDrab" />
+      <!-- RGB:107,142,35-->
+      <xs:enumeration value="OliveDrab1" />
+      <!-- RGB:192,255,62-->
+      <xs:enumeration value="OliveDrab2" />
+      <!-- RGB:179,238,58-->
+      <xs:enumeration value="OliveDrab3" />
+      <!-- RGB:154,205,50-->
+      <xs:enumeration value="OliveDrab4" />
+      <!-- RGB:105,139,34-->
+      <xs:enumeration value="orange" />
+      <!-- RGB:255,165,0-->
+      <xs:enumeration value="orange red" />
+      <!-- RGB:255,69,0-->
+      <xs:enumeration value="orange1" />
+      <!-- RGB:255,165,0-->
+      <xs:enumeration value="orange2" />
+      <!-- RGB:238,154,0-->
+      <xs:enumeration value="orange3" />
+      <!-- RGB:205,133,0-->
+      <xs:enumeration value="orange4" />
+      <!-- RGB:139,90,0-->
+      <xs:enumeration value="OrangeRed" />
+      <!-- RGB:255,69,0-->
+      <xs:enumeration value="OrangeRed1" />
+      <!-- RGB:255,69,0-->
+      <xs:enumeration value="OrangeRed2" />
+      <!-- RGB:238,64,0-->
+      <xs:enumeration value="OrangeRed3" />
+      <!-- RGB:205,55,0-->
+      <xs:enumeration value="OrangeRed4" />
+      <!-- RGB:139,37,0-->
+      <xs:enumeration value="orchid" />
+      <!-- RGB:218,112,214-->
+      <xs:enumeration value="orchid1" />
+      <!-- RGB:255,131,250-->
+      <xs:enumeration value="orchid2" />
+      <!-- RGB:238,122,233-->
+      <xs:enumeration value="orchid3" />
+      <!-- RGB:205,105,201-->
+      <xs:enumeration value="orchid4" />
+      <!-- RGB:139,71,137-->
+      <xs:enumeration value="pale goldenrod" />
+      <!-- RGB:238,232,170-->
+      <xs:enumeration value="pale green" />
+      <!-- RGB:152,251,152-->
+      <xs:enumeration value="pale turquoise" />
+      <!-- RGB:175,238,238-->
+      <xs:enumeration value="pale violet red" />
+      <!-- RGB:219,112,147-->
+      <xs:enumeration value="PaleGoldenrod" />
+      <!-- RGB:238,232,170-->
+      <xs:enumeration value="PaleGreen" />
+      <!-- RGB:152,251,152-->
+      <xs:enumeration value="PaleGreen1" />
+      <!-- RGB:154,255,154-->
+      <xs:enumeration value="PaleGreen2" />
+      <!-- RGB:144,238,144-->
+      <xs:enumeration value="PaleGreen3" />
+      <!-- RGB:124,205,124-->
+      <xs:enumeration value="PaleGreen4" />
+      <!-- RGB:84,139,84-->
+      <xs:enumeration value="PaleTurquoise" />
+      <!-- RGB:175,238,238-->
+      <xs:enumeration value="PaleTurquoise1" />
+      <!-- RGB:187,255,255-->
+      <xs:enumeration value="PaleTurquoise2" />
+      <!-- RGB:174,238,238-->
+      <xs:enumeration value="PaleTurquoise3" />
+      <!-- RGB:150,205,205-->
+      <xs:enumeration value="PaleTurquoise4" />
+      <!-- RGB:102,139,139-->
+      <xs:enumeration value="PaleVioletRed" />
+      <!-- RGB:219,112,147-->
+      <xs:enumeration value="PaleVioletRed1" />
+      <!-- RGB:255,130,171-->
+      <xs:enumeration value="PaleVioletRed2" />
+      <!-- RGB:238,121,159-->
+      <xs:enumeration value="PaleVioletRed3" />
+      <!-- RGB:205,104,127-->
+      <xs:enumeration value="PaleVioletRed4" />
+      <!-- RGB:139,71,93-->
+      <xs:enumeration value="papaya whip" />
+      <!-- RGB:255,239,213-->
+      <xs:enumeration value="PapayaWhip" />
+      <!-- RGB:255,239,213-->
+      <xs:enumeration value="peach puff" />
+      <!-- RGB:255,218,185-->
+      <xs:enumeration value="PeachPuff" />
+      <!-- RGB:255,218,185-->
+      <xs:enumeration value="PeachPuff1" />
+      <!-- RGB:255,218,185-->
+      <xs:enumeration value="PeachPuff2" />
+      <!-- RGB:238,203,173-->
+      <xs:enumeration value="PeachPuff3" />
+      <!-- RGB:205,175,149-->
+      <xs:enumeration value="PeachPuff4" />
+      <!-- RGB:139,119,101-->
+      <xs:enumeration value="peru" />
+      <!-- RGB:205,133,63-->
+      <xs:enumeration value="pink" />
+      <!-- RGB:255,192,203-->
+      <xs:enumeration value="pink1" />
+      <!-- RGB:255,181,197-->
+      <xs:enumeration value="pink2" />
+      <!-- RGB:238,169,184-->
+      <xs:enumeration value="pink3" />
+      <!-- RGB:205,145,158-->
+      <xs:enumeration value="pink4" />
+      <!-- RGB:139,99,108-->
+      <xs:enumeration value="plum" />
+      <!-- RGB:221,160,221-->
+      <xs:enumeration value="plum1" />
+      <!-- RGB:255,187,255-->
+      <xs:enumeration value="plum2" />
+      <!-- RGB:238,174,238-->
+      <xs:enumeration value="plum3" />
+      <!-- RGB:205,150,205-->
+      <xs:enumeration value="plum4" />
+      <!-- RGB:139,102,139-->
+      <xs:enumeration value="powder blue" />
+      <!-- RGB:176,224,230-->
+      <xs:enumeration value="PowderBlue" />
+      <!-- RGB:176,224,230-->
+      <xs:enumeration value="purple" />
+      <!-- RGB:160,32,240-->
+      <xs:enumeration value="purple1" />
+      <!-- RGB:155,48,255-->
+      <xs:enumeration value="purple2" />
+      <!-- RGB:145,44,238-->
+      <xs:enumeration value="purple3" />
+      <!-- RGB:125,38,205-->
+      <xs:enumeration value="purple4" />
+      <!-- RGB:85,26,139-->
+      <xs:enumeration value="red" />
+      <!-- RGB:255,0,0-->
+      <xs:enumeration value="red1" />
+      <!-- RGB:255,0,0-->
+      <xs:enumeration value="red2" />
+      <!-- RGB:238,0,0-->
+      <xs:enumeration value="red3" />
+      <!-- RGB:205,0,0-->
+      <xs:enumeration value="red4" />
+      <!-- RGB:139,0,0-->
+      <xs:enumeration value="rosy brown" />
+      <!-- RGB:188,143,143-->
+      <xs:enumeration value="RosyBrown" />
+      <!-- RGB:188,143,143-->
+      <xs:enumeration value="RosyBrown1" />
+      <!-- RGB:255,193,193-->
+      <xs:enumeration value="RosyBrown2" />
+      <!-- RGB:238,180,180-->
+      <xs:enumeration value="RosyBrown3" />
+      <!-- RGB:205,155,155-->
+      <xs:enumeration value="RosyBrown4" />
+      <!-- RGB:139,105,105-->
+      <xs:enumeration value="royal blue" />
+      <!-- RGB:65,105,225-->
+      <xs:enumeration value="RoyalBlue" />
+      <!-- RGB:65,105,225-->
+      <xs:enumeration value="RoyalBlue1" />
+      <!-- RGB:72,118,255-->
+      <xs:enumeration value="RoyalBlue2" />
+      <!-- RGB:67,110,238-->
+      <xs:enumeration value="RoyalBlue3" />
+      <!-- RGB:58,95,205-->
+      <xs:enumeration value="RoyalBlue4" />
+      <!-- RGB:39,64,139-->
+      <xs:enumeration value="saddle brown" />
+      <!-- RGB:139,69,19-->
+      <xs:enumeration value="SaddleBrown" />
+      <!-- RGB:139,69,19-->
+      <xs:enumeration value="salmon" />
+      <!-- RGB:250,128,114-->
+      <xs:enumeration value="salmon1" />
+      <!-- RGB:255,140,105-->
+      <xs:enumeration value="salmon2" />
+      <!-- RGB:238,130,98-->
+      <xs:enumeration value="salmon3" />
+      <!-- RGB:205,112,84-->
+      <xs:enumeration value="salmon4" />
+      <!-- RGB:139,76,57-->
+      <xs:enumeration value="sandy brown" />
+      <!-- RGB:244,164,96-->
+      <xs:enumeration value="SandyBrown" />
+      <!-- RGB:244,164,96-->
+      <xs:enumeration value="sea green" />
+      <!-- RGB:46,139,87-->
+      <xs:enumeration value="SeaGreen" />
+      <!-- RGB:46,139,87-->
+      <xs:enumeration value="SeaGreen1" />
+      <!-- RGB:84,255,159-->
+      <xs:enumeration value="SeaGreen2" />
+      <!-- RGB:78,238,148-->
+      <xs:enumeration value="SeaGreen3" />
+      <!-- RGB:67,205,128-->
+      <xs:enumeration value="SeaGreen4" />
+      <!-- RGB:46,139,87-->
+      <xs:enumeration value="seashell" />
+      <!-- RGB:255,245,238-->
+      <xs:enumeration value="seashell1" />
+      <!-- RGB:255,245,238-->
+      <xs:enumeration value="seashell2" />
+      <!-- RGB:238,229,222-->
+      <xs:enumeration value="seashell3" />
+      <!-- RGB:205,197,191-->
+      <xs:enumeration value="seashell4" />
+      <!-- RGB:139,134,130-->
+      <xs:enumeration value="sienna" />
+      <!-- RGB:160,82,45-->
+      <xs:enumeration value="sienna1" />
+      <!-- RGB:255,130,71-->
+      <xs:enumeration value="sienna2" />
+      <!-- RGB:238,121,66-->
+      <xs:enumeration value="sienna3" />
+      <!-- RGB:205,104,57-->
+      <xs:enumeration value="sienna4" />
+      <!-- RGB:139,71,38-->
+      <xs:enumeration value="silver" />
+      <!-- RGB:192,192,192-->
+      <xs:enumeration value="sky blue" />
+      <!-- RGB:135,206,235-->
+      <xs:enumeration value="SkyBlue" />
+      <!-- RGB:135,206,235-->
+      <xs:enumeration value="SkyBlue1" />
+      <!-- RGB:135,206,255-->
+      <xs:enumeration value="SkyBlue2" />
+      <!-- RGB:126,192,238-->
+      <xs:enumeration value="SkyBlue3" />
+      <!-- RGB:108,166,205-->
+      <xs:enumeration value="SkyBlue4" />
+      <!-- RGB:74,112,139-->
+      <xs:enumeration value="slate blue" />
+      <!-- RGB:106,90,205-->
+      <xs:enumeration value="slate gray" />
+      <!-- RGB:112,128,144-->
+      <xs:enumeration value="slate grey" />
+      <!-- RGB:112,128,144-->
+      <xs:enumeration value="SlateBlue" />
+      <!-- RGB:106,90,205-->
+      <xs:enumeration value="SlateBlue1" />
+      <!-- RGB:131,111,255-->
+      <xs:enumeration value="SlateBlue2" />
+      <!-- RGB:122,103,238-->
+      <xs:enumeration value="SlateBlue3" />
+      <!-- RGB:105,89,205-->
+      <xs:enumeration value="SlateBlue4" />
+      <!-- RGB:71,60,139-->
+      <xs:enumeration value="SlateGray" />
+      <!-- RGB:112,128,144-->
+      <xs:enumeration value="SlateGray1" />
+      <!-- RGB:198,226,255-->
+      <xs:enumeration value="SlateGray2" />
+      <!-- RGB:185,211,238-->
+      <xs:enumeration value="SlateGray3" />
+      <!-- RGB:159,182,205-->
+      <xs:enumeration value="SlateGray4" />
+      <!-- RGB:108,123,139-->
+      <xs:enumeration value="SlateGrey" />
+      <!-- RGB:112,128,144-->
+      <xs:enumeration value="snow" />
+      <!-- RGB:255,250,250-->
+      <xs:enumeration value="snow1" />
+      <!-- RGB:255,250,250-->
+      <xs:enumeration value="snow2" />
+      <!-- RGB:238,233,233-->
+      <xs:enumeration value="snow3" />
+      <!-- RGB:205,201,201-->
+      <xs:enumeration value="snow4" />
+      <!-- RGB:139,137,137-->
+      <xs:enumeration value="spring green" />
+      <!-- RGB:0,255,127-->
+      <xs:enumeration value="SpringGreen" />
+      <!-- RGB:0,255,127-->
+      <xs:enumeration value="SpringGreen1" />
+      <!-- RGB:0,255,127-->
+      <xs:enumeration value="SpringGreen2" />
+      <!-- RGB:0,238,118-->
+      <xs:enumeration value="SpringGreen3" />
+      <!-- RGB:0,205,102-->
+      <xs:enumeration value="SpringGreen4" />
+      <!-- RGB:0,139,69-->
+      <xs:enumeration value="steel blue" />
+      <!-- RGB:70,130,180-->
+      <xs:enumeration value="SteelBlue" />
+      <!-- RGB:70,130,180-->
+      <xs:enumeration value="SteelBlue1" />
+      <!-- RGB:99,184,255-->
+      <xs:enumeration value="SteelBlue2" />
+      <!-- RGB:92,172,238-->
+      <xs:enumeration value="SteelBlue3" />
+      <!-- RGB:79,148,205-->
+      <xs:enumeration value="SteelBlue4" />
+      <!-- RGB:54,100,139-->
+      <xs:enumeration value="tan" />
+      <!-- RGB:210,180,140-->
+      <xs:enumeration value="tan1" />
+      <!-- RGB:255,165,79-->
+      <xs:enumeration value="tan2" />
+      <!-- RGB:238,154,73-->
+      <xs:enumeration value="tan3" />
+      <!-- RGB:205,133,63-->
+      <xs:enumeration value="tan4" />
+      <!-- RGB:139,90,43-->
+      <xs:enumeration value="teal" />
+      <!-- RGB:0,128,128-->
+      <xs:enumeration value="thistle" />
+      <!-- RGB:216,191,216-->
+      <xs:enumeration value="thistle1" />
+      <!-- RGB:255,225,255-->
+      <xs:enumeration value="thistle2" />
+      <!-- RGB:238,210,238-->
+      <xs:enumeration value="thistle3" />
+      <!-- RGB:205,181,205-->
+      <xs:enumeration value="thistle4" />
+      <!-- RGB:139,123,139-->
+      <xs:enumeration value="tomato" />
+      <!-- RGB:255,99,71-->
+      <xs:enumeration value="tomato1" />
+      <!-- RGB:255,99,71-->
+      <xs:enumeration value="tomato2" />
+      <!-- RGB:238,92,66-->
+      <xs:enumeration value="tomato3" />
+      <!-- RGB:205,79,57-->
+      <xs:enumeration value="tomato4" />
+      <!-- RGB:139,54,38-->
+      <xs:enumeration value="turquoise" />
+      <!-- RGB:64,224,208-->
+      <xs:enumeration value="turquoise1" />
+      <!-- RGB:0,245,255-->
+      <xs:enumeration value="turquoise2" />
+      <!-- RGB:0,229,238-->
+      <xs:enumeration value="turquoise3" />
+      <!-- RGB:0,197,205-->
+      <xs:enumeration value="turquoise4" />
+      <!-- RGB:0,134,139-->
+      <xs:enumeration value="violet" />
+      <!-- RGB:238,130,238-->
+      <xs:enumeration value="violet red" />
+      <!-- RGB:208,32,144-->
+      <xs:enumeration value="VioletRed" />
+      <!-- RGB:208,32,144-->
+      <xs:enumeration value="VioletRed1" />
+      <!-- RGB:255,62,150-->
+      <xs:enumeration value="VioletRed2" />
+      <!-- RGB:238,58,140-->
+      <xs:enumeration value="VioletRed3" />
+      <!-- RGB:205,50,120-->
+      <xs:enumeration value="VioletRed4" />
+      <!-- RGB:139,34,82-->
+      <xs:enumeration value="wheat" />
+      <!-- RGB:245,222,179-->
+      <xs:enumeration value="wheat1" />
+      <!-- RGB:255,231,186-->
+      <xs:enumeration value="wheat2" />
+      <!-- RGB:238,216,174-->
+      <xs:enumeration value="wheat3" />
+      <!-- RGB:205,186,150-->
+      <xs:enumeration value="wheat4" />
+      <!-- RGB:139,126,102-->
+      <xs:enumeration value="white" />
+      <!-- RGB:255,255,255-->
+      <xs:enumeration value="white smoke" />
+      <!-- RGB:245,245,245-->
+      <xs:enumeration value="WhiteSmoke" />
+      <!-- RGB:245,245,245-->
+      <xs:enumeration value="yellow" />
+      <!-- RGB:255,255,0-->
+      <xs:enumeration value="yellow green" />
+      <!-- RGB:154,205,50-->
+      <xs:enumeration value="yellow1" />
+      <!-- RGB:255,255,0-->
+      <xs:enumeration value="yellow2" />
+      <!-- RGB:238,238,0-->
+      <xs:enumeration value="yellow3" />
+      <!-- RGB:205,205,0-->
+      <xs:enumeration value="yellow4" />
+      <!-- RGB:139,139,0-->
+      <xs:enumeration value="YellowGreen" />
+      <!-- RGB:154,205,50-->
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="WindowsThemeColors">
+    <!--On Windows, the following theme based colours are available
+(note that the actual color values depend on the currently active OS theme).-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="system3dDarkShadow" />
+      <xs:enumeration value="systemHighlight" />
+      <xs:enumeration value="system3dLight" />
+      <xs:enumeration value="systemHighlightText" />
+      <xs:enumeration value="systemActiveBorder" />
+      <xs:enumeration value="systemInactiveBorder" />
+      <xs:enumeration value="systemActiveCaption" />
+      <xs:enumeration value="systemInactiveCaption" />
+      <xs:enumeration value="systemAppWorkspace" />
+      <xs:enumeration value="systemInactiveCaptionText" />
+      <xs:enumeration value="systemBackground" />
+      <xs:enumeration value="systemInfoBackground" />
+      <xs:enumeration value="systemButtonFace" />
+      <xs:enumeration value="systemInfoText" />
+      <xs:enumeration value="systemButtonHighlight" />
+      <xs:enumeration value="systemMenu" />
+      <xs:enumeration value="systemButtonShadow" />
+      <xs:enumeration value="systemMenuText" />
+      <xs:enumeration value="systemButtonText" />
+      <xs:enumeration value="systemScrollbar" />
+      <xs:enumeration value="systemCaptionText" />
+      <xs:enumeration value="systemWindow" />
+      <xs:enumeration value="systemDisabledText" />
+      <xs:enumeration value="systemWindowFrame" />
+      <xs:enumeration value="systemGrayText" />
+      <xs:enumeration value="systemWindowText" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CursorType">
+    <!--The standard X cursor names can be used.
+    You can also specify a bitmap and mask file of your own. (Not Yet Implemented)-->
+    <xs:union memberTypes="CursorNames WindowsCursorNames MacOSCursorNames" />
+  </xs:simpleType>
+  <xs:simpleType name="CursorNames">
+    <!--Mouse cursors available in Tk on all platforms.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="X_cursor" />
+      <xs:enumeration value="arrow" />
+      <!--On Windows and Mac OS X systems, the arrow cursor is mapped to a native cursor-->
+      <xs:enumeration value="based_arrow_down" />
+      <xs:enumeration value="based_arrow_up" />
+      <xs:enumeration value="boat" />
+      <xs:enumeration value="bogosity" />
+      <xs:enumeration value="bottom_left_corner" />
+      <xs:enumeration value="bottom_right_corner" />
+      <xs:enumeration value="bottom_side" />
+      <xs:enumeration value="bottom_tee" />
+      <xs:enumeration value="box_spiral" />
+      <xs:enumeration value="center_ptr" />
+      <!--On Windows systems, the center_ptr  cursor is mapped to a native cursor-->
+      <xs:enumeration value="circle" />
+      <xs:enumeration value="clock" />
+      <xs:enumeration value="coffee_mug" />
+      <xs:enumeration value="cross" />
+      <!--On Windows systems, the cross cursor is mapped to a native cursor-->
+      <xs:enumeration value="cross_reverse" />
+      <xs:enumeration value="crosshair" />
+      <!--On Windows and Mac OS X systems, the crosshair cursor is mapped to a native cursor-->
+      <xs:enumeration value="diamond_cross" />
+      <xs:enumeration value="dot" />
+      <xs:enumeration value="dotbox" />
+      <xs:enumeration value="double_arrow" />
+      <!--On Windows systems, the sb_h_double_arrow cursor is mapped to a native cursor-->
+      <xs:enumeration value="draft_large" />
+      <xs:enumeration value="draft_small" />
+      <xs:enumeration value="draped_box" />
+      <xs:enumeration value="exchange" />
+      <xs:enumeration value="fleur" />
+      <!--On Windows systems, the fleur cursor is mapped to a native cursor-->
+      <xs:enumeration value="gobbler" />
+      <xs:enumeration value="gumby" />
+      <xs:enumeration value="hand1" />
+      <xs:enumeration value="hand2" />
+      <xs:enumeration value="heart" />
+      <xs:enumeration value="ibeam" />
+      <!--On Windows and Mac OS X systems, the xterm cursor is mapped to a native cursor-->
+      <xs:enumeration value="icon" />
+      <!--On Windows systems, the icon cursor is mapped to a native cursor-->
+      <xs:enumeration value="iron_cross" />
+      <xs:enumeration value="left_ptr" />
+      <xs:enumeration value="left_side" />
+      <xs:enumeration value="left_tee" />
+      <xs:enumeration value="leftbutton" />
+      <xs:enumeration value="ll_angle" />
+      <xs:enumeration value="lr_angle" />
+      <xs:enumeration value="man" />
+      <xs:enumeration value="middlebutton" />
+      <xs:enumeration value="mouse" />
+      <xs:enumeration value="none" />
+      <!--The none cursor can be specified to eliminate the cursor.
+On Windows and Mac OS X systems, the none cursor is mapped to a native cursor-->
+      <xs:enumeration value="pencil" />
+      <xs:enumeration value="pirate" />
+      <xs:enumeration value="plus" />
+      <!--On Windows systems, the plus cursor is mapped to a native cursor-->
+      <xs:enumeration value="question_arrow" />
+      <xs:enumeration value="right_ptr" />
+      <xs:enumeration value="right_side" />
+      <xs:enumeration value="right_tee" />
+      <xs:enumeration value="rightbutton" />
+      <xs:enumeration value="rtl_logo" />
+      <xs:enumeration value="sailboat" />
+      <xs:enumeration value="sb_down_arrow" />
+      <xs:enumeration value="sb_h_double_arrow" />
+      <xs:enumeration value="sb_left_arrow" />
+      <xs:enumeration value="sb_right_arrow" />
+      <xs:enumeration value="sb_up_arrow" />
+      <xs:enumeration value="sb_v_double_arrow" />
+      <!--On Windows systems, the sb_v_double_arrow cursor is mapped to a native cursor-->
+      <xs:enumeration value="shuttle" />
+      <xs:enumeration value="sizing" />
+      <xs:enumeration value="spider" />
+      <xs:enumeration value="spraycan" />
+      <xs:enumeration value="star" />
+      <xs:enumeration value="target" />
+      <xs:enumeration value="tcross" />
+      <xs:enumeration value="top_left_arrow" />
+      <xs:enumeration value="top_left_corner" />
+      <xs:enumeration value="top_right_corner" />
+      <xs:enumeration value="top_side" />
+      <xs:enumeration value="top_tee" />
+      <xs:enumeration value="trek" />
+      <xs:enumeration value="ul_angle" />
+      <xs:enumeration value="umbrella" />
+      <xs:enumeration value="ur_angle" />
+      <xs:enumeration value="watch" />
+      <!--On Windows and Mac OS X systems, the watch cursor is mapped to a native cursor-->
+      <xs:enumeration value="xterm" />
+      <!--On Windows and Mac OS X systems, the xterm cursor is mapped to a native cursor-->
+    </xs:restriction>
+
+  </xs:simpleType>
+  <xs:simpleType name="WindowsCursorNames">
+    <!--Additional Mouse cursors available in Tk on Windows systems.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="ibeam" />
+      <xs:enumeration value="no" />
+      <xs:enumeration value="starting" />
+      <xs:enumeration value="size" />
+      <xs:enumeration value="size_ne_sw" />
+      <xs:enumeration value="size_ns" />
+      <xs:enumeration value="size_nw_se" />
+      <xs:enumeration value="size_we" />
+      <xs:enumeration value="uparrow" />
+      <xs:enumeration value="wait" />
+    </xs:restriction>
+
+  </xs:simpleType>
+  <xs:simpleType name="MacOSCursorNames">
+    <!--Additional Mouse cursors available in Tk on Mac OS X systems.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="copyarrow" />
+      <xs:enumeration value="aliasarrow" />
+      <xs:enumeration value="contextualmenuarrow" />
+      <xs:enumeration value="text" />
+      <xs:enumeration value="cross-hair" />
+      <xs:enumeration value="closedhand" />
+      <xs:enumeration value="openhand" />
+      <xs:enumeration value="pointinghand" />
+      <xs:enumeration value="resizeleft" />
+      <xs:enumeration value="resizeright" />
+      <xs:enumeration value="resizeleftright" />
+      <xs:enumeration value="resizeup" />
+      <xs:enumeration value="resizedown" />
+      <xs:enumeration value="resizeupdown" />
+      <xs:enumeration value="notallowed" />
+      <xs:enumeration value="poof" />
+      <xs:enumeration value="countinguphand" />
+      <xs:enumeration value="countingdownhand" />
+      <xs:enumeration value="countingupanddownhand" />
+      <xs:enumeration value="spinning" />
+    </xs:restriction>
+
+  </xs:simpleType>
+
+  <xs:simpleType name="DistanceType">
+    <!--Screen distances in either pixels or absolute distances.
+    Pixels are given as numbers and absolute distances as strings, with the trailing character denoting units. For example, 3.5 inches is expressed as "3.5i".-->
+    <xs:union memberTypes="xs:integer AbsoluteDistanceType" />
+  </xs:simpleType>
+  <xs:simpleType name="AbsoluteDistanceType">
+    <!--Absolute screen distances; The trailing character denoting units:
+    c for centimetres,
+    i for inches,
+    m for millimetres,
+    p for printer’s points.-->
+    <xs:restriction base="xs:string">
+      <xs:pattern value="#[0-9.]+[cimp]" />
+    </xs:restriction>
+  </xs:simpleType>
+
   <xs:simpleType name="AnchorType">
+    <!--Legal values are points of the compass and Center-->
     <xs:restriction base="xs:string">
       <xs:enumeration value="n" />
       <xs:enumeration value="ne" />
@@ -26,6 +1864,206 @@
       <xs:enumeration value="center" />
     </xs:restriction>
   </xs:simpleType>
+  <xs:simpleType name="TextAnchorType">
+    <!--If the text and/or image are smaller than the specified width,
+    the anchor option specifies where to position them.
+    When you provide both image and text options but don't specify a compound
+    option, the image will appear and the text will not.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="e" />
+      <!--Right alignment-->
+      <xs:enumeration value="w" />
+      <!--Left alignment-->
+      <xs:enumeration value="center" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="LabelAnchorType">
+    <!-- Specifies the position of the label on the widget's border.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="n" />
+      <!--Centered on the top border-->
+      <xs:enumeration value="ne" />
+      <!--Right end of the top border-->
+      <xs:enumeration value="en" />
+      <!--Top of the right border-->
+      <xs:enumeration value="e" />
+      <!--Center of the right border-->
+      <xs:enumeration value="se" />
+      <!--Right end of the bottom border-->
+      <xs:enumeration value="es" />
+      <!--Bottom of the right border-->
+      <xs:enumeration value="s" />
+      <!--Centered on the bottom border-->
+      <xs:enumeration value="sw" />
+      <!--Left end of the bottom border-->
+      <xs:enumeration value="ws" />
+      <!--Bottom of the left border-->
+      <xs:enumeration value="w" />
+      <!--Center of the left border-->
+      <xs:enumeration value="wn" />
+      <!--Top of the left border-->
+      <xs:enumeration value="nw" />
+      <!--Left end of the top border-->
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CompoundType">
+    <!--Specifies the position of the image relative to the text when both
+    image and text options are supplied.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="none" />
+      <!--Display the image if there is one, otherwise display the text.
+      This is the default value.-->
+      <xs:enumeration value="image" />
+      <!--Display only the image, not the text.-->
+      <xs:enumeration value="text" />
+      <!--Display the text, not the image.-->
+      <xs:enumeration value="top" />
+      <!--Display the image above the text.-->
+      <xs:enumeration value="bottom" />
+      <!--Display the image below the text.-->
+      <xs:enumeration value="left" />
+      <!--Display the image to the left of the text.-->
+      <xs:enumeration value="right" />
+      <!--Display the image to the right of the text.-->
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ShowType">
+    <!--Character to be substituted for each of the actual characters in the
+    text field.
+    This is used to protect fields such as passwords from being visible on the
+    screen.  For example, if the field contains “ sesame” but you have
+    specified show='*', the field will appear as “******”.-->
+    <xs:restriction base="xs:string">
+      <xs:length value="1" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="DirectionType">
+    <!--The position where the drop-down menu appears, relative to the
+    menu-button.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="above" />
+      <!--The menu will appear just above the menu-button.-->
+      <xs:enumeration value="below" />
+      <!--The menu will appear just below the menu-button.-->
+      <xs:enumeration value="flush" />
+      <!--The menu will appear over the menu-button, so that the menu's
+      northwest corner coincides with the menu-button's northwest corner.-->
+      <xs:enumeration value="left" />
+      <!--The menu will appear just to the left of the menu-button.-->
+      <xs:enumeration value="right" />
+      <!--The menu will appear just to the right of the menu-button.-->
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ModeType" >
+    <!--The display method for the progress bar.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="indeterminate" />
+      <!--In this mode, a rectangle bounces back and forth between the ends of
+    the widget once you use the .start() method.-->
+      <xs:enumeration value="determinate" />
+      <!--The indicator moves to specified positions along the widget's track.-->
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="OrientationType" >
+    <!--The direction for the scale.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="horizontal" />
+      <!--the scale to runs along the x dimension, or -->
+      <xs:enumeration value="vertical" />
+      <!--the scale to runs along the y dimension. Default is vertical.-->
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CapType" >
+    <!--The shape of the end of the line.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="butt" />
+      <!--The end of the line is cut off square at a line that passes through
+      the endpoint.-->
+      <xs:enumeration value="projecting" />
+      <!--The end of the line is cut off square, but the cut line projects
+      past the endpoint a distance equal to half the line's width.-->
+      <xs:enumeration value="round" />
+      <!--The end describes a semicircle centered on the endpoint.-->
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="JoinType" >
+    <!--The shape where two line segments meet at an angle.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="round" />
+      <!--The join is a circle centered on the point where the adjacent line
+      segments meet.-->
+      <xs:enumeration value="bevel" />
+      <!--A flat facet is drawn at an angle intermediate between the angles of
+      the adjacent lines.-->
+      <xs:enumeration value="miter" />
+      <!--The edges of the adjacent line segments are continued to meet at a
+      sharp point.-->
+    </xs:restriction>
+  </xs:simpleType>
+
+
+  <!--
+
+
+region
+This is a string with four space-delimited elements, each of which is a legal distance (see above). For example: "2 3 4 5" and "3i 2i 4.5i 2i" and "3c 2c 4c 10.43c" are all legal regions.
+
+font
+Tk uses a list font name format, such as {courier 10 bold}. Font sizes with positive numbers are measured in points; sizes with negative numbers are measured in pixels.
+  family	The font family name as a string.
+  size	The font height as an integer in points. To get a font n pixels high, use -n.
+  weight	'bold' for boldface, 'normal' for regular weight.
+  slant	'italic' for italic, 'roman' for unslanted.
+  underline	1 for underlined text, 0 for normal.
+  overstrike	1 for overstruck text, 0 for normal.
+
+geometry
+This is a string of the form widthxheight, where width and height are measured in pixels for most widgets (in characters for widgets displaying text). For example: fred["geometry"] = "200x100".
+
+Dash patterns
+    A number of widgets allow you to specify a dashed outline. The dash and dashoffset options give you fine control over the exact pattern of the dashes.
+      dash
+        This option is specified as a tuple of integers. The first integer specifies how many pixels should be drawn. The second integer specifies how many pixels should be skipped before starting to draw again, and so on. When all the integers in the tuple are exhausted, they are reused in the same order until the border is complete.
+        For example, dash=(3,5) produces alternating 3-pixel dashes separated by 5-pixel gaps. A value of dash=(7,1,1,1) produces a dash-and-dot pattern, with the dash seven times as long as the dot or the gaps around the dot. A value of dash=(5,) produces alternating five-pixel dashes and five-pixel gaps.
+      dashoff
+        To start the dash pattern in a different point of cycle instead of at the beginning, use an option of dashoff=n, where n is the number of pixels to skip at the beginning of the pattern.
+        For example, for options dash=(5, 1, 2, 1) and dashoff=3, the first pattern produced will be: 2 on, 1 off, 2 on, and 1 off. Subsequent patterns will be 5 on, 1 off, 2 on, and 1 off. Here is a screen shot of a line drawn with this combination of options:
+
+
+The index Parameter
+    A number of widgets require”index” parameters to be passed. These are used to point at a specific place in a Text widget, or to particular characters in an Entry widget, or to particular menu items in a Menu widget.
+    Entry widget indexes (index, view index, etc.)
+    Entry widgets have options that refer to character positions in the text being displayed. You can use these Tkinter functions to access these special points in text widgets:
+    AtEnd()
+    refers to the last position in the text
+    AtInsert()
+    refers to the point where the text cursor is
+    AtSelFirst()
+    indicates the beginning point of the selected text
+    AtSelLast()
+    denotes the last point of the selected text and finally
+    At(x[, y])
+    refers to the character at pixel location x, y (with y not used in the case of a text entry widget, which contains a single line of text).
+    Text widget indexes
+    The index notation for Text widgets is very rich and is best described in the Tk man pages.
+    Menu indexes (menu.invoke(), menu.entryconfig(), etc.)
+    Some options and methods for menus manipulate specific menu entries. Anytime a menu index is needed for an option or a parameter, you may pass in:
+    w an integer which refers to the numeric position of the entry in the widget, counted from the top, starting with 0;
+    w the string 'active', which refers to the menu position that is currently under the cursor;
+    w the string "last" which refers to the last menu item;
+    w An integer preceded by @, as in @6, where the integer is interpreted as a y pixel coordinate in the menu’s coordinate system;
+    w the string "none", which indicates no menu entry at all, most often used with menu.activate() to deactivate all entries, and finally,
+    w a text string that is pattern matched against the label of the menu entry, as scanned from the top of the menu to the bottom. Note that this index type is considered after all the others, which means that matches for menu items labelled last, active, or none may be interpreted as the above literals, instead.
+
+-->
+
   <xs:complexType name="AppearanceType">
     <xs:attribute name="borderwidth"
                   type="xs:unsignedByte"
@@ -43,6 +2081,7 @@
                   type="xs:string"
                   use="optional" />
   </xs:complexType>
+
   <xs:complexType name="GridConfigureType">
     <xs:choice maxOccurs="unbounded">
       <xs:element minOccurs="0"
@@ -91,7 +2130,6 @@
     </xs:sequence>
   </xs:complexType>
 
-
   <xs:element name="Configure">
     <xs:complexType>
       <xs:sequence>
@@ -110,7 +2148,6 @@
       <xs:anyAttribute processContents="skip" />
     </xs:complexType>
   </xs:element>
-
 
   <xs:complexType name="WindowsSettingsType">
     <xs:sequence>
@@ -140,6 +2177,7 @@
                   type="GridConfigureType" />
     </xs:sequence>
   </xs:complexType>
+
   <xs:complexType name="WindowGeometryType">
     <xs:sequence>
       <xs:element minOccurs="0"
@@ -175,7 +2213,6 @@
       </xs:element>
     </xs:sequence>
   </xs:complexType>
-
 
   <xs:complexType name="WidgetGeometryType">
     <xs:sequence>
@@ -227,6 +2264,7 @@
       </xs:element>
     </xs:sequence>
   </xs:complexType>
+
   <xs:complexType name="WidgetBasicType">
     <xs:sequence>
       <xs:element minOccurs="1"
@@ -241,6 +2279,7 @@
                   type="xs:string"
                   use="required" />
   </xs:complexType>
+
   <xs:complexType name="WidgetSettingsType">
     <xs:all>
       <xs:element name="Geometry"
@@ -253,6 +2292,7 @@
                   type="BindingsType" />
     </xs:all>
   </xs:complexType>
+
   <xs:complexType name="WidgetContainerSettingsType">
     <xs:all>
 

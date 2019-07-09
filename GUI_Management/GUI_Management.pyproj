@@ -49,6 +49,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="file_select_window.py" />
+    <Compile Include="font_list.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="gui_methods.py">
       <SubType>Code</SubType>
     </Compile>
