@@ -520,6 +520,7 @@ def append_data_sheet(data_table: pd.DataFrame, starting_cell: str = 'A1',
                 excel file.
             sub_dir {str} --  A string containing a sub directory path from
                 base_path to the excel file.
+            base_path {optional, Path} -- A full path to the base directory.            
             sheet_name {str} --  THe name of the desired worksheet.
             new_file {bool, optional} --  True if a new book is to be created.
                 Default is False.
