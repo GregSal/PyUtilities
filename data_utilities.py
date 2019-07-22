@@ -84,12 +84,9 @@ merge_columns(data_table: pd.DataFrame, columns: List[str],
         Returns:
             A Pandas DataFrame or Series with the merged columns and data.
 '''
-# TODO Move some of the functions to the BeamData Tools Module
 from collections.abc import Iterable
 from typing import List, Dict, Tuple, Any, Union, Set
 import pandas as pd
-import numpy as np
-from scipy.interpolate import interp1d
 
 
 Data = Union[pd.DataFrame, pd.Series]
@@ -167,23 +164,6 @@ def nearest_step(value: float, step_size: float = 1.0,
         rounded = (-abs(value)//step_size)*step_size  # rounded up
     rounded = sign*rounded
     return rounded
-
-
-def get_profile_limit(profile_curves: Data, step_size: float = 1.0)->float:
-    '''Find the largest profile distance that is included in all of the
-    profile curves.
-    The resulting distance is rounded down to the next smallest step size.
-    Args:
-        profile_curves: A Pandas DataFrame containing a 'Distance' column.
-        step_size: The size of the distance steps being used. Default is 1.0.
-    Returns:
-        The largest profile distance that is included in all of the supplied
-            profile curves.
-    '''
-    scan_range = profile_curves['Distance'].agg([np.min, np.max])
-    minimum_range = scan_range.stack().abs().min()
-    distance_limit = nearest_step(minimum_range, step_size)
-    return distance_limit
 
 
 def value_parse(value_string: str)->Value:
@@ -271,55 +251,6 @@ def select_data(data: pd.DataFrame,
     if index_columns:
         selected_data = selected_data.set_index(index_columns)
     return selected_data
-
-
-def process_curve(curve: pd.DataFrame, data_names: Dict[str, str],
-                  min_range: float = None, max_range: float = None,
-                  step_size: float = 1.0, norm_point: float = None,
-                  norm_factor: float = 100.0, kind='cubic'):
-    '''Interpolate and normalize a curve.
-    Uses scipy.interpolate.interp1d.
-    The X values in curve must extend to or beyond min_range norm_point, and
-        max_range.
-    If min_range or max_range is not given the minimum/maximum X values will
-        be used as endpoints for the interpolation.
-    If norm_point is not given no normalization will be done.
-    Args:
-        curve: A Pandas DataFrame containing at least 2 columns.
-        data_names: A dictionary containing the names of the X and Y columns
-            to be used.
-                Must contain keys 'X' and 'Y'.
-        min_range (optional): The minimum X value to use in the interpolation.
-        max_range (optional): The maximum X value to use in the interpolation.
-        step_size (optional): The X step size for the interpolation.
-            Default is 1.0.
-        norm_point (optional): The X point to be set to the normalization factor.
-        norm_factor (optional): The normalization value to set to the
-            normalization point to. Default is 100 (percentage).
-        kind (optional): The interpolation method to use.  Can be one of:
-            'cubic', 'linear', 'nearest', 'zero', 'slinear', 'quadratic',
-            ‘previous’ or ‘next’. Default is ‘cubic’.
-    Returns:
-        Two np.Arrays corresponding to the X and Y data columns.
-    '''
-    x_name = data_names['X']
-    y_name = data_names['Y']
-    curve = curve.sort_values(by=x_name)
-    curve = curve.drop_duplicates(subset=x_name)
-    if min_range is None:
-        min_range = nearest_step(min(curve[x_name]), step_size,
-                                 towards_zero=False)
-    if max_range is None:
-        max_range = nearest_step(max(curve[x_name]), step_size,
-                                 towards_zero=True)
-    curve_interp = interp1d(curve[x_name], curve[y_name], kind=kind)
-    max_range = max_range + step_size/1000
-    x_data = np.arange(min_range, max_range, step_size)
-    y_data = curve_interp(x_data)
-    if norm_point is not None:
-        norm_value = float(curve_interp(norm_point))
-        y_data = y_data/norm_value*norm_factor
-    return x_data, y_data
 
 
 def merge_columns(data_table: pd.DataFrame, columns: List[str],
