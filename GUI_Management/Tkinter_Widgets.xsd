@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema elementFormDefault="qualified"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation=".\Tkinter_GUI.xsd" />
+
+
+  <xs:complexType name="WidgetGeometryType">
+    <xs:sequence>
+      <xs:choice>
+        <xs:element name="Grid">
+          <xs:complexType>
+            <xs:attribute name="column"
+                          type="xs:unsignedInt"
+                          use="required" />
+            <xs:attribute name="row"
+                          type="xs:unsignedInt"
+                          use="required" />
+            <xs:attribute name="columnspan"
+                          type="xs:unsignedInt"
+                          use="optional" />
+            <xs:attribute name="rowspan"
+                          type="xs:unsignedInt"
+                          use="optional" />
+            <xs:attribute name="sticky"
+                          type="StickyType"
+                          use="optional" />
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Pack">
+          <xs:complexType>
+            <xs:attribute name="anchor"
+                          type="xs:string"
+                          use="required" />
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="Padding">
+        <xs:complexType>
+          <xs:attribute name="ipadx"
+                        type="xs:unsignedInt"
+                        use="optional" />
+          <xs:attribute name="ipady"
+                        type="xs:unsignedInt"
+                        use="optional" />
+          <xs:attribute name="padx"
+                        type="xs:unsignedInt"
+                        use="optional" />
+          <xs:attribute name="pady"
+                        type="xs:unsignedInt"
+                        use="optional" />
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+
+  <xs:complexType name="WidgetBasicType">
+    <xs:sequence>
+      <xs:element minOccurs="1"
+                  maxOccurs="1"
+                  name="widget_class"
+                  type="xs:string" />
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  ref="Configure" />
+    </xs:sequence>
+    <xs:attribute name="name"
+                  type="xs:string"
+                  use="required" />
+  </xs:complexType>
+
+
+  <xs:complexType name="WidgetSettingsType">
+    <xs:all>
+      <xs:element name="Geometry"
+                  type="WidgetGeometryType" />
+      <xs:element minOccurs="0"
+                  name="Appearance"
+                  type="AppearanceType" />
+      <xs:element minOccurs="0"
+                  name="Bindings"
+                  type="BindingsType" />
+    </xs:all>
+  </xs:complexType>
+
+
+  <xs:complexType name="WidgetContainerSettingsType">
+    <xs:all>
+      <xs:element name="Geometry"
+                  type="WidgetGeometryType" />
+      <xs:element minOccurs="0"
+                  name="Appearance"
+                  type="AppearanceType" />
+      <xs:element minOccurs="0"
+                  name="Bindings"
+                  type="BindingsType" />
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="GridConfigure"
+                  type="GridConfigureType" />
+    </xs:all>
+  </xs:complexType>
+
+
+  <xs:complexType name="TreeWidgetSettingsType">
+    <xs:all>
+      <xs:element name="Geometry"
+                  type="WidgetGeometryType" />
+      <xs:element minOccurs="0"
+                  name="Appearance">
+        <xs:complexType mixed="false">
+          <xs:complexContent mixed="false">
+            <xs:extension base="AppearanceType">
+              <xs:sequence>
+                <xs:element minOccurs="0"
+                            maxOccurs="2"
+                            name="show">
+                  <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                      <xs:enumeration value="tree"/>
+                      <!--display tree labels in column #0-->
+                      <xs:enumeration value="headings"/>
+                      <!--display the heading row-->
+                    </xs:restriction>
+                  </xs:simpleType>
+                </xs:element>
+              </xs:sequence>
+              <xs:attribute name="height"
+                            type="xs:unsignedInt"
+                            use="optional" />
+            </xs:extension>
+          </xs:complexContent>
+        </xs:complexType>
+      </xs:element>
+      <xs:element minOccurs="0"
+                  name="Bindings"
+                  type="BindingsType" />
+      <xs:element name="columns"
+                  minOccurs="0">
+        <xs:simpleType>
+          <xs:list itemType="xs:string"></xs:list>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="displaycolumns"
+                  minOccurs="0" >
+        <xs:simpleType>
+          <xs:list itemType="xs:string"></xs:list>
+        </xs:simpleType>
+      </xs:element>
+    </xs:all>
+    <xs:attribute name="selectmode"
+                  use="optional">
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="extended" />
+          <!--(the default), multiple items may be selected-->
+          <xs:enumeration value="browse" />
+          <!--only a single item will be selected at a time-->
+          <xs:enumeration value="none" />
+          <!--the selection will not be changed-->
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:complexType>
+  
+  
+</xs:schema>

@@ -40,6 +40,8 @@ from pathlib import Path
 # from typing import TypeVar, Dict, List, Any, NoReturn
 
 from typing import TypeVar, Dict, List, Any
+from typing import NamedTuple
+
 import xlwings as xw
 import pandas as pd
 from data_utilities import value2num
@@ -54,6 +56,35 @@ WorksheetInfo = Dict[str, str]
 Variables = TypeVar('Variables', List[str], str)
 TableSpan = TypeVar('TableSpan', int, str)
 
+class TableDef(NamedTuple):
+    '''Table reference info.
+    Attributes
+        data_sheet: {xw.sheet} -- The excel worksheet containing the table.
+        starting_cell: {optional, str} -- The top right cell of the table in
+            excel, in "A1" format. Default is "A1".
+        columns: {optional, int, str} -- The number of columns in the table.
+            If 'expand', the table will include all columns left of
+            the starting_cell until the first empty cell is encountered.
+            Default is 'expand'.
+        rows: {optional, int, str} -- The number of rows in the table.  If
+            'expand', the table will include all rows below the starting_cell
+            until the first empty cell is encountered. Default is 'expand'.
+        header: {optional, int} -- The number of variable header rows.
+            Default is 1. To include the top row in the range selection set
+                header to 0.
+    '''
+    data_sheet: xw.Sheet
+    starting_cell: str ='A1'
+    columns: TableSpan ='expand'
+    rows: TableSpan ='expand'
+    header: int = 1
+    def __repr__(self) -> str:
+        format_str = 'Sheet {data_sheet.name},\n\t'
+        format_str += 'Starting Cell={starting_cell},\n\t'
+        format_str += 'Number of Columns={columns},\t'
+        format_str += 'Number of Rows={rows},\n\t'
+        format_str += 'Number of Header Rows={header}'
+        return format_str.format(self.dir())
 
 def open_book(file_name: Path, new_file=False)->xw.Book:
     '''Opens a workbook and returns the requested sheet.

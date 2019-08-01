@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema elementFormDefault="qualified"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="CursorType">
+    <!--The standard X cursor names can be used. You can also specify a bitmap and mask file of your own. (Not Yet Implemented)-->
+    <xs:union memberTypes="CursorNames WindowsCursorNames MacOSCursorNames" />
+  </xs:simpleType>
+
+		     <xs:simpleType name="CursorNames">
+    <!--Mouse cursors available in Tk on all platforms.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="X_cursor" />
+      <xs:enumeration value="arrow" />
+      <!--On Windows and Mac OS X systems, the arrow cursor is mapped to a native cursor-->
+      <xs:enumeration value="based_arrow_down" />
+      <xs:enumeration value="based_arrow_up" />
+      <xs:enumeration value="boat" />
+      <xs:enumeration value="bogosity" />
+      <xs:enumeration value="bottom_left_corner" />
+      <xs:enumeration value="bottom_right_corner" />
+      <xs:enumeration value="bottom_side" />
+      <xs:enumeration value="bottom_tee" />
+      <xs:enumeration value="box_spiral" />
+      <xs:enumeration value="center_ptr" />
+      <!--On Windows systems, the center_ptr  cursor is mapped to a native cursor-->
+      <xs:enumeration value="circle" />
+      <xs:enumeration value="clock" />
+      <xs:enumeration value="coffee_mug" />
+      <xs:enumeration value="cross" />
+      <!--On Windows systems, the cross cursor is mapped to a native cursor-->
+      <xs:enumeration value="cross_reverse" />
+      <xs:enumeration value="crosshair" />
+      <!--On Windows and Mac OS X systems, the crosshair cursor is mapped to a native cursor-->
+      <xs:enumeration value="diamond_cross" />
+      <xs:enumeration value="dot" />
+      <xs:enumeration value="dotbox" />
+      <xs:enumeration value="double_arrow" />
+      <!--On Windows systems, the sb_h_double_arrow cursor is mapped to a native cursor-->
+      <xs:enumeration value="draft_large" />
+      <xs:enumeration value="draft_small" />
+      <xs:enumeration value="draped_box" />
+      <xs:enumeration value="exchange" />
+      <xs:enumeration value="fleur" />
+      <!--On Windows systems, the fleur cursor is mapped to a native cursor-->
+      <xs:enumeration value="gobbler" />
+      <xs:enumeration value="gumby" />
+      <xs:enumeration value="hand1" />
+      <xs:enumeration value="hand2" />
+      <xs:enumeration value="heart" />
+      <xs:enumeration value="ibeam" />
+      <!--On Windows and Mac OS X systems, the xterm cursor is mapped to a native cursor-->
+      <xs:enumeration value="icon" />
+      <!--On Windows systems, the icon cursor is mapped to a native cursor-->
+      <xs:enumeration value="iron_cross" />
+      <xs:enumeration value="left_ptr" />
+      <xs:enumeration value="left_side" />
+      <xs:enumeration value="left_tee" />
+      <xs:enumeration value="leftbutton" />
+      <xs:enumeration value="ll_angle" />
+      <xs:enumeration value="lr_angle" />
+      <xs:enumeration value="man" />
+      <xs:enumeration value="middlebutton" />
+      <xs:enumeration value="mouse" />
+      <xs:enumeration value="none" />
+      <!--The none cursor can be specified to eliminate the cursor. On Windows and Mac OS X systems, the none cursor is mapped to a native cursor-->
+      <xs:enumeration value="pencil" />
+      <xs:enumeration value="pirate" />
+      <xs:enumeration value="plus" />
+      <!--On Windows systems, the plus cursor is mapped to a native cursor-->
+      <xs:enumeration value="question_arrow" />
+      <xs:enumeration value="right_ptr" />
+      <xs:enumeration value="right_side" />
+      <xs:enumeration value="right_tee" />
+      <xs:enumeration value="rightbutton" />
+      <xs:enumeration value="rtl_logo" />
+      <xs:enumeration value="sailboat" />
+      <xs:enumeration value="sb_down_arrow" />
+      <xs:enumeration value="sb_h_double_arrow" />
+      <xs:enumeration value="sb_left_arrow" />
+      <xs:enumeration value="sb_right_arrow" />
+      <xs:enumeration value="sb_up_arrow" />
+      <xs:enumeration value="sb_v_double_arrow" />
+      <!--On Windows systems, the sb_v_double_arrow cursor is mapped to a native cursor-->
+      <xs:enumeration value="shuttle" />
+      <xs:enumeration value="sizing" />
+      <xs:enumeration value="spider" />
+      <xs:enumeration value="spraycan" />
+      <xs:enumeration value="star" />
+      <xs:enumeration value="target" />
+      <xs:enumeration value="tcross" />
+      <xs:enumeration value="top_left_arrow" />
+      <xs:enumeration value="top_left_corner" />
+      <xs:enumeration value="top_right_corner" />
+      <xs:enumeration value="top_side" />
+      <xs:enumeration value="top_tee" />
+      <xs:enumeration value="trek" />
+      <xs:enumeration value="ul_angle" />
+      <xs:enumeration value="umbrella" />
+      <xs:enumeration value="ur_angle" />
+      <xs:enumeration value="watch" />
+      <!--On Windows and Mac OS X systems, the watch cursor is mapped to a native cursor-->
+      <xs:enumeration value="xterm" />
+      <!--On Windows and Mac OS X systems, the xterm cursor is mapped to a native cursor-->
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="WindowsCursorNames">
+    <!--Additional Mouse cursors available in Tk on Windows systems.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="ibeam" />
+      <xs:enumeration value="no" />
+      <xs:enumeration value="starting" />
+      <xs:enumeration value="size" />
+      <xs:enumeration value="size_ne_sw" />
+      <xs:enumeration value="size_ns" />
+      <xs:enumeration value="size_nw_se" />
+      <xs:enumeration value="size_we" />
+      <xs:enumeration value="uparrow" />
+      <xs:enumeration value="wait" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="MacOSCursorNames">
+    <!--Additional Mouse cursors available in Tk on Mac OS X systems.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="copyarrow" />
+      <xs:enumeration value="aliasarrow" />
+      <xs:enumeration value="contextualmenuarrow" />
+      <xs:enumeration value="text" />
+      <xs:enumeration value="cross-hair" />
+      <xs:enumeration value="closedhand" />
+      <xs:enumeration value="openhand" />
+      <xs:enumeration value="pointinghand" />
+      <xs:enumeration value="resizeleft" />
+      <xs:enumeration value="resizeright" />
+      <xs:enumeration value="resizeleftright" />
+      <xs:enumeration value="resizeup" />
+      <xs:enumeration value="resizedown" />
+      <xs:enumeration value="resizeupdown" />
+      <xs:enumeration value="notallowed" />
+      <xs:enumeration value="poof" />
+      <xs:enumeration value="countinguphand" />
+      <xs:enumeration value="countingdownhand" />
+      <xs:enumeration value="countingupanddownhand" />
+      <xs:enumeration value="spinning" />
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema>

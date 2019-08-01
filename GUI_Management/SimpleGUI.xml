@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Simplest possible GUI format:
+1 Widget with un-named variable and command embedded.-->
+<GuiDefinition xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:noNamespaceSchemaLocation="file:./GUI_Builder.xsd">
+  <Entry>
+    <!-- Uses default naming scheme "entry1"-->
+    <!-- Takes widget class from element tag.-->
+    <Variable>
+      <!-- Accessed as "variable" attribute of widget.-->
+      <!-- Assumes StringVar type if not specified.-->
+    </Variable>
+    <Command name="ShowText" >
+      <!-- Accessed as "action" attribute of widget.-->
+      <!-- Method to be assigned to widget in code.-->
+      <function>fg.message_window</function>
+    </Command>
+    <!-- Uses pack as geometry manager.-->
+  </Entry>
+</GuiDefinition>

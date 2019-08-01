@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema elementFormDefault="qualified"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema">
+		     <xs:simpleType name="DistanceType">
+    <!--Screen distances in either pixels or absolute distances. Pixels are given as numbers and absolute distances as strings, with the trailing character denoting units. For example, 3.5 inches is expressed as "3.5i".-->
+    <xs:union memberTypes="xs:integer AbsoluteDistanceType DistanceCompoundType" />
+  </xs:simpleType>
+  <xs:simpleType name="AbsoluteDistanceType">
+    <!--Absolute screen distances; The trailing character denoting units: c for centimetres, i for inches, m for millimetres, p for printer’s points.-->
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9.]+[cimp]" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="DistanceCompoundType">
+    <xs:sequence maxOccurs="1"
+                 minOccurs="1">
+      <xs:element minOccurs="1"
+                  name="Value"
+                  type="xs:unsignedInt" />
+      <xs:element minOccurs="0"
+                  name="Unit">
+        <xs:simpleType>
+          <!--Distance units: c for centimetres, i for inches, m for millimetres, p for printer’s points 	Nothing for pixels.-->
+          <xs:restriction base="xs:string">
+            <xs:pattern value="[cimp]" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:simpleType name="RegionType">
+    <!--Four space-delimited DistanceTypes, each indication a point on the screen and together delineate a region of the screen. -->
+    <xs:union memberTypes="RegionStringType RegionCompoundType" />
+  </xs:simpleType>
+  <xs:simpleType name="RegionStringType">
+    <xs:list itemType="AbsoluteDistanceType">
+      <xs:restriction >
+        <xs:length value="8"/>
+      </xs:restriction>
+    </xs:list>
+  </xs:simpleType>
+  <xs:complexType name="RegionCompoundType">
+    <xs:element  name="Point"
+                 minOccurs="4"
+                 maxOccurs="4"
+                 type="AbsoluteDistanceType" />
+  </xs:complexType>
+<!--  geometry This is a string of the form widthxheight, 
+  where width and height are measured in pixels for most widgets 
+  (in characters for widgets displaying text). 
+  For example: fred["geometry"] = "200x100". 
+  
+-->
+
+</xs:schema>

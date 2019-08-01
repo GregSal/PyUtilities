@@ -24,7 +24,9 @@
     <Content Include="GUI_Builder.xsd" />
     <Content Include="Options and Functions.xlsx" />
     <Content Include="StructuresGUI.xml" />
+    <Content Include="SimpleGUI.xml" />
     <Content Include="TestGUI.xml" />
+    <Content Include="OldTestGUI.xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="dir_gui_trial.py" />

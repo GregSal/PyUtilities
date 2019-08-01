@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema elementFormDefault="qualified"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="BooleanType">
+    <!--You can pass integers 0 or 1 or the strings "yes" or "no".-->
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="yes" />
+          <xs:enumeration value="no" />
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base="xs:unsignedByte">
+          <xs:minInclusive value="0"/>
+          <xs:maxInclusive value="1"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="StateType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="normal" />
+      <xs:enumeration value="iconic" />
+      <xs:enumeration value="withdrawn" />
+    </xs:restriction>
+  </xs:simpleType>
+
+
+
+  <xs:simpleType name="ReliefType">
+    <!--The border style of a widget.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="raised" />
+      <xs:enumeration value="sunken" />
+      <xs:enumeration value="flat" />
+      <xs:enumeration value="groove" />
+      <xs:enumeration value="ridge" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CapType" >
+    <!--The shape of the end of the line.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="butt" />
+      <!--The end of the line is cut off square at a line that passes through the endpoint.-->
+      <xs:enumeration value="projecting" />
+      <!--The end of the line is cut off square, but the cut line projects past the endpoint a distance equal to half the line's width.-->
+      <xs:enumeration value="round" />
+      <!--The end describes a semicircle centered on the endpoint.-->
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="JoinType" >
+    <!--The shape where two line segments meet at an angle.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="round" />
+      <!--The join is a circle centered on the point where the adjacent line segments meet.-->
+      <xs:enumeration value="bevel" />
+      <!--A flat facet is drawn at an angle intermediate between the angles of the adjacent lines.-->
+      <xs:enumeration value="miter" />
+      <!--The edges of the adjacent line segments are continued to meet at a sharp point.-->
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="StickyType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[nsew]{1,4}" />
+    </xs:restriction>
+  </xs:simpleType>
+
+
+
+  <xs:simpleType name="AnchorType">
+    <!--Legal values are points of the compass and Center-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="n" />
+      <xs:enumeration value="ne" />
+      <xs:enumeration value="e" />
+      <xs:enumeration value="se" />
+      <xs:enumeration value="s" />
+      <xs:enumeration value="sw" />
+      <xs:enumeration value="w" />
+      <xs:enumeration value="nw" />
+      <xs:enumeration value="center" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="TextAnchorType">
+    <!--If the text and/or image are smaller than the specified width, the anchor option specifies where to position them. When you provide both image and text options but don't specify a compound option, the image will appear and the text will not.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="e" />
+      <!--Right alignment-->
+      <xs:enumeration value="w" />
+      <!--Left alignment-->
+      <xs:enumeration value="center" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="LabelAnchorType">
+    <!-- Specifies the position of the label on the widget's border.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="n" />
+      <!--Centered on the top border-->
+      <xs:enumeration value="ne" />
+      <!--Right end of the top border-->
+      <xs:enumeration value="en" />
+      <!--Top of the right border-->
+      <xs:enumeration value="e" />
+      <!--Center of the right border-->
+      <xs:enumeration value="se" />
+      <!--Right end of the bottom border-->
+      <xs:enumeration value="es" />
+      <!--Bottom of the right border-->
+      <xs:enumeration value="s" />
+      <!--Centered on the bottom border-->
+      <xs:enumeration value="sw" />
+      <!--Left end of the bottom border-->
+      <xs:enumeration value="ws" />
+      <!--Bottom of the left border-->
+      <xs:enumeration value="w" />
+      <!--Center of the left border-->
+      <xs:enumeration value="wn" />
+      <!--Top of the left border-->
+      <xs:enumeration value="nw" />
+      <!--Left end of the top border-->
+    </xs:restriction>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="JustifyType">
+    <!--Text justification on a given line.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="left" />
+      <xs:enumeration value="center" />
+      <xs:enumeration value="right" />
+      <xs:enumeration value="fill" />
+    </xs:restriction>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="WrapType">
+    <!--Text wrapping options for multi-line text widgets.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="none" />
+      <xs:enumeration value="char" />
+      <xs:enumeration value="word" />
+    </xs:restriction>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="CompoundType">
+    <!--Specifies the position of the image relative to the text when both image and text options are supplied.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="none" />
+      <!--Display the image if there is one, otherwise display the text. This is the default value.-->
+      <xs:enumeration value="image" />
+      <!--Display only the image, not the text.-->
+      <xs:enumeration value="text" />
+      <!--Display the text, not the image.-->
+      <xs:enumeration value="top" />
+      <!--Display the image above the text.-->
+      <xs:enumeration value="bottom" />
+      <!--Display the image below the text.-->
+      <xs:enumeration value="left" />
+      <!--Display the image to the left of the text.-->
+      <xs:enumeration value="right" />
+      <!--Display the image to the right of the text.-->
+    </xs:restriction>
+  </xs:simpleType>
+
+
+
+
+  <xs:simpleType name="ShowType">
+    <!--Character to be substituted for each of the actual characters in the text field. This is used to protect fields such as passwords from being visible on the screen.  For example, if the field contains “ sesame” but you have specified show='*', the field will appear as “******”.-->
+    <xs:restriction base="xs:string">
+      <xs:length value="1" />
+    </xs:restriction>
+  </xs:simpleType>
+
+
+
+  <xs:simpleType name="DirectionType">
+    <!--The position where the drop-down menu appears, relative to the menu-button.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="above" />
+      <!--The menu will appear just above the menu-button.-->
+      <xs:enumeration value="below" />
+      <!--The menu will appear just below the menu-button.-->
+      <xs:enumeration value="flush" />
+      <!--The menu will appear over the menu-button, so that the menu's northwest corner coincides with the menu-button's northwest corner.-->
+      <xs:enumeration value="left" />
+      <!--The menu will appear just to the left of the menu-button.-->
+      <xs:enumeration value="right" />
+      <!--The menu will appear just to the right of the menu-button.-->
+    </xs:restriction>
+  </xs:simpleType>
+
+
+
+  <xs:simpleType name="ModeType" >
+    <!--The display method for the progress bar.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="indeterminate" />
+      <!--In this mode, a rectangle bounces back and forth between the ends of the widget once you use the .start() method.-->
+      <xs:enumeration value="determinate" />
+      <!--The indicator moves to specified positions along the widget's track.-->
+    </xs:restriction>
+  </xs:simpleType>
+
+
+
+  <xs:simpleType name="OrientationType" >
+    <!--The direction for the scale.-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="horizontal" />
+      <!--the scale to runs along the x dimension, or -->
+      <xs:enumeration value="vertical" />
+      <!--the scale to runs along the y dimension. Default is vertical.-->
+    </xs:restriction>
+  </xs:simpleType>
+
+
+
+
+
+
+  <!-- font Tk uses a list font name format, such as {courier 10 bold}. 
+  Font sizes with positive numbers are measured in points; sizes with negative numbers are measured in pixels. 
+  family	The font family name as a string. 
+  size	The font height as an integer in points. To get a font n pixels high, use -n. 
+  weight	'bold' for boldface, 'normal' for regular weight. 
+  slant	'italic' for italic, 'roman' for unslanted. 
+  underline	1 for underlined text, 0 for normal. 
+  overstrike	1 for overstruck text, 0 for normal. 
+  
+  Dash patterns A number of widgets allow you to specify a dashed outline. 
+  The dash and dashoffset options give you fine control over the exact pattern of the dashes. 
+  dash This option is specified as a tuple of integers. 
+  The first integer specifies how many pixels should be drawn. 
+  The second integer specifies how many pixels should be skipped before starting to draw again, and so on. 
+  When all the integers in the tuple are exhausted, they are reused in the same order until the border is complete. 
+  For example, dash=(3,5) produces alternating 3-pixel dashes separated by 5-pixel gaps. 
+  A value of dash=(7,1,1,1) produces a dash-and-dot pattern, with the dash seven times as long as the dot or the gaps around the dot. 
+  A value of dash=(5,) produces alternating five-pixel dashes and five-pixel gaps. 
+  dashoff To start the dash pattern in a different point of cycle instead of at the beginning, use an option of dashoff=n, 
+  where n is the number of pixels to skip at the beginning of the pattern. 
+  For example, for options dash=(5, 1, 2, 1) and dashoff=3, the first pattern produced will be: 2 on, 1 off, 2 on, and 1 off. 
+  Subsequent patterns will be 5 on, 1 off, 2 on, and 1 off. -->
+
+
+
+  
+<!-- Wait till used to design:
+  The index Parameter A number of widgets require”index” parameters to be passed. 
+  These are used to point at a specific place in a Text widget, 
+  or to particular characters in an Entry widget, 
+  or to particular menu items in a Menu widget. 
+  
+  Entry widget indexes (index, view index, etc.) 
+  Entry widgets have options that refer to character positions in the text being displayed. Y
+  ou can use these Tkinter functions to access these special points in text widgets: 
+  AtEnd() refers to the last position in the text 
+  AtInsert() refers to the point where the text cursor is 
+  AtSelFirst() indicates the beginning point of the selected text 
+  AtSelLast() denotes the last point of the selected text and finally 
+  At(x[, y]) refers to the character at pixel location x, y (with y not used in the case of a text entry widget, which contains a single line of text). 
+  
+  Text widget indexes The index notation for Text widgets is very rich and is best described in the Tk man pages. 
+  Menu indexes (menu.invoke(), 
+  menu.entryconfig(), etc.) 
+  Some options and methods for menus manipulate specific menu entries. 
+  Anytime a menu index is needed for an option or a parameter, you may pass in: 
+  w an integer which refers to the numeric position of the entry in the widget, counted from the top, starting with 0; 
+  w the string 'active', which refers to the menu position that is currently under the cursor; 
+  w the string "last" which refers to the last menu item; 
+  w An integer preceded by @, as in @6, where the integer is interpreted as a y pixel coordinate in the menu’s coordinate system; 
+  w the string "none", which indicates no menu entry at all, most often used with menu.activate() to deactivate all entries, and finally, 
+  w a text string that is pattern matched against the label of the menu entry, as scanned from the top of the menu to the bottom. 
+  Note that this index type is considered after all the others, which means that matches for menu items labelled last, active, or none may be interpreted as the above literals, instead. -->
+  <xs:complexType name="AppearanceType">
+    <xs:attribute name="borderwidth"
+                  type="xs:unsignedByte"
+                  use="optional" />
+    <xs:attribute name="relief"
+                  type="ReliefType"
+                  use="optional" />
+    <xs:attribute name="background"
+                  type="xs:string"
+                  use="optional" />
+    <xs:attribute name="foreground"
+                  type="xs:string"
+                  use="optional" />
+    <xs:attribute name="image"
+                  type="xs:string"
+                  use="optional" />
+  </xs:complexType>
+  <xs:complexType name="GridConfigureType">
+    <xs:choice maxOccurs="unbounded">
+      <xs:element minOccurs="0"
+                  name="ColumnConfigure">
+        <xs:complexType>
+          <xs:attribute name="column"
+                        type="xs:unsignedInt" />
+          <xs:attribute name="weight"
+                        type="xs:unsignedInt"
+                        use="required" />
+        </xs:complexType>
+      </xs:element>
+      <xs:element minOccurs="0"
+                  name="RowConfigure">
+        <xs:complexType>
+          <xs:attribute name="row"
+                        type="xs:unsignedInt" />
+          <xs:attribute name="weight"
+                        type="xs:unsignedInt"
+                        use="required" />
+        </xs:complexType>
+      </xs:element>
+    </xs:choice>
+  </xs:complexType>
+  <xs:complexType name="BindingsType">
+    <!-- Expand this definition to include parts of event -->
+    <xs:sequence>
+      <xs:element minOccurs="1"
+                  maxOccurs="unbounded"
+                  name="Bind">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="event"
+                        type="xs:string" />
+            <xs:element name="callback"
+                        type="xs:string" />
+            <xs:element name="add"
+                        maxOccurs="1"
+                        minOccurs="0"
+                        type="xs:string"	/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="Configure">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0"
+                    maxOccurs="unbounded"
+                    name="Set">
+          <xs:complexType>
+            <xs:simpleContent>
+              <xs:extension base="xs:string">
+                <xs:anyAttribute processContents="skip" />
+              </xs:extension>
+            </xs:simpleContent>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:anyAttribute processContents="skip" />
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="WindowsSettingsType">
+    <xs:sequence>
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="title"
+                  type="xs:string" />
+      <xs:choice minOccurs="0"
+                 maxOccurs="1">
+        <xs:element minOccurs="0"
+                    maxOccurs="1"
+                    name="Fullscreen" />
+        <xs:element minOccurs="0"
+                    maxOccurs="1"
+                    name="Geometry"
+                    type="WindowGeometryType" />
+      </xs:choice>
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="State"
+                  type="StateType" />
+      <xs:element minOccurs="0"
+                  name="Appearance"
+                  type="AppearanceType" />
+      <xs:element minOccurs="0"
+                  name="GridConfigure"
+                  type="GridConfigureType" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="WindowGeometryType">
+    <xs:sequence>
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="Height"
+                  type="xs:unsignedInt" />
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="Width"
+                  type="xs:unsignedInt" />
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="Xposition"
+                  type="xs:int" />
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="Yposition"
+                  type="xs:int" />
+      <xs:element minOccurs="0"
+                  name="Stacking">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element minOccurs="0"
+                        maxOccurs="1"
+                        name="lift"
+                        type="xs:string" />
+            <xs:element minOccurs="0"
+                        maxOccurs="1"
+                        name="lower"
+                        type="xs:string" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="WidgetGeometryType">
+    <xs:sequence>
+      <xs:choice>
+        <xs:element name="Grid">
+          <xs:complexType>
+            <xs:attribute name="column"
+                          type="xs:unsignedInt"
+                          use="required" />
+            <xs:attribute name="row"
+                          type="xs:unsignedInt"
+                          use="required" />
+            <xs:attribute name="columnspan"
+                          type="xs:unsignedInt"
+                          use="optional" />
+            <xs:attribute name="rowspan"
+                          type="xs:unsignedInt"
+                          use="optional" />
+            <xs:attribute name="sticky"
+                          type="StickyType"
+                          use="optional" />
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Pack">
+          <xs:complexType>
+            <xs:attribute name="anchor"
+                          type="xs:string"
+                          use="required" />
+          </xs:complexType>
+        </xs:element>
+      </xs:choice>
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="Padding">
+        <xs:complexType>
+          <xs:attribute name="ipadx"
+                        type="xs:unsignedInt"
+                        use="optional" />
+          <xs:attribute name="ipady"
+                        type="xs:unsignedInt"
+                        use="optional" />
+          <xs:attribute name="padx"
+                        type="xs:unsignedInt"
+                        use="optional" />
+          <xs:attribute name="pady"
+                        type="xs:unsignedInt"
+                        use="optional" />
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="WidgetBasicType">
+    <xs:sequence>
+      <xs:element minOccurs="1"
+                  maxOccurs="1"
+                  name="widget_class"
+                  type="xs:string" />
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  ref="Configure" />
+    </xs:sequence>
+    <xs:attribute name="name"
+                  type="xs:string"
+                  use="required" />
+  </xs:complexType>
+  <xs:complexType name="WidgetSettingsType">
+    <xs:all>
+      <xs:element name="Geometry"
+                  type="WidgetGeometryType" />
+      <xs:element minOccurs="0"
+                  name="Appearance"
+                  type="AppearanceType" />
+      <xs:element minOccurs="0"
+                  name="Bindings"
+                  type="BindingsType" />
+    </xs:all>
+  </xs:complexType>
+  <xs:complexType name="WidgetContainerSettingsType">
+    <xs:all>
+      <xs:element name="Geometry"
+                  type="WidgetGeometryType" />
+      <xs:element minOccurs="0"
+                  name="Appearance"
+                  type="AppearanceType" />
+      <xs:element minOccurs="0"
+                  name="Bindings"
+                  type="BindingsType" />
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  name="GridConfigure"
+                  type="GridConfigureType" />
+    </xs:all>
+  </xs:complexType>
+</xs:schema>

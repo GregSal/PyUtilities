@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Created with Liquid Studio 2019 (https://www.liquid-technologies.com) -->
+<GuiDefinition xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:noNamespaceSchemaLocation="file:./GUI_Builder.xsd">
+    <VariableSet>
+        <Variable name="FileName">
+            <variable_class>tk.StringVar</variable_class>
+        </Variable>
+    </VariableSet>
+    <CommandSet>
+        <Command name="Exit">
+            <function>W::root.destroy</function>
+            <PositionalArgs />
+            <KeywordArgs />
+        </Command>
+        <Command name="ShowText">
+            <function>fg.message_window</function>
+            <PositionalArgs>
+                <Arg>W::root</Arg>
+            </PositionalArgs>
+            <KeywordArgs window_text="Message"
+                         variable="V::Output"/>
+        </Command>
+    </CommandSet>
+    <RootWindow name="root">
+        <Settings>
+            <title>Main GUI</title>
+            <Geometry>
+                <Height>768</Height>
+                <Width>1024</Width>
+            </Geometry>
+            <State>normal</State>
+            <Appearance background='light blue'/>
+            <GridConfigure>
+                <ColumnConfigure column='0'
+                                 weight='1'/>
+                <RowConfigure row='0'
+                              weight='1'/>
+            </GridConfigure>
+        </Settings>
+        <WidgetSet>
+            <Widget name="exit_button">
+                <widget_class>ttk.Button</widget_class>
+                <Configure text="Egress"
+                           command="C::Exit"/>
+                <Settings>
+                    <Geometry>
+                        <Placement>
+                            <GridPlacement column="0"
+                                           row="3"/>
+                        </Placement>
+                    </Geometry>
+                </Settings>
+            </Widget>
+            <Widget name="test_entry">
+                <widget_class>ttk.Entry</widget_class>
+                <Configure textvariable="V::Output"/>
+                <Settings>
+                    <Geometry>
+                        <Placement>
+                            <GridPlacement column="0"
+                                           row="0"/>
+                        </Placement>
+                    </Geometry>
+                </Settings>
+            </Widget>
+            <Widget name="text_button">
+                <widget_class>ttk.Button</widget_class>
+                <Configure text="Display"
+                           command="C::ShowText"/>
+                <Settings>
+                    <Geometry>
+                        <Placement>
+                            <GridPlacement column="1"
+                                           row="0"
+                                           rowspan="2"/>
+                        </Placement>
+                    </Geometry>
+                </Settings>
+            </Widget>
+            <Widget name="test_label">
+                <widget_class>ttk.Label</widget_class>
+                <Configure textvariable="V::Output"/>
+                <Settings>
+                    <Geometry>
+                        <Placement>
+                            <GridPlacement column="0"
+                                           row="1"/>
+                        </Placement>
+                    </Geometry>
+                </Settings>
+            </Widget>
+        </WidgetSet>
+    </RootWindow>
+</GuiDefinition>

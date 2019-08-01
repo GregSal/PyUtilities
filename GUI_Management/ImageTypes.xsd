@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema elementFormDefault="qualified"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:simpleType name="BitmapType">
+    <!--There are eight built-in, named bitmaps. To specify an X bitmap file name, give the full path to the file, preceded with an @, as in "@/bitmap/gumby.bit".-->
+    <xs:union memberTypes="NamedBitmaps BitmapFileName" />
+  </xs:simpleType>
+  <xs:simpleType name="BitmapFileName">
+    <!--The eight built-in, named bitmaps.-->
+    <xs:restriction base="xs:string">
+      <xs:pattern value="@.*" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="NamedBitmaps">
+    <!--To specify an X bitmap filename, give the full path to the file, preceded with an @, as in "@/usr/contrib/bitmap/gumby.bit".-->
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="error" />
+      <xs:enumeration value="gray25" />
+      <xs:enumeration value="gray50" />
+      <xs:enumeration value="hourglass" />
+      <xs:enumeration value="info" />
+      <xs:enumeration value="question" />
+      <xs:enumeration value="warning" />
+    </xs:restriction>
+  </xs:simpleType>
+
+</xs:schema>
