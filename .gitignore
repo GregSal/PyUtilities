@@ -5,3 +5,7 @@
 .mypy_cache/*
 .vs/*
 .vscode/*
+CodeGraphData
+__pycache__
+*.sln
+*.pyproj*
