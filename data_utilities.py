@@ -86,7 +86,8 @@ merge_columns(data_table: pd.DataFrame, columns: List[str],
 '''
 # TODO Move some of the functions to the BeamData Tools Module
 from collections.abc import Iterable
-from typing import List, Dict, Tuple, Any, Union, Set
+from operator import attrgetter
+from typing import List, Dict, Tuple, Any, Union, Set, NamedTuple 
 import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
@@ -94,6 +95,69 @@ from scipy.interpolate import interp1d
 
 Data = Union[pd.DataFrame, pd.Series]
 Value = Tuple[float, str]
+
+
+class DataElement(NamedTuple):
+    '''A number containing a corresponding unit.
+    Attributes:
+        Value {float} -- The number
+        Unit {str} -- The corresponding unit.
+    '''
+    Value: float
+    Unit: str
+
+    def convert_units(self, target_units: str):
+        '''Take value in starting_units and convert to target_units.
+        Arguments:
+            target_units {str} -- The unit to convert starting_value to. Must
+                be of the same unit type as starting_units.
+        Returns:
+            DataElement -- The initial value converted to the new units.
+        '''
+        conversion_table = {'cGy': {'cGy': 1.0,
+                                    'Gy': 0.01
+                                    },
+                            'Gy':  {'Gy': 1.0,
+                                    'cGy': 100},
+                            'cc':  {'cc': 1.0,
+                                    'ml': 1.0,
+                                    'l': 0.01,
+                                    },
+                            'cm':  {'cm': 1.0,
+                                    'mm': 10,
+                                    'm': 0.01,
+                                    },
+                            'mm':  {'cm': 0.1,
+                                    'mm': 1.0,
+                                    'm': 0.001,
+                                    }
+                           }
+        try:
+            conversion_factor = conversion_table[self.Unit][target_units]
+        except KeyError as err:
+            raise ValueError('Unknown units') from err
+        new_value = float(self.Value)*conversion_factor
+        return DataElement(new_value, target_units)
+    
+    
+def sort_dict(dict_data: Dict[str, Any],# FIXME Use Generic typing for Dict Value
+              sort_list: List[str] = None
+              )->List[Any]:
+    '''Generate a sorted list of from dictionary values. 
+    Arguments:
+        dict_data {Dict[str, Any]} -- A dictionary containing values with
+            multiple sortable attributes.
+        sort_list {List[str]} -- A list of attribute names to sort by.
+    Returns:
+        List[Any] -- Sorted list of values.
+        '''
+    # TODO Add sort_dict to data utilities
+    data_list = list(dict_data.values())
+    if sort_list:
+        data_set = sorted(data_list, key=attrgetter(*sort_list))
+    else:
+        data_set = data_list
+    return data_set
 
 
 def logic_match(value: Any,

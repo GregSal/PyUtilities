@@ -1,0 +1,535 @@
+PatientLastName; Virt Sim
+PatientFirstName; Test Plans
+PatientMiddleName; 
+PatientId; PYVirtSimTest
+PatientDateOfBirth; 
+PatientSex; Unknown
+PrimaryOncologist; -
+CurrentDateShort; 02/10/2019 15:36
+ApplicationName; External Beam Planning
+TaskName; External Beam Planning
+TaskVersion; 13.6.32
+Hospital; CCSEO at KGH, Kingston, ON
+UserId; gsal
+IsPlanModified; -
+IsAllMUperGyValid; 
+Invalid If condition: $PlanSumName
+CourseId; AirGap2
+CourseIntent; QA
+PlanId; AG30K6XF20
+PlanName; AirGap 3.0cm Set to Thick 20x20
+ApprovalStatus; Unapproved
+PlanCreationDate; Wednesday, October 02, 2019 10:38:43
+PlanCreator; gsal
+PlanModificationDate; Wednesday, October 02, 2019 10:40:33
+PlanModifier; gsal
+ImageId; AirGapBase
+ImageName; AirGap3.0R20x40
+ImageSeriesId; AirGap
+ImageModality; CT
+ImagingDeviceId; GE Multislice CT
+ImagingDeviceModel; LightSpeed RT16
+ImagingDeviceManufacturer; GE MEDICAL SYSTEMS
+ImagingDeviceSerialNumber; 
+PatientImagingOrientation; Head First-Supine
+PatientTreatmentOrientation; Head First-Supine
+            PlanningCoordinateSystemName; Standard
+            ImageUserOrigin; User origin DICOM offset = (0.00cm, -6.92cm, 0.00cm)
+            StructureId; Body
+            0.0 HU
+            StructureName; 
+            StructureId; AirGap3.0
+            -992.8 HU
+            StructureName; AirGap3.0
+            PhotonAlg; AAA_10028_Golden_Beam
+            CalculationGridSizeInCM; 0.25
+            FieldNormalizationType; 100% to isocenter
+            HeterogeneityCorrection; ON
+            StdArcCalculationSegments; 10
+            VMATFluenceResolution; High
+            TargetVolume; -
+            PlanNormValue; 100.0 %
+            PlanNormMethod; Plan Normalization Value: 100.00
+            PrescribedDosePercent; 100.0 %
+            PrimaryRefPointId; -
+            RelativeDoseInPrimaryRefPoint; -
+            Fractionations; 1
+            FractionationId; F1
+            PrescribedDose; 100.0 cGy
+            PrescribedDosePerFraction; 100.0 cGy
+            DoseInPrimaryRefPoint; -
+            DosePerFractionInPrimaryRefPoint; -
+            Fractions; 1
+            FieldId; • 20x20 6MV 0Nd •
+            FieldName; • Thin 0.0cm 20x20 6MV •
+            FieldMachineId; • TR1 •
+            FieldMachineModel; TDS
+            FieldMachineScale; Varian IEC
+            FieldEnergyMode; 6X
+            FieldDoseRate; 600 MU/min
+            FieldTechnique; STATIC
+            FieldMonitorUnits; 97 MU
+            FieldMonitorUnitsPerGy; -
+            FieldRefDose; 103.4 cGy
+            FieldIMRT; 
+            FieldSAD; 100.0 cm
+            FieldSSD; 97.0 cm
+            FieldActualSSD; -
+            X1: +10.0 cm
+            X2: +10.0 cm
+            Y1: +10.0 cm
+            Y2: +10.0 cm
+            FieldSymmetry; Asymmetric X&Y
+            FieldGantryAngle; 0.0 deg
+            FieldCollimatorAngle; 0.0 deg
+            FieldTableAngle; 0.0 deg
+            FieldIsocentreX; -2.50 cm
+            FieldIsocentreY; 0.00 cm
+            FieldIsocentreZ; 0.00 cm
+            FieldNormMethod; FIELD_ISOC_NORM
+            FieldNormFactor; 100.0 %
+            FieldWeightFactor; 0.981
+            FractionationId F1
+            FieldMonitorUnits; 97 MU
+            FieldMonitorUnitsPerGy; -
+            FieldRefDose; 103.4 cGy
+            RefPoints; 8
+            RefPointId; Thick d=12, -5
+            FieldDose; 66.3 cGy
+            RefPointType; 
+            FieldRefPointSSD; 97.1 cm
+            FieldRefPointPointDepth; 12.0 cm
+            FieldRefPointEffectiveDepth; 12.0 cm
+            RefPointId; Thick d=3, -5
+            FieldDose; 101.7 cGy
+            RefPointType; 
+            FieldRefPointSSD; 97.1 cm
+            FieldRefPointPointDepth; 3.0 cm
+            FieldRefPointEffectiveDepth; 3.0 cm
+            RefPointId; Thick d=6, -5
+            FieldDose; 89.0 cGy
+            RefPointType; 
+            FieldRefPointSSD; 97.1 cm
+            FieldRefPointPointDepth; 6.0 cm
+            FieldRefPointEffectiveDepth; 6.0 cm
+            RefPointId; Thick d=9, -5
+            FieldDose; 77.0 cGy
+            RefPointType; 
+            FieldRefPointSSD; 97.1 cm
+            FieldRefPointPointDepth; 9.0 cm
+            FieldRefPointEffectiveDepth; 9.0 cm
+            RefPointId; Thin d=0, 5
+            FieldDose; 31.4 cGy
+            RefPointType; 
+            FieldRefPointSSD; -
+            FieldRefPointPointDepth; -
+            FieldRefPointEffectiveDepth; -
+            RefPointId; Thin d=3, 5
+            FieldDose; 97.5 cGy
+            RefPointType; 
+            FieldRefPointSSD; 100.1 cm
+            FieldRefPointPointDepth; 3.0 cm
+            FieldRefPointEffectiveDepth; 3.0 cm
+            RefPointId; Thin d=6, 5
+            FieldDose; 85.2 cGy
+            RefPointType; 
+            FieldRefPointSSD; 100.1 cm
+            FieldRefPointPointDepth; 6.0 cm
+            FieldRefPointEffectiveDepth; 6.0 cm
+            RefPointId; Thin d=9, 5
+            FieldDose; 73.6 cGy
+            RefPointType; 
+            FieldRefPointSSD; 100.1 cm
+            FieldRefPointPointDepth; 9.0 cm
+            FieldRefPointEffectiveDepth; 9.1 cm
+            FieldCalculationTimestamp; Wednesday, October 02, 2019 10:40:14
+            FieldCalculationInfo; Service: AAA.FieldVolumeDose.10.0.28.9901x64
+            FieldCalculationInfo; Servant: p2972@varfaspr21
+            FieldCalculationInfo; Calculated Wednesday, October 02, 2019 10:40:14
+            FieldCalculationInfo; Client workstation CTX7-ARIA-PV4/5396
+            FieldCalculationInfo; Client version 13.6.32.20182
+            FieldCalculationInfo; Client time 2019-10-02T10:40:14-04:00 (ISO8601)
+            FieldCalculationInfo; Anisotropic Analytical Algorithm (Version 10.0.28)
+            FieldCalculationInfo; There is a new version of this algorithm available (13.6.23).
+            FieldCalculationInfo; Using DCF protocol version 0.3
+            FieldCalculationInfo; AAACalculationOptions.CalculationGridSizeInCM = 0.25
+            FieldCalculationInfo; AAACalculationOptions.FieldNormalizationType = 100% to isocenter
+            FieldCalculationInfo; AAACalculationOptions.HeterogeneityCorrection = ON
+            FieldCalculationInfo; AAACalculationOptions.StdArcCalculationSegments = 10
+            FieldCalculationInfo; AAACalculationOptions.VMATFluenceResolution = High
+            FieldCalculationInfo; Machine directory: \\VARFASPR13\DCF$\client\BeamData\AAA_10025_Gold...
+            FieldCalculationInfo; Treatment unit: TR1, energy: 6X
+            FieldCalculationInfo; Accessory OPENFIELD matches code 00
+            FieldCalculationInfo; Input Fluence Pixel Size 0.3125x0.3125 mm2.
+            FieldCalculationInfo; Field dose normalized 100% to isocenter
+            FieldId; • 20x20 6MV 3Nd •
+            FieldName; • Thin 3.0cm 20x20 6 MV •
+            FieldMachineId; • TR1 •
+            FieldMachineModel; TDS
+            FieldMachineScale; Varian IEC
+            FieldEnergyMode; 6X
+            FieldDoseRate; 600 MU/min
+            FieldTechnique; STATIC
+            FieldMonitorUnits; 104 MU
+            FieldMonitorUnitsPerGy; -
+            FieldRefDose; 118.0 cGy
+            FieldIMRT; 
+            FieldSAD; 100.0 cm
+            FieldSSD; 94.0 cm
+            FieldActualSSD; -
+            X1: +10.0 cm
+            X2: +10.0 cm
+            Y1: +10.0 cm
+            Y2: +10.0 cm
+            FieldSymmetry; Asymmetric X&Y
+            FieldGantryAngle; 0.0 deg
+            FieldCollimatorAngle; 0.0 deg
+            FieldTableAngle; 0.0 deg
+            FieldIsocentreX; -2.50 cm
+            FieldIsocentreY; 3.02 cm
+            FieldIsocentreZ; 0.00 cm
+            FieldNormMethod; FIELD_ISOC_NORM
+            FieldNormFactor; 100.0 %
+            FieldWeightFactor; 0.987
+            FractionationId F1
+            FieldMonitorUnits; 104 MU
+            FieldMonitorUnitsPerGy; -
+            FieldRefDose; 118.0 cGy
+            RefPoints; 8
+            RefPointId; Thick d=12, -5
+            FieldDose; 75.0 cGy
+            RefPointType; 
+            FieldRefPointSSD; 94.1 cm
+            FieldRefPointPointDepth; 12.0 cm
+            FieldRefPointEffectiveDepth; 12.0 cm
+            RefPointId; Thick d=3, -5
+            FieldDose; 116.0 cGy
+            RefPointType; 
+            FieldRefPointSSD; 94.1 cm
+            FieldRefPointPointDepth; 3.0 cm
+            FieldRefPointEffectiveDepth; 3.0 cm
+            RefPointId; Thick d=6, -5
+            FieldDose; 101.2 cGy
+            RefPointType; 
+            FieldRefPointSSD; 94.1 cm
+            FieldRefPointPointDepth; 6.0 cm
+            FieldRefPointEffectiveDepth; 6.0 cm
+            RefPointId; Thick d=9, -5
+            FieldDose; 87.3 cGy
+            RefPointType; 
+            FieldRefPointSSD; 94.1 cm
+            FieldRefPointPointDepth; 9.0 cm
+            FieldRefPointEffectiveDepth; 9.0 cm
+            RefPointId; Thin d=0, 5
+            FieldDose; 38.8 cGy
+            RefPointType; 
+            FieldRefPointSSD; -
+            FieldRefPointPointDepth; -
+            FieldRefPointEffectiveDepth; -
+            RefPointId; Thin d=3, 5
+            FieldDose; 111.0 cGy
+            RefPointType; 
+            FieldRefPointSSD; 97.1 cm
+            FieldRefPointPointDepth; 3.0 cm
+            FieldRefPointEffectiveDepth; 3.0 cm
+            RefPointId; Thin d=6, 5
+            FieldDose; 96.7 cGy
+            RefPointType; 
+            FieldRefPointSSD; 97.1 cm
+            FieldRefPointPointDepth; 6.0 cm
+            FieldRefPointEffectiveDepth; 6.0 cm
+            RefPointId; Thin d=9, 5
+            FieldDose; 83.2 cGy
+            RefPointType; 
+            FieldRefPointSSD; 97.1 cm
+            FieldRefPointPointDepth; 9.0 cm
+            FieldRefPointEffectiveDepth; 9.1 cm
+            FieldCalculationTimestamp; Wednesday, October 02, 2019 10:40:14
+            FieldCalculationInfo; Service: AAA.FieldVolumeDose.10.0.28.9901x64
+            FieldCalculationInfo; Servant: p2812@varfaspr19
+            FieldCalculationInfo; Calculated Wednesday, October 02, 2019 10:40:14
+            FieldCalculationInfo; Client workstation CTX7-ARIA-PV4/5396
+            FieldCalculationInfo; Client version 13.6.32.20182
+            FieldCalculationInfo; Client time 2019-10-02T10:40:14-04:00 (ISO8601)
+            FieldCalculationInfo; Anisotropic Analytical Algorithm (Version 10.0.28)
+            FieldCalculationInfo; There is a new version of this algorithm available (13.6.23).
+            FieldCalculationInfo; Using DCF protocol version 0.3
+            FieldCalculationInfo; AAACalculationOptions.CalculationGridSizeInCM = 0.25
+            FieldCalculationInfo; AAACalculationOptions.FieldNormalizationType = 100% to isocenter
+            FieldCalculationInfo; AAACalculationOptions.HeterogeneityCorrection = ON
+            FieldCalculationInfo; AAACalculationOptions.StdArcCalculationSegments = 10
+            FieldCalculationInfo; AAACalculationOptions.VMATFluenceResolution = High
+            FieldCalculationInfo; Machine directory: \\VARFASPR13\DCF$\client\BeamData\AAA_10025_Gold...
+            FieldCalculationInfo; Treatment unit: TR1, energy: 6X
+            FieldCalculationInfo; Accessory OPENFIELD matches code 00
+            FieldCalculationInfo; Input Fluence Pixel Size 0.3125x0.3125 mm2.
+            FieldCalculationInfo; Field dose normalized 100% to isocenter
+            FieldId; • 20x20 6MV 6Nd •
+            FieldName; • Thin 6.0cm 20x20 6 MV •
+            FieldMachineId; • TR1 •
+            FieldMachineModel; TDS
+            FieldMachineScale; Varian IEC
+            FieldEnergyMode; 6X
+            FieldDoseRate; 600 MU/min
+            FieldTechnique; STATIC
+            FieldMonitorUnits; 113 MU
+            FieldMonitorUnitsPerGy; -
+            FieldRefDose; 136.8 cGy
+            FieldIMRT; 
+            FieldSAD; 100.0 cm
+            FieldSSD; 91.0 cm
+            FieldActualSSD; -
+            X1: +10.0 cm
+            X2: +10.0 cm
+            Y1: +10.0 cm
+            Y2: +10.0 cm
+            FieldSymmetry; Asymmetric X&Y
+            FieldGantryAngle; 0.0 deg
+            FieldCollimatorAngle; 0.0 deg
+            FieldTableAngle; 0.0 deg
+            FieldIsocentreX; -2.50 cm
+            FieldIsocentreY; 6.02 cm
+            FieldIsocentreZ; 0.00 cm
+            FieldNormMethod; FIELD_ISOC_NORM
+            FieldNormFactor; 100.0 %
+            FieldWeightFactor; 0.989
+            FractionationId F1
+            FieldMonitorUnits; 113 MU
+            FieldMonitorUnitsPerGy; -
+            FieldRefDose; 136.8 cGy
+            RefPoints; 8
+            RefPointId; Thick d=12, -5
+            FieldDose; 86.1 cGy
+            RefPointType; 
+            FieldRefPointSSD; 91.1 cm
+            FieldRefPointPointDepth; 12.0 cm
+            FieldRefPointEffectiveDepth; 12.0 cm
+            RefPointId; Thick d=3, -5
+            FieldDose; 134.2 cGy
+            RefPointType; 
+            FieldRefPointSSD; 91.1 cm
+            FieldRefPointPointDepth; 3.0 cm
+            FieldRefPointEffectiveDepth; 3.0 cm
+            RefPointId; Thick d=6, -5
+            FieldDose; 116.7 cGy
+            RefPointType; 
+            FieldRefPointSSD; 91.1 cm
+            FieldRefPointPointDepth; 6.0 cm
+            FieldRefPointEffectiveDepth; 6.0 cm
+            RefPointId; Thick d=9, -5
+            FieldDose; 100.4 cGy
+            RefPointType; 
+            FieldRefPointSSD; 91.1 cm
+            FieldRefPointPointDepth; 9.0 cm
+            FieldRefPointEffectiveDepth; 9.0 cm
+            RefPointId; Thin d=0, 5
+            FieldDose; 40.8 cGy
+            RefPointType; 
+            FieldRefPointSSD; -
+            FieldRefPointPointDepth; -
+            FieldRefPointEffectiveDepth; -
+            RefPointId; Thin d=3, 5
+            FieldDose; 127.9 cGy
+            RefPointType; 
+            FieldRefPointSSD; 94.1 cm
+            FieldRefPointPointDepth; 3.0 cm
+            FieldRefPointEffectiveDepth; 3.0 cm
+            RefPointId; Thin d=6, 5
+            FieldDose; 111.1 cGy
+            RefPointType; 
+            FieldRefPointSSD; 94.1 cm
+            FieldRefPointPointDepth; 6.0 cm
+            FieldRefPointEffectiveDepth; 6.0 cm
+            RefPointId; Thin d=9, 5
+            FieldDose; 95.4 cGy
+            RefPointType; 
+            FieldRefPointSSD; 94.0 cm
+            FieldRefPointPointDepth; 9.1 cm
+            FieldRefPointEffectiveDepth; 9.1 cm
+            FieldCalculationTimestamp; Wednesday, October 02, 2019 10:40:14
+            FieldCalculationInfo; Service: AAA.FieldVolumeDose.10.0.28.9901x64
+            FieldCalculationInfo; Servant: p4440@varfaspr18
+            FieldCalculationInfo; Calculated Wednesday, October 02, 2019 10:40:14
+            FieldCalculationInfo; Client workstation CTX7-ARIA-PV4/5396
+            FieldCalculationInfo; Client version 13.6.32.20182
+            FieldCalculationInfo; Client time 2019-10-02T10:40:14-04:00 (ISO8601)
+            FieldCalculationInfo; Anisotropic Analytical Algorithm (Version 10.0.28)
+            FieldCalculationInfo; There is a new version of this algorithm available (13.6.23).
+            FieldCalculationInfo; Using DCF protocol version 0.3
+            FieldCalculationInfo; AAACalculationOptions.CalculationGridSizeInCM = 0.25
+            FieldCalculationInfo; AAACalculationOptions.FieldNormalizationType = 100% to isocenter
+            FieldCalculationInfo; AAACalculationOptions.HeterogeneityCorrection = ON
+            FieldCalculationInfo; AAACalculationOptions.StdArcCalculationSegments = 10
+            FieldCalculationInfo; AAACalculationOptions.VMATFluenceResolution = High
+            FieldCalculationInfo; Machine directory: \\VARFASPR13\DCF$\client\BeamData\AAA_10025_Gold...
+            FieldCalculationInfo; Treatment unit: TR1, energy: 6X
+            FieldCalculationInfo; Accessory OPENFIELD matches code 00
+            FieldCalculationInfo; Input Fluence Pixel Size 0.3125x0.3125 mm2.
+            FieldCalculationInfo; Field dose normalized 100% to isocenter
+            FieldId; • 20x20 6MV 9Nd •
+            FieldName; • Thin 9.0cm 20x20 6 MV •
+            FieldMachineId; • TR1 •
+            FieldMachineModel; TDS
+            FieldMachineScale; Varian IEC
+            FieldEnergyMode; 6X
+            FieldDoseRate; 600 MU/min
+            FieldTechnique; STATIC
+            FieldMonitorUnits; 125 MU
+            FieldMonitorUnitsPerGy; -
+            FieldRefDose; 161.7 cGy
+            FieldIMRT; 
+            FieldSAD; 100.0 cm
+            FieldSSD; 88.0 cm
+            FieldActualSSD; -
+            X1: +10.0 cm
+            X2: +10.0 cm
+            Y1: +10.0 cm
+            Y2: +10.0 cm
+            FieldSymmetry; Asymmetric X&Y
+            FieldGantryAngle; 0.0 deg
+            FieldCollimatorAngle; 0.0 deg
+            FieldTableAngle; 0.0 deg
+            FieldIsocentreX; -2.50 cm
+            FieldIsocentreY; 9.02 cm
+            FieldIsocentreZ; 0.00 cm
+            FieldNormMethod; FIELD_ISOC_NORM
+            FieldNormFactor; 100.0 %
+            FieldWeightFactor; 1.001
+            FractionationId F1
+            FieldMonitorUnits; 125 MU
+            FieldMonitorUnitsPerGy; -
+            FieldRefDose; 161.7 cGy
+            RefPoints; 8
+            RefPointId; Thick d=12, -5
+            FieldDose; 100.7 cGy
+            RefPointType; 
+            FieldRefPointSSD; 88.1 cm
+            FieldRefPointPointDepth; 12.0 cm
+            FieldRefPointEffectiveDepth; 12.0 cm
+            RefPointId; Thick d=3, -5
+            FieldDose; 158.4 cGy
+            RefPointType; 
+            FieldRefPointSSD; 88.1 cm
+            FieldRefPointPointDepth; 3.0 cm
+            FieldRefPointEffectiveDepth; 3.0 cm
+            RefPointId; Thick d=6, -5
+            FieldDose; 137.3 cGy
+            RefPointType; 
+            FieldRefPointSSD; 88.1 cm
+            FieldRefPointPointDepth; 6.0 cm
+            FieldRefPointEffectiveDepth; 6.0 cm
+            RefPointId; Thick d=9, -5
+            FieldDose; 117.7 cGy
+            RefPointType; 
+            FieldRefPointSSD; 88.1 cm
+            FieldRefPointPointDepth; 9.0 cm
+            FieldRefPointEffectiveDepth; 9.0 cm
+            RefPointId; Thin d=0, 5
+            FieldDose; 54.7 cGy
+            RefPointType; 
+            FieldRefPointSSD; -
+            FieldRefPointPointDepth; -
+            FieldRefPointEffectiveDepth; -
+            RefPointId; Thin d=3, 5
+            FieldDose; 150.7 cGy
+            RefPointType; 
+            FieldRefPointSSD; 91.1 cm
+            FieldRefPointPointDepth; 3.0 cm
+            FieldRefPointEffectiveDepth; 3.0 cm
+            RefPointId; Thin d=6, 5
+            FieldDose; 130.5 cGy
+            RefPointType; 
+            FieldRefPointSSD; 91.1 cm
+            FieldRefPointPointDepth; 6.0 cm
+            FieldRefPointEffectiveDepth; 6.0 cm
+            RefPointId; Thin d=9, 5
+            FieldDose; 111.7 cGy
+            RefPointType; 
+            FieldRefPointSSD; 91.1 cm
+            FieldRefPointPointDepth; 9.1 cm
+            FieldRefPointEffectiveDepth; 9.1 cm
+            FieldCalculationTimestamp; Wednesday, October 02, 2019 10:40:14
+            FieldCalculationInfo; Service: AAA.FieldVolumeDose.10.0.28.9901x64
+            FieldCalculationInfo; Servant: p2320@varfaspr24
+            FieldCalculationInfo; Calculated Wednesday, October 02, 2019 10:40:14
+            FieldCalculationInfo; Client workstation CTX7-ARIA-PV4/5396
+            FieldCalculationInfo; Client version 13.6.32.20182
+            FieldCalculationInfo; Client time 2019-10-02T10:40:14-04:00 (ISO8601)
+            FieldCalculationInfo; Anisotropic Analytical Algorithm (Version 10.0.28)
+            FieldCalculationInfo; There is a new version of this algorithm available (13.6.23).
+            FieldCalculationInfo; Using DCF protocol version 0.3
+            FieldCalculationInfo; AAACalculationOptions.CalculationGridSizeInCM = 0.25
+            FieldCalculationInfo; AAACalculationOptions.FieldNormalizationType = 100% to isocenter
+            FieldCalculationInfo; AAACalculationOptions.HeterogeneityCorrection = ON
+            FieldCalculationInfo; AAACalculationOptions.StdArcCalculationSegments = 10
+            FieldCalculationInfo; AAACalculationOptions.VMATFluenceResolution = High
+            FieldCalculationInfo; Machine directory: \\VARFASPR13\DCF$\client\BeamData\AAA_10025_Gold...
+            FieldCalculationInfo; Treatment unit: TR1, energy: 6X
+            FieldCalculationInfo; Accessory OPENFIELD matches code 00
+            FieldCalculationInfo; Input Fluence Pixel Size 0.3125x0.3125 mm2.
+            FieldCalculationInfo; Field dose normalized 100% to isocenter
+            FractionationId; F1
+            RefPointId; Thick d=12, -5
+            RefPointX; -7.50 cm
+            RefPointY; 9.00 cm
+            RefPointZ; 0.00 cm
+            RefPointTotalDosePerFraction; 328.1 cGy
+            RefPointTotalDose; 328.1 cGy
+            IsPrimaryRefPoint; 
+            RefPointPatientVolumeId; Body
+            RefPointId; Thick d=3, -5
+            RefPointX; -7.50 cm
+            RefPointY; 0.00 cm
+            RefPointZ; 0.00 cm
+            RefPointTotalDosePerFraction; 510.2 cGy
+            RefPointTotalDose; 510.2 cGy
+            IsPrimaryRefPoint; 
+            RefPointPatientVolumeId; Body
+            RefPointId; Thick d=6, -5
+            RefPointX; -7.50 cm
+            RefPointY; 3.00 cm
+            RefPointZ; 0.00 cm
+            RefPointTotalDosePerFraction; 444.3 cGy
+            RefPointTotalDose; 444.3 cGy
+            IsPrimaryRefPoint; 
+            RefPointPatientVolumeId; Body
+            RefPointId; Thick d=9, -5
+            RefPointX; -7.50 cm
+            RefPointY; 6.00 cm
+            RefPointZ; 0.00 cm
+            RefPointTotalDosePerFraction; 382.4 cGy
+            RefPointTotalDose; 382.4 cGy
+            IsPrimaryRefPoint; 
+            RefPointPatientVolumeId; Body
+            RefPointId; Thin d=0, 5
+            RefPointX; 2.50 cm
+            RefPointY; 0.00 cm
+            RefPointZ; 0.00 cm
+            RefPointTotalDosePerFraction; 165.7 cGy
+            RefPointTotalDose; 165.7 cGy
+            IsPrimaryRefPoint; 
+            RefPointPatientVolumeId; Body
+            RefPointId; Thin d=3, 5
+            RefPointX; 2.50 cm
+            RefPointY; 3.00 cm
+            RefPointZ; -0.00 cm
+            RefPointTotalDosePerFraction; 487.1 cGy
+            RefPointTotalDose; 487.1 cGy
+            IsPrimaryRefPoint; 
+            RefPointPatientVolumeId; Body
+            RefPointId; Thin d=6, 5
+            RefPointX; 2.50 cm
+            RefPointY; 6.00 cm
+            RefPointZ; -0.00 cm
+            RefPointTotalDosePerFraction; 423.5 cGy
+            RefPointTotalDose; 423.5 cGy
+            IsPrimaryRefPoint; 
+            RefPointPatientVolumeId; Body
+            RefPointId; Thin d=9, 5
+            RefPointX; 2.50 cm
+            RefPointY; 9.00 cm
+            RefPointZ; -0.00 cm
+            RefPointTotalDosePerFraction; 363.8 cGy
+            RefPointTotalDose; 363.8 cGy
+            IsPrimaryRefPoint; 
+            RefPointPatientVolumeId; Body

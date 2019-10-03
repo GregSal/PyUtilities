@@ -52,7 +52,7 @@ from data_utilities import select_data
 Data = TypeVar('Data', pd.DataFrame, pd.Series, List[Any])
 FileName = TypeVar('FileName', Path, str)
 TableInfo = Dict[str, str]
-WorksheetInfo = Dict[str, str]
+WorksheetInfo = Dict[str, str] # TODO Create a named tuple that defines WorksheetInfo
 Variables = TypeVar('Variables', List[str], str)
 TableSpan = TypeVar('TableSpan', int, str)
 
@@ -166,10 +166,56 @@ def select_sheet(file_name: FileName, sub_dir: str = None,
     return data_sheet
 
 
+def create_output_file(file_name: FileName, sub_dir: str = None,
+                       base_path: Path = None, new_file=True)->xw.Book:
+    '''Create an output spreadsheet.
+    Args:
+        file_name {FileName} --  A full Path or a string file name of an
+            excel file.
+        sub_dir {str} --  A string containing a sub directory path from
+            base_path to the excel file.
+        base_path {Path} -- A full path of type Path to the top directory.
+        new_file {bool} -- True if a new book is to be created. Default is False.
+    Raises:
+        FileNotFoundError
+    Returns:
+        An XLWings Book object pointing to the requested Excel workbook.
+    '''
+    file_path = get_file_path(file_name, sub_dir, base_path)
+    workbook = open_book(file_path, new_file)
+    workbook.save(str(file_path))
+    return workbook
+
+
+def save_data_to_sheet(data_table: pd.DataFrame, workbook: xw.Book,
+                       sheet_name: str = 'Sheet A', starting_cell: str = 'A1',
+                       add_index=False, new_sheet=True, replace=True)->xw.Sheet:
+    '''Adds the given data to a new data sheet.
+    Args:
+        data_table {pd.DataFrame} -- The Pandas DataFrame data to be added.
+        starting_cell {str} -- The top right cell in the excel table.
+        add_index {bool} -- Whether to include the DataFrame index in the
+            spreadsheet table.  Default is False.
+        workbook {xw.Book} -- An XLWings Book object pointing to an open Excel 
+            workbook.
+        sheet_name (str): The name of the desired worksheet.
+        starting_cell: {optional, str} -- The top right cell of the table in
+            excel, in "A1" format. Default is "A1".
+        add_index (bool): Include the DataFrame index in the spreadsheet. Default is True.
+        new_sheet (bool): If True, a new sheet will be created in the
+            specified workbook if it does not already exist. Default is True.
+        replace (bool): If the specified worksheet already exists
+            and new_sheet is True, return the existing worksheet. Default is True.
+    '''
+    worksheet = get_data_sheet(workbook, sheet_name, new_sheet, replace)
+    worksheet.range(starting_cell).options(index=add_index).value = data_table
+    return worksheet
+
+
 def get_table_range(data_sheet: xw.Sheet, starting_cell: str = 'A1',
-                    columns: TableSpan = 'expand',
-                    rows: TableSpan = 'expand',
-                    header: int = 1)->xw.Range:
+                columns: TableSpan = 'expand',
+                rows: TableSpan = 'expand',
+                header: int = 1)->xw.Range:
     '''Returns an excel range for the specified table.
     columns='expand' assumes no break in the variable names.
     Args:
@@ -200,7 +246,7 @@ def get_table_range(data_sheet: xw.Sheet, starting_cell: str = 'A1',
     end_range = end_range.offset(row_offset=num_rows)
     selection_range = xw.Range(start_range, end_range)
     return selection_range
-
+    
 
 def get_variable_list(header: int = 1, **table: TableInfo)->List[str]:
     '''Returns a list of header variables in the row of starting cell.
@@ -568,7 +614,6 @@ def append_data_sheet(data_table: pd.DataFrame, starting_cell: str = 'A1',
     new_sheet.range(starting_cell).options(index=add_index).value = data_table
     new_sheet.autofit(axis='columns')
     return new_sheet
-
 
 def insert_data_column(variable_name: str, data_column: List[Any],
                        starting_cell: str = 'A1',
