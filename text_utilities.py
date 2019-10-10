@@ -245,9 +245,9 @@ class Header(object):
     def build_header_re():
         '''Compile a regular expression for parsing a header string
         '''
-        delim = ':;'      # Possible value delimiters
-        name_chrs = ' ,='  # allowable name characters (besides letters)
-        val_chrs = ' ,='  # allowable value characters (besides letters and numbers)
+        delim = ':;'         # Possible value delimiters
+        name_chrs = ' ,='    # allowable name characters (besides letters)
+        val_chrs = ' ,=+-'   # allowable value characters (besides letters and numbers)
         header_name_ptn = (
             '^'                # beginning of string
             '\s*'              # possible space before the header name begins
@@ -259,7 +259,7 @@ class Header(object):
             )
         generic_value_ptn = (
             '(?P<value>'       # beginning of value string group
-            '[\w{chrs}]+'          # value string
+            '[\w{chrs}]+'      # value string
             ')'                # end of value string group
             '.*'               # possible space after the value ends
             '$'                # end of string
@@ -275,7 +275,7 @@ class Header(object):
             '(?P<unit>'        # beginning of possible unit string group
             '[\w]*'            # value unit
             ')'                # end of unit string group
-            '.*'               # possible space after the value ends
+            '\s*'              # possible space after the value ends
             '$'                # end of string
             )
         field_size_value_ptn = (
@@ -290,19 +290,54 @@ class Header(object):
             '(?P<unit>'        # beginning of possible unit string group
             '[\w]*'            # value unit
             ')'                # end of unit string group
-            '.*'               # possible space after the value ends
+            '\s*'              # possible space after the value ends
             '$'                # end of string
             )
+        DICOM_offset_value_ptn = (
+            '\s*'                        # possible space before text
+            'User origin DICOM offset =' # Initial Text
+            '\s*'                        # possible space after text
+            '[(]\s*'                     # Starting bracket
+            '(?P<x_value>'     # beginning of x_value string group
+            '[+-]?\d+\.?\d*'   # float value
+            ')'                # end of x_value string group
+            '\s*'              # possible space before unit
+            '(?P<x_unit>'      # beginning of x unit string group
+            '[cm]m'            # Unit with possible space
+            ')'                # end of x_unit string group
+            '\s*,\s*'          # possible space before y value
+            '(?P<y_value>'     # beginning of y_value string group
+            '[+-]?\d+\.?\d*'   # float value
+            ')'                # end of y_value string group
+            '\s*'              # possible space before unit
+            '(?P<y_unit>'      # beginning of y unit string group
+            '[cm]m'            # Unit with possible space
+            ')'                # end of y_unit string group
+            '\s*,\s*'          # possible space before y value
+            '(?P<z_value>'     # beginning of z_value string group
+            '[+-]?\d+\.?\d*'   # float value
+            ')'                # end of z_value string group
+            '\s*'              # possible space before unit
+            '(?P<z_unit>'      # beginning of z unit string group
+            '[cm]m'            # Unit with possible space
+            ')'                # end of z_unit string group
+            '\s*'              # possible space after z
+            '[)]'              # Closing bracket
+            '\s*'              # possible space after the bracket
+            '$'                # end of string
+            )
+        #ImageUserOrigin; User origin DICOM offset = (0.00cm, -6.92cm, 0.00cm)
         # Can't use format method because there are {} in the re expression
         name_ptn = header_name_ptn.replace('{delim}', delim)
         name_ptn = name_ptn.replace('{chrs}', name_chrs)
         val_ptn = generic_value_ptn.replace('{chrs}', val_chrs)
         # Compile expressions
-        header_re = re.compile(name_ptn + generic_value_ptn)
+        header_re = re.compile(name_ptn + val_ptn)
         number_header_re = re.compile(name_ptn + number_value_ptn)
         field_size_header_re = re.compile(name_ptn + field_size_value_ptn)
-        return (header_re, number_header_re, field_size_header_re)
-    (header_re, number_header_re, field_size_header_re) = build_header_re()
+        Dicom_offset_header_re = re.compile(name_ptn + DICOM_offset_value_ptn)
+        return (header_re, number_header_re, field_size_header_re, Dicom_offset_header_re)
+    (header_re, number_header_re, field_size_header_re, Dicom_offset_header_re) = build_header_re()
 
     def __init__(self, line: str):
         '''Scan a string for date and time elements
@@ -311,6 +346,7 @@ class Header(object):
         self.is_header = False
         self.is_numeric = False
         self.is_field_size = False
+        self.is_dicom_offset = False
         self.name = None
         self.value = None
         self.unit = None
@@ -321,25 +357,32 @@ class Header(object):
     def parse_header_string(self):
         '''Parse a single line to extract date parameters.
         '''
-        found = self.field_size_header_re.search(self.raw_text)
+        found = self.Dicom_offset_header_re.search(self.raw_text)
         if found:
             parameters = found.groupdict()
-            self.get_field_size(parameters)
+            self.get_dicom_offset(parameters)
             self.is_header = True
-            self.is_field_size = True
+            self.is_dicom_offset = True
         else:
-            found = self.number_header_re.search(self.raw_text)
+            found = self.field_size_header_re.search(self.raw_text)
             if found:
                 parameters = found.groupdict()
-                self.get_numeric_header(parameters)
+                self.get_field_size(parameters)
                 self.is_header = True
-                self.is_numeric = True
+                self.is_field_size = True
             else:
-                found = self.header_re.search(self.raw_text)
+                found = self.number_header_re.search(self.raw_text)
                 if found:
                     parameters = found.groupdict()
-                    self.get_generic_header(parameters)
+                    self.get_numeric_header(parameters)
                     self.is_header = True
+                    self.is_numeric = True
+                else:
+                    found = self.header_re.search(self.raw_text)
+                    if found:
+                        parameters = found.groupdict()
+                        self.get_generic_header(parameters)
+                        self.is_header = True
 
     def get_field_size(self, parameters: Dict[str, str]):
         '''Extract field size values.
@@ -348,6 +391,26 @@ class Header(object):
         self.x_value = float(parameters['x_value'].strip())
         self.y_value = float(parameters['y_value'].strip())
         self.unit = parameters.get('unit')
+
+    def get_dicom_offset(self, parameters: Dict[str, str]):
+        '''Extract field size values.
+        '''
+        offset_string = '(' + ', '.join(['{:3.1f} {}']*3) + ')'
+        self.name = parameters['name'].strip()
+        self.x_value = float(parameters['x_value'].strip())
+        self.y_value = float(parameters['y_value'].strip())
+        self.z_value = float(parameters['z_value'].strip())
+        self.x_unit = parameters['y_unit'].strip()
+        self.y_unit = parameters['y_unit'].strip()
+        self.z_unit = parameters['z_unit'].strip()
+        self.offset_string = offset_string.format(
+                self.x_value,
+                self.x_unit,
+                self.y_value,
+                self.y_unit,
+                self.z_value,
+                self.z_unit)
+
 
     def get_numeric_header(self, parameters: Dict[str, str]):
         '''Extract numeric header values.
@@ -374,7 +437,8 @@ def next_line(file: TextIO) -> str:
 
 
 def read_file_header(file: TextIO, text_data: Dict[str, str],
-                     stop_marker: Union[List[str], str]) -> Dict[str, str]:
+                     stop_marker: Union[List[str], str],
+                     step_back=False) -> Dict[str, str]:
     '''Read the header lines of an Eclipse Curve Export file.
     Add the header data to the text_data dictionary.
     '''
@@ -384,15 +448,16 @@ def read_file_header(file: TextIO, text_data: Dict[str, str],
         '''
         line_check = Header(line)
         if line_check.is_header:
-            if line_check.is_numeric:
+            if line_check.is_dicom_offset:
+                value = line_check.offset_string
+            elif line_check.is_numeric:
                 if line_check.unit:
                     #value = DataElement(line_check.value, line_check.unit)
-                    value = line_check.value
-                else:
-                    value = line_check.value
-                line_data = {line_check.name: value}
+                    pass
+                value = line_check.value
             else:
-                line_data = {line_check.name: line_check.value}
+                value = line_check.value
+            line_data = {line_check.name: value}
         else:
             line_data = None
         return line_data
@@ -401,11 +466,12 @@ def read_file_header(file: TextIO, text_data: Dict[str, str],
         stop_marker = [stop_marker]
     line = ''
     position = file.tell()
-    while any(mk  not in line for mk in stop_marker):
+    while all(mk  not in line for mk in stop_marker):
         position = file.tell()
         line = next_line(file)
         header_line = parse_header_line(line)
         if header_line:
             text_data.update(header_line)
-    file.seek(position)
+    if step_back:
+        file.seek(position)
     return text_data

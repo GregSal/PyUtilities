@@ -9,3 +9,7 @@ CodeGraphData
 __pycache__
 *.sln
 *.pyproj*
+*.pyproj
+*.sln
+*.code-workspace
+GUI_Management/GUI Management.code-workspace

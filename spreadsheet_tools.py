@@ -56,6 +56,12 @@ WorksheetInfo = Dict[str, str] # TODO Create a named tuple that defines Workshee
 Variables = TypeVar('Variables', List[str], str)
 TableSpan = TypeVar('TableSpan', int, str)
 
+# TODO make systematic steps for finding or saving a table
+# Set file:  select, open or create an excel file
+# Set sheet: Select or create an excel worksheet within a given file
+# Set table:  Identify a table range within a given file
+# Define WorkSheet and WorkBook named tuples
+
 class TableDef(NamedTuple):
     '''Table reference info.
     Attributes
@@ -103,7 +109,7 @@ def open_book(file_name: Path, new_file=False)->xw.Book:
         data_book = exel_app.books.open(str(file_name))
     elif new_file:
         data_book = exel_app.books.add()
-        data_book.save(str(file_name))
+#        data_book.save(str(file_name))
     else:
         raise FileNotFoundError('The file %s does not exist', file_name)
     return data_book

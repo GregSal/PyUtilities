@@ -151,7 +151,6 @@ def sort_dict(dict_data: Dict[str, Any],# FIXME Use Generic typing for Dict Valu
     Returns:
         List[Any] -- Sorted list of values.
         '''
-    # TODO Add sort_dict to data utilities
     data_list = list(dict_data.values())
     if sort_list:
         data_set = sorted(data_list, key=attrgetter(*sort_list))
@@ -265,6 +264,7 @@ def value_parse(value_string: str)->Value:
             The number as float,
             The unit as string
     '''
+    # TODO allow value_parse to identify units even when no space is present.
     try:
         (num, unit) = value_string.split(sep=' ', maxsplit=1)
     except (AttributeError, ValueError):
