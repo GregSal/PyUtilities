@@ -242,12 +242,14 @@ class Header(object):
         x_value (:obj:`float', optional): The x value of the field size
         y_value (:obj:`float', optional): The y value of the field size
     '''
-    def build_header_re():
+    @classmethod
+    def build_header_re(cls):
         '''Compile a regular expression for parsing a header string
         '''
-        delim = ':;'         # Possible value delimiters
-        name_chrs = ' ,='    # allowable name characters (besides letters)
-        val_chrs = ' ,=+-'   # allowable value characters (besides letters and numbers)
+        cls.delim = ':;'         # Possible value delimiters
+        cls.name_chrs = ' ,='    # allowable name characters (besides letters)
+        cls.val_chrs = ' ,=+-'   # allowable value characters (besides letters and numbers)
+
         header_name_ptn = (
             '^'                # beginning of string
             '\s*'              # possible space before the header name begins
@@ -328,20 +330,19 @@ class Header(object):
             )
         #ImageUserOrigin; User origin DICOM offset = (0.00cm, -6.92cm, 0.00cm)
         # Can't use format method because there are {} in the re expression
-        name_ptn = header_name_ptn.replace('{delim}', delim)
-        name_ptn = name_ptn.replace('{chrs}', name_chrs)
-        val_ptn = generic_value_ptn.replace('{chrs}', val_chrs)
+        name_ptn = header_name_ptn.replace('{delim}', cls.delim)
+        name_ptn = name_ptn.replace('{chrs}', cls.name_chrs)
+        val_ptn = generic_value_ptn.replace('{chrs}', cls.val_chrs)
         # Compile expressions
-        header_re = re.compile(name_ptn + val_ptn)
-        number_header_re = re.compile(name_ptn + number_value_ptn)
-        field_size_header_re = re.compile(name_ptn + field_size_value_ptn)
-        Dicom_offset_header_re = re.compile(name_ptn + DICOM_offset_value_ptn)
-        return (header_re, number_header_re, field_size_header_re, Dicom_offset_header_re)
-    (header_re, number_header_re, field_size_header_re, Dicom_offset_header_re) = build_header_re()
+        cls.header_re = re.compile(name_ptn + val_ptn)
+        cls.number_header_re = re.compile(name_ptn + number_value_ptn)
+        cls.field_size_header_re = re.compile(name_ptn + field_size_value_ptn)
+        cls.Dicom_offset_header_re = re.compile(name_ptn + DICOM_offset_value_ptn)
 
     def __init__(self, line: str):
         '''Scan a string for date and time elements
         '''
+        self.build_header_re()
         self.raw_text = line
         self.is_header = False
         self.is_numeric = False
@@ -357,32 +358,38 @@ class Header(object):
     def parse_header_string(self):
         '''Parse a single line to extract date parameters.
         '''
-        found = self.Dicom_offset_header_re.search(self.raw_text)
-        if found:
-            parameters = found.groupdict()
-            self.get_dicom_offset(parameters)
-            self.is_header = True
-            self.is_dicom_offset = True
+        if self.raw_text.count(self.delim) > 2:
+            self.parse_table_row()
         else:
-            found = self.field_size_header_re.search(self.raw_text)
+            found = self.Dicom_offset_header_re.search(self.raw_text)
             if found:
                 parameters = found.groupdict()
-                self.get_field_size(parameters)
+                self.get_dicom_offset(parameters)
                 self.is_header = True
-                self.is_field_size = True
+                self.is_dicom_offset = True
             else:
-                found = self.number_header_re.search(self.raw_text)
+                found = self.field_size_header_re.search(self.raw_text)
                 if found:
                     parameters = found.groupdict()
-                    self.get_numeric_header(parameters)
+                    self.get_field_size(parameters)
                     self.is_header = True
-                    self.is_numeric = True
+                    self.is_field_size = True
                 else:
-                    found = self.header_re.search(self.raw_text)
+                    found = self.number_header_re.search(self.raw_text)
                     if found:
                         parameters = found.groupdict()
-                        self.get_generic_header(parameters)
+                        self.get_numeric_header(parameters)
                         self.is_header = True
+                        self.is_numeric = True
+                    else:
+                        found = self.header_re.search(self.raw_text)
+                        if found:
+                            parameters = found.groupdict()
+                            self.get_generic_header(parameters)
+                            self.is_header = True
+
+    def parse_table_row(self):
+        self.value = self.raw_text.split(self.delim)
 
     def get_field_size(self, parameters: Dict[str, str]):
         '''Extract field size values.
@@ -475,3 +482,74 @@ def read_file_header(file: TextIO, text_data: Dict[str, str],
     if step_back:
         file.seek(position)
     return text_data
+
+
+def read_text_dict(file: TextIO, text_data: Dict[str, str] = None,
+                     stop_marker: Union[List[str], str] = '',
+                     step_back=False) -> Dict[str, str]:
+    '''Read the text lines and convert to dictionary items.
+    Stop reading when stop_marker is found.
+    return a text_data dictionary.
+    '''
+    def parse_text_line(line: str) -> Dict[str, str]:
+        '''Return dictionary values from line.
+        If line does not contain appropriate format, return None
+        '''
+        line_check = Header(line)
+        if line_check.is_header:
+            if line_check.is_dicom_offset:
+                value = line_check.offset_string
+            elif line_check.is_numeric:
+                if line_check.unit:
+                    #value = DataElement(line_check.value, line_check.unit)
+                    pass
+                value = line_check.value
+            else:
+                value = line_check.value
+            line_data = {line_check.name: value}
+        else:
+            line_data = None
+        return line_data
+
+    if not text_data:
+        text_data = dict()
+    if not true_iterable(stop_marker):
+        stop_marker = [stop_marker]
+    line = ''
+    position = file.tell()
+    while all(mk  not in line for mk in stop_marker):
+        position = file.tell()
+        try:
+            line = next_line(file)
+        except EOF:
+            break
+        header_line = parse_text_line(line)
+        if header_line:
+            text_data.update(header_line)
+    if step_back:
+        file.seek(position)
+    return text_data
+
+def read_text_table(file: TextIO, stop_marker: Union[List[str], str] = '',
+                    step_back=False) -> List[List[str]]:
+    '''Read the text lines and convert to a table.
+    Stop reading when stop_marker is found.
+    return a list of lists.
+    '''
+    table = list()
+    if not true_iterable(stop_marker):
+        stop_marker = [stop_marker]
+    line = ''
+    position = file.tell()
+    while all(mk  not in line for mk in stop_marker):
+        position = file.tell()
+        try:
+            line = next_line(file)
+        except EOF:
+            break
+        if line.count(Header.delim) > 2:
+            row = line.split(Header.delim)
+            table.append(row)
+    if step_back:
+        file.seek(position)
+    return table

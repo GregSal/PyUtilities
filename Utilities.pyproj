@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{167f98ff-f940-4216-a4b3-0ed2df5e40cd}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>GUI_Management\gui_xml_builder.py</StartupFile>
+    <StartupFile>read_printout.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,8 +22,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="data_utilities.py" />
+    <Compile Include="file_dialogue.py" />
     <Compile Include="file_utilities.py" />
     <Compile Include="logging_tools.py" />
+    <Compile Include="read_printout.py" />
     <Compile Include="spreadsheet_tools.py" />
     <Compile Include="Testing\file_utilities_tests - Copy.py" />
     <Compile Include="Testing\file_utilities_tests.py" />
@@ -35,6 +37,7 @@
     <Compile Include="Testing\misc_testing\__init__.py" />
     <Compile Include="Testing\test_files_setup.py" />
     <Compile Include="Testing\__init__.py" />
+    <Compile Include="text_file_utilities.py" />
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
@@ -59,6 +62,7 @@
     <Folder Include="Testing\Test Data\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include=".gitignore" />
     <Content Include="Testing\misc_testing\__pycache__\data_utilities_tests.cpython-37.pyc" />
     <Content Include="Testing\misc_testing\__pycache__\Spreadsheet_tool_tests.cpython-37.pyc" />
     <Content Include="Testing\misc_testing\__pycache__\test_range.cpython-36-PYTEST.pyc" />
