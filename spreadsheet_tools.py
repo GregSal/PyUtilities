@@ -304,13 +304,17 @@ def get_column_range(variable: str, **table: TableInfo)->xw.Range:
 
 
 def load_data_table(index_variables: List[str] = None, sort: bool = True,
-                    header: int = 1, **table: TableInfo)->pd.DataFrame:
+                    rename: Dict[str, str] = None, header: int = 1,
+                    **table: TableInfo)->pd.DataFrame:
     '''Extract the requested data table from the worksheet.
      Args:
         index_variables: The name of the columns to be used as the DataFrame
             Index. Default is None (no index).
-        sort: If True the DataFrame will be sorted on the index.  If false do
+        sort: If True the DataFrame will be sorted on the index. If false no
             sorting is done.  Default is True.
+        rename: Dictionary of column name replacements
+            Key is is old column Name, value is new column name. 
+            Default is None.
         header: the number of header rows at the top of the excel table.
             Default is 1.
         table: The table reference info supplied to get_table_range.
@@ -334,6 +338,8 @@ def load_data_table(index_variables: List[str] = None, sort: bool = True,
     table_range = get_table_range(**table)
     data_table = table_range.options(pd.DataFrame, header=header).value
     data_table.reset_index(inplace=True)
+    if rename:
+        data_table.rename(inplace=True, columns=rename)
     if index_variables:
         data_table.set_index(index_variables, inplace=True)
         if sort:
@@ -610,7 +616,7 @@ def append_data_sheet(data_table: pd.DataFrame, starting_cell: str = 'A1',
                 in the specified workbook if it does not already exist.
                 Default is True.
             replace {bool, optional} -- If the specified worksheet already
-                exists and new_sheet is True, return the existing worksheet.
+                exists and new_sheet is True, replace the existing worksheet.
                 Default is True.
     '''
     new_sheet = select_sheet(**worksheet)

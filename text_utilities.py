@@ -242,14 +242,13 @@ class Header(object):
         x_value (:obj:`float', optional): The x value of the field size
         y_value (:obj:`float', optional): The y value of the field size
     '''
+    delim = ':;'         # Possible value delimiters
+    name_chrs = ' ,='    # allowable name characters (besides letters)
+    val_chrs = ' ,=+-'   # allowable value characters (besides letters and numbers)
     @classmethod
     def build_header_re(cls):
         '''Compile a regular expression for parsing a header string
         '''
-        cls.delim = ':;'         # Possible value delimiters
-        cls.name_chrs = ' ,='    # allowable name characters (besides letters)
-        cls.val_chrs = ' ,=+-'   # allowable value characters (besides letters and numbers)
-
         header_name_ptn = (
             '^'                # beginning of string
             '\s*'              # possible space before the header name begins
@@ -486,7 +485,7 @@ def read_file_header(file: TextIO, text_data: Dict[str, str],
 
 def read_text_dict(file: TextIO, text_data: Dict[str, str] = None,
                      stop_marker: Union[List[str], str] = '',
-                     step_back=False) -> Dict[str, str]:
+                     step_back=False, header_cls=Header) -> Dict[str, str]:
     '''Read the text lines and convert to dictionary items.
     Stop reading when stop_marker is found.
     return a text_data dictionary.
@@ -495,7 +494,7 @@ def read_text_dict(file: TextIO, text_data: Dict[str, str] = None,
         '''Return dictionary values from line.
         If line does not contain appropriate format, return None
         '''
-        line_check = Header(line)
+        line_check = header_cls(line)
         if line_check.is_header:
             if line_check.is_dicom_offset:
                 value = line_check.offset_string
@@ -531,7 +530,7 @@ def read_text_dict(file: TextIO, text_data: Dict[str, str] = None,
     return text_data
 
 def read_text_table(file: TextIO, stop_marker: Union[List[str], str] = '',
-                    step_back=False) -> List[List[str]]:
+                    step_back=False, delim=';') -> List[List[str]]:
     '''Read the text lines and convert to a table.
     Stop reading when stop_marker is found.
     return a list of lists.
@@ -547,8 +546,8 @@ def read_text_table(file: TextIO, stop_marker: Union[List[str], str] = '',
             line = next_line(file)
         except EOF:
             break
-        if line.count(Header.delim) > 2:
-            row = line.split(Header.delim)
+        if line.count(delim) > 2:
+            row = line.split(delim)
             table.append(row)
     if step_back:
         file.seek(position)
