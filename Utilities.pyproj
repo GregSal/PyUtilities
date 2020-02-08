@@ -25,7 +25,7 @@
     <Compile Include="file_dialogue.py" />
     <Compile Include="file_utilities.py" />
     <Compile Include="logging_tools.py" />
-    <Compile Include="read_printout.py" />
+    <Compile Include="Testing\Test Data\re_test.py" />
     <Compile Include="spreadsheet_tools.py" />
     <Compile Include="Testing\file_utilities_tests - Copy.py" />
     <Compile Include="Testing\file_utilities_tests.py" />
@@ -37,7 +37,7 @@
     <Compile Include="Testing\misc_testing\__init__.py" />
     <Compile Include="Testing\test_files_setup.py" />
     <Compile Include="Testing\__init__.py" />
-    <Compile Include="text_file_utilities.py" />
+    <Compile Include="text_utilities.py" />
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
