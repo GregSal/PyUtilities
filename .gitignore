@@ -13,3 +13,6 @@ __pycache__
 *.sln
 *.code-workspace
 GUI_Management/GUI Management.code-workspace
+/GUI_Management/.vs/GUI_Management/v16/.suo
+/GUI_Management/.vs/slnx.sqlite
+/GUI_Management/.vs/VSWorkspaceState.json
