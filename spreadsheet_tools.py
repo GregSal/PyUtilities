@@ -6,7 +6,7 @@ Built on XLWings and pandas.
 Data Types
     TableInfo (dict): A dictionary referencing an excel table.
         It contains the following items:
-            worksheet (xl.Sheet): The excel worksheet containing the table.
+            data_sheet (xl.Sheet): The excel worksheet containing the table.
             starting_cell (str, optional): the top right cell in the excel
                 table.
             columns (TableSpan, optional): The number of columns in the table.
@@ -111,12 +111,12 @@ def open_book(file_name: Path, new_file=False)->xw.Book:
         data_book = exel_app.books.add()
 #        data_book.save(str(file_name))
     else:
-        raise FileNotFoundError('The file %s does not exist', file_name)
+        raise FileNotFoundError(f'The file {file_name} does not exist', file_name)
     return data_book
 
 
 def get_data_sheet(workbook: xw.Book, sheet_name: str,
-                   new_sheet=True, replace=True)->xw.Sheet:
+                   new_sheet=True, replace=True, clear=False)->xw.Sheet:
     '''Returns the specified excel sheet from the given workbook.
     Args:
         workbook: An XLWings Book object pointing to the Excel workbook that
@@ -127,6 +127,8 @@ def get_data_sheet(workbook: xw.Book, sheet_name: str,
         replace: If the specified worksheet already exists
             and new_sheet is True, return the existing worksheet.
             Default is True.
+        clear: Clear the contents of the worksheet before returning it. 
+            Default is False.
     Raises:
         ValueError
     Returns:
@@ -142,6 +144,8 @@ def get_data_sheet(workbook: xw.Book, sheet_name: str,
         data_sheet = workbook.sheets.add(sheet_name)
     else:
         raise ValueError('Sheet {} does not exist'.format(sheet_name))
+    if clear:
+        data_sheet.clear_contents()
     return data_sheet
 
 
@@ -345,6 +349,35 @@ def load_data_table(index_variables: List[str] = None, sort: bool = True,
         if sort:
             data_table.sort_index(inplace=True)
     return data_table
+
+
+def load_data_list(transpose=True, header: int = 1,
+                   **table: TableInfo)->List[Any]:
+    '''Extract the requested data list from the worksheet.
+     Args:
+        transpose {bool} -- Orientation of the list. If True, the list is column wise.
+        header: the number of header rows at the top of the excel list.
+            Default is 1.
+        table: The table reference info supplied to get_table_range.
+            Must contain:
+                data_sheet: The excel worksheet containing the table.
+            Optionally contains:
+                starting_cell: the top right cell in the excel table.
+                columns: The number of columns in the table.  If 'expand',
+                    the table will include all columns left of starting_cell
+                    until the first empty cell is encountered.
+                rows: The number of rows in the table.  If 'expand', the
+                    table will include all rows below the starting_cell until
+                    the first empty cell is encountered.
+                header: The number of variable header rows. Default is 1.
+                    To include the top row in the range selection set header
+                    to 0.
+    Returns:
+        A list containing the data from the Excel table.
+    '''
+    table_range = get_table_range(**table)
+    data_list = table_range.options(transpose=True).value
+    return data_list
 
 
 def load_definitions(data_sheet: xw.Sheet, starting_cell='A1',
