@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Created with Liquid Studio 2019 (https://www.liquid-technologies.com) -->
+<xs:schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="FilePathConfig">
+    <!--This file contains configuation data-->
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="DefaultPaths">
+          <!--This element Contains default files and directories-->
+          <xs:complexType>
+            <xs:sequence>
+            <xs:choice minOccurs="0"  maxOccurs="unbounded" >
+              <xs:element minOccurs="0"  maxOccurs="unbounded" name="Directory" />       
+              <!--A Directory definition-->
+                <xs:choice minOccurs="1" maxOccurs="1" >
+                  <xs:sequence>
+                    <!--Full path as a Base directory and a subdirectory of the base directory-->
+                    <xs:group ref="PathGroup" />            
+                  </xs:sequence>
+                  <!--The directory as a single full path-->
+                  <xs:group ref="FullPathGroup" />
+                </xs:choice>
+              <xs:element minOccurs="0" maxOccurs="unbounded" name="File" />
+              <!--A File definition-->
+              <xs:sequence>
+              <xs:choice minOccurs="1" maxOccurs="1" >
+                <xs:sequence>
+                  <!--Full path as a Base directory, a subdirectory of the base directory, and a filename with extension-->
+                  <xs:group ref="PathGroup" />
+                  <xs:element name="FileName"  minOccurs="1" maxOccurs="1"  type="xs:normalizedString"/>
+                </xs:sequence>
+                <xs:group ref="FullPathGroup" />
+              </xs:choice>
+              <xs:element name="FileTypes">
+                <xs:complexType>
+                  <xs:sequence minOccurs="0" maxOccurs="1">
+                    <xs:element name="FileType"  minOccurs="0" maxOccurs="unbounded" type="xs:token" />
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              </xs:sequence>
+            </xs:choice>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:group name="PathGroup">
+    <!--A path from a combination of a Base directory and a subdirectory of the base directory-->
+    <xs:sequence>
+    <xs:element name="BaseDirectory"  minOccurs="1" maxOccurs="1" type="xs:anyURI"/>
+    <xs:element name="Folder" minOccurs="0" maxOccurs="1"  type="xs:normalizedString" />
+    </xs:sequence>
+  </xs:group>
+  <xs:group name="FullPathGroup">
+    <!--A path from a combination of a Base directory and a subdirectory of the base directory-->
+    <xs:sequence>
+      <xs:element name="FullPath"   minOccurs="1" maxOccurs="1" type="xs:anyURI"/>
+    </xs:sequence>
+  </xs:group>
+</xs:schema>
