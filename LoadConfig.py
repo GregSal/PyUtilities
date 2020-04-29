@@ -3,20 +3,93 @@
 
 
 #%% imports etc.
-from typing import Any, Dict, List
-from copy import deepcopy
+# from typing import Any, Dict, List
+# from copy import deepcopy
 from pathlib import Path
-from functools import partial
-from itertools import product
-import re
+# from functools import partial
+# from itertools import product
+# import re
 import xml.etree.ElementTree as ET
-from pickle import dump, load
+# from pickle import dump, load
 
-import pandas as pd
-import xlwings as xw
-import PySimpleGUI as sg
-from data_utilities import true_iterable
-from spreadsheet_tools import get_data_sheet, load_table
+# import pandas as pd
+# import xlwings as xw
+# import PySimpleGUI as sg
+# from data_utilities import true_iterable
+# from spreadsheet_tools import get_data_sheet, load_table
+
+
+def load_config(base_path: Path, config_file_name: str)->ET.Element:
+    '''Load the XML configuration file
+    Arguments:
+        base_path {Path} -- The directory containing the config file.
+        config_file_name {str} -- The name of configuration file.
+    Returns:
+        ET.Element -- The root element of the XML config data
+    '''
+    config_path = base_path / config_file_name
+    config_tree = ET.parse(config_path)
+    config = config_tree.getroot()
+    return config
+
+
+def get_path(default_paths, path_name):
+    x_path = f'.//*[@name="{path_name}"]'
+    path_elmt = default_paths.find(x_path)
+    full_path_elm =  path_elmt.find('FullPath')
+    if full_path_elm is not None:
+        full_path = Path(full_path_elm).resolve()
+        return full_path
+    base_dir_txt = path_elmt.find('BaseDirectory').text
+    base_dir = Path(base_dir_txt).resolve()
+    sub_dir = path_elmt.find('Folder').text
+    if sub_dir is not None:
+        dir_path = base_dir / sub_dir
+    else:
+        dir_path = base_dir
+    if 'File' in path_elmt.tag:
+        file_name = path_elmt.find('FileName').text
+        full_path = dir_path / file_name
+        full_path = full_path.resolve()
+        return full_path
+    full_path = dir_path.resolve()
+    return full_path
+
+
+#%% Main
+def main():
+    '''Test
+    '''
+    # Load Config File Data
+    base_path = Path.cwd()
+    config_file = 'FilePaths.xml'
+    config = load_config(base_path, config_file)
+    default_paths = config.find('DefaultPaths')
+    get_path(default_paths, "DataDir")
+
+
+
+
+    SQL_PATH = Path.cwd() / r'..\SQL'
+    SQL_PATH = SQL_PATH.resolve()
+    source_path = Path.cwd() / r'..'
+    source_path = source_path.resolve()
+    reference_path = source_path / 'Reference Data'
+    template_path = source_path / 'Templates'
+    data_path = Path(r'L:\temp\Plan Checking Temp')
+    file_paths = dict(
+        starting_path = data_path,
+        sql_path = source_path / 'SQL',
+        template_file_path = template_path / 'DVH Check Template.xlsx',
+        save_data_file_name = data_path / 'plan_check_data.xlsx',
+        save_form_file_name = data_path / 'DVHCheck.xlsx'
+        )
+
+
+    window = make_window()
+    file_frame_list = file_selection_frame(**file_paths)
+    window.extend_layout(window['File Selection'], file_frame_list)
+
 
 
 
@@ -66,20 +139,6 @@ class IconPaths(dict):
 
 #%% Initialization Methods
 # Question use file utilities functions for path and file name checking/completion?
-def load_config(base_path: Path, config_file_name: str)->ET.Element:
-    '''Load the XML configuration file
-    Arguments:
-        base_path {Path} -- The directory containing the config file.
-        config_file_name {str} -- The name of configuration file.
-    Returns:
-        ET.Element -- The root element of the XML config data
-    '''
-    config_path = base_path / config_file_name
-    config_tree = ET.parse(config_path)
-    config = config_tree.getroot()
-    return config
-
-
 def save_config(updated_config: ET.Element,
                 base_path: Path, config_file_name: str):
     '''Saves the XML configuration file
@@ -266,39 +325,6 @@ def drop_units(text: str)->float:
             return float(find_num['value'])
         else:
             return text
-
-
-
-#%% Main
-def main():
-    '''Test
-    '''
-    # Load Config File Data
-    base_path = Path.cwd()
-    test_path = base_path / 'GUI\Testing'
-    config_file = 'PlanEvaluationConfig.xml'
-    config = load_config(base_path, config_file)
-    
-    
-    SQL_PATH = Path.cwd() / r'..\SQL'
-    SQL_PATH = SQL_PATH.resolve()
-    source_path = Path.cwd() / r'..'
-    source_path = source_path.resolve()
-    reference_path = source_path / 'Reference Data'
-    template_path = source_path / 'Templates'
-    data_path = Path(r'L:\temp\Plan Checking Temp')
-    file_paths = dict(
-        starting_path = data_path,
-        sql_path = source_path / 'SQL',
-        template_file_path = template_path / 'DVH Check Template.xlsx',
-        save_data_file_name = data_path / 'plan_check_data.xlsx',
-        save_form_file_name = data_path / 'DVHCheck.xlsx'
-        )
-        
-        
-    window = make_window()
-    file_frame_list = file_selection_frame(**file_paths)
-    window.extend_layout(window['File Selection'], file_frame_list)
 
 
 

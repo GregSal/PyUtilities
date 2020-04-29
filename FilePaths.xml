@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<FilePathConfig>
+  <DefaultPaths>
+    <Directory name="DataDir">
+      <BaseDirectory>.</BaseDirectory>
+      <Folder>Data</Folder>
+    </Directory>
+    <Directory name="SaveDir">
+      <BaseDirectory>..</BaseDirectory>
+      <Folder>Results</Folder>
+    </Directory>
+    <File name="Template">
+      <BaseDirectory>.</BaseDirectory>
+      <Folder>Data</Folder>
+      <FileName>template.xlsx</FileName>
+    </File>
+    <File name="SaveFile">
+      <FullPath>..\Results\output.xlsx</FullPath>
+      <FileTypes>
+        <FileTypeGroup name="Excel Files">
+          <FileType>.xlsx</FileType>
+          <FileType>.xls</FileType>
+        </FileTypeGroup>
+      </FileTypes>
+    </File>
+  </DefaultPaths>
+</FilePathConfig>
