@@ -6,7 +6,7 @@ Built on XLWings and pandas.
 Data Types
     TableInfo (dict): A dictionary referencing an excel table.
         It contains the following items:
-            worksheet (xl.Sheet): The excel worksheet containing the table.
+            data_sheet (xl.Sheet): The excel worksheet containing the table.
             starting_cell (str, optional): the top right cell in the excel
                 table.
             columns (TableSpan, optional): The number of columns in the table.
@@ -111,12 +111,12 @@ def open_book(file_name: Path, new_file=False)->xw.Book:
         data_book = exel_app.books.add()
 #        data_book.save(str(file_name))
     else:
-        raise FileNotFoundError('The file %s does not exist', file_name)
+        raise FileNotFoundError(f'The file {file_name} does not exist', file_name)
     return data_book
 
 
 def get_data_sheet(workbook: xw.Book, sheet_name: str,
-                   new_sheet=True, replace=True)->xw.Sheet:
+                   new_sheet=True, replace=True, clear=False)->xw.Sheet:
     '''Returns the specified excel sheet from the given workbook.
     Args:
         workbook: An XLWings Book object pointing to the Excel workbook that
@@ -127,6 +127,8 @@ def get_data_sheet(workbook: xw.Book, sheet_name: str,
         replace: If the specified worksheet already exists
             and new_sheet is True, return the existing worksheet.
             Default is True.
+        clear: Clear the contents of the worksheet before returning it.
+            Default is False.
     Raises:
         ValueError
     Returns:
@@ -142,6 +144,8 @@ def get_data_sheet(workbook: xw.Book, sheet_name: str,
         data_sheet = workbook.sheets.add(sheet_name)
     else:
         raise ValueError('Sheet {} does not exist'.format(sheet_name))
+    if clear:
+        data_sheet.clear_contents()
     return data_sheet
 
 
@@ -195,26 +199,53 @@ def create_output_file(file_name: FileName, sub_dir: str = None,
 
 def save_data_to_sheet(data_table: pd.DataFrame, workbook: xw.Book,
                        sheet_name: str = 'Sheet A', starting_cell: str = 'A1',
-                       add_index=False, new_sheet=True, replace=True)->xw.Sheet:
+                       add_index=False, add_header=True, new_sheet=True,
+                       replace=True)->xw.Sheet:
     '''Adds the given data to a new data sheet.
     Args:
         data_table {pd.DataFrame} -- The Pandas DataFrame data to be added.
         starting_cell {str} -- The top right cell in the excel table.
         add_index {bool} -- Whether to include the DataFrame index in the
             spreadsheet table.  Default is False.
-        workbook {xw.Book} -- An XLWings Book object pointing to an open Excel 
+        workbook {xw.Book} -- An XLWings Book object pointing to an open Excel
             workbook.
         sheet_name (str): The name of the desired worksheet.
         starting_cell: {optional, str} -- The top right cell of the table in
             excel, in "A1" format. Default is "A1".
-        add_index (bool): Include the DataFrame index in the spreadsheet. Default is True.
+        add_index (bool): Include the DataFrame index in the spreadsheet.
+            Default is False.
+        add_header (bool): Include the DataFrame Column headers in the
+            spreadsheet. Default is True.
         new_sheet (bool): If True, a new sheet will be created in the
             specified workbook if it does not already exist. Default is True.
         replace (bool): If the specified worksheet already exists
             and new_sheet is True, return the existing worksheet. Default is True.
     '''
     worksheet = get_data_sheet(workbook, sheet_name, new_sheet, replace)
-    worksheet.range(starting_cell).options(index=add_index).value = data_table
+    worksheet.range(starting_cell).options(
+        index=add_index, header=add_header).value = data_table
+    return worksheet
+
+
+def save_dict_to_sheet(dict_data: dict, workbook: xw.Book,
+                       sheet_name: str = 'Sheet A', starting_cell: str = 'A1',
+                       new_sheet=True, replace=True)->xw.Sheet:
+    '''Adds the given data to a new data sheet.
+    Args:
+        dict_data {dict} -- The dictionary with the data to be added.
+        starting_cell {str} -- The top right cell in the excel table.
+        workbook {xw.Book} -- An XLWings Book object pointing to an open Excel
+            workbook.
+        sheet_name (str): The name of the desired worksheet.
+        starting_cell: {optional, str} -- The top right cell of the table in
+            excel, in "A1" format. Default is "A1".
+        new_sheet (bool): If True, a new sheet will be created in the
+            specified workbook if it does not already exist. Default is True.
+        replace (bool): If the specified worksheet already exists
+            and new_sheet is True, return the existing worksheet. Default is True.
+    '''
+    worksheet = get_data_sheet(workbook, sheet_name, new_sheet, replace)
+    worksheet.range(starting_cell).value = dict_data
     return worksheet
 
 
@@ -252,7 +283,7 @@ def get_table_range(data_sheet: xw.Sheet, starting_cell: str = 'A1',
     end_range = end_range.offset(row_offset=num_rows)
     selection_range = xw.Range(start_range, end_range)
     return selection_range
-    
+
 
 def get_variable_list(header: int = 1, **table: TableInfo)->List[str]:
     '''Returns a list of header variables in the row of starting cell.
@@ -313,7 +344,7 @@ def load_data_table(index_variables: List[str] = None, sort: bool = True,
         sort: If True the DataFrame will be sorted on the index. If false no
             sorting is done.  Default is True.
         rename: Dictionary of column name replacements
-            Key is is old column Name, value is new column name. 
+            Key is is old column Name, value is new column name.
             Default is None.
         header: the number of header rows at the top of the excel table.
             Default is 1.
@@ -345,6 +376,35 @@ def load_data_table(index_variables: List[str] = None, sort: bool = True,
         if sort:
             data_table.sort_index(inplace=True)
     return data_table
+
+
+def load_data_list(transpose=True, header: int = 1,
+                   **table: TableInfo)->List[Any]:
+    '''Extract the requested data list from the worksheet.
+     Args:
+        transpose {bool} -- Orientation of the list. If True, the list is column wise.
+        header: the number of header rows at the top of the excel list.
+            Default is 1.
+        table: The table reference info supplied to get_table_range.
+            Must contain:
+                data_sheet: The excel worksheet containing the table.
+            Optionally contains:
+                starting_cell: the top right cell in the excel table.
+                columns: The number of columns in the table.  If 'expand',
+                    the table will include all columns left of starting_cell
+                    until the first empty cell is encountered.
+                rows: The number of rows in the table.  If 'expand', the
+                    table will include all rows below the starting_cell until
+                    the first empty cell is encountered.
+                header: The number of variable header rows. Default is 1.
+                    To include the top row in the range selection set header
+                    to 0.
+    Returns:
+        A list containing the data from the Excel table.
+    '''
+    table_range = get_table_range(**table)
+    data_list = table_range.options(transpose=True).value
+    return data_list
 
 
 def load_definitions(data_sheet: xw.Sheet, starting_cell='A1',
@@ -713,3 +773,53 @@ def fill_gaps(variable_name: str, fill_value=None, **table):  # ->NoReturn
                 value = fill_value
         row_value_list.append(value)
     data_range.value = row_value_list
+
+def load_table(workbook: xw.Book, worksheet: str, starting_cell='A1',
+               columns='expand', rows='expand')->pd.DataFrame:
+    '''Load an excel table
+    workbook: The excel workbook containing the table.
+    worksheet: The name of the sheet containing the table,
+    starting_cell: the top right cell in the excel table. default 'A1',
+    columns: The number of columns in the table. default 'expand',
+    rows: The number of rows in the table. default 'expand'
+    Returns:
+    Pd.DataFrame -- The data in the specified Excel region
+    '''
+    table_info = {'starting_cell': starting_cell,
+                  'columns': columns,
+                  'rows': rows}
+    sheet = get_data_sheet(workbook, worksheet, new_sheet=False, replace=False)
+    table = load_data_table(data_sheet=sheet, **table_info)
+    return table
+
+
+def load_list(workbook: xw.Book, sheet_name: str,
+              starting_cell: str = 'A1',
+              columns: TableSpan = 1, rows: TableSpan = 'expand')->List[Any]:
+    '''Load a list of items from an excel spreadsheet.
+    Args:
+        workbook: xw.Book -- The excel workbook containing the table.
+        sheet_name: str -- The name of the worksheet containing the table.
+                           Default is 'Condition Lists',
+        starting_cell: str -- The top right cell in the excel table.
+                              Default is 'A1'.
+        columns: TableSpan -- The number of columns in the table.  If 'expand',
+                              the table will include all columns left of
+                              starting_cell until the first empty cell is
+                              encountered. Default is 1
+        rows: TableSpan -- The number of rows in the table.  If 'expand', the
+                           table will include all rows below the starting_cell
+                           until the first empty cell is encountered.
+                           Default is 'expand'
+    Returns: List[Any]
+        A list containing the data from the Excel table.
+    '''
+    table_info = {'starting_cell': starting_cell,
+                  'columns': columns,
+                  'rows': rows}
+    sheet = get_data_sheet(workbook, sheet_name, new_sheet=False,
+                           replace=False)
+    new_list = load_data_list(data_sheet=sheet, **table_info)
+    return new_list
+
+
