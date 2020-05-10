@@ -24,6 +24,7 @@
     <Compile Include="data_utilities.py" />
     <Compile Include="file_dialogue.py" />
     <Compile Include="file_utilities.py" />
+    <Compile Include="LoadConfig.py" />
     <Compile Include="logging_tools.py" />
     <Compile Include="Testing\Test Data\re_test.py" />
     <Compile Include="spreadsheet_tools.py" />
@@ -63,6 +64,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
+    <Content Include="FilePathConfig.xsd" />
+    <Content Include="FilePaths.xml" />
     <Content Include="Testing\misc_testing\__pycache__\data_utilities_tests.cpython-37.pyc" />
     <Content Include="Testing\misc_testing\__pycache__\Spreadsheet_tool_tests.cpython-37.pyc" />
     <Content Include="Testing\misc_testing\__pycache__\test_range.cpython-36-PYTEST.pyc" />
