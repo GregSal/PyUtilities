@@ -1,5 +1,5 @@
 import unittest
-from Tools.data_utilities import *
+from data_utilities import *
 
 class Test_value2num(unittest.TestCase):
     def test_value2num_SSD(self):
@@ -16,7 +16,8 @@ class Test_value2num(unittest.TestCase):
         number = value2num(value)
         self.assertEqual(number, 0.5)
 
-    @unittest.skip("Not Implimented")    def test_value2num_percent(self):
+    @unittest.skip("Not Implimented")
+    def test_value2num_percent(self):
         '''Test that value2num works with percent
         '''
         value = '0.60%'

@@ -1,4 +1,4 @@
-from Tools.spreadsheet_tools import *
+from spreadsheet_tools import *
 
 
 parameter_sheet_info = dict(file_name='Profile Parameter analysis.xlsx',
