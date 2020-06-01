@@ -5,6 +5,7 @@
 .mypy_cache/*
 .vs/*
 .vscode/*
+.spyproject
 CodeGraphData
 __pycache__
 *.sln
@@ -13,3 +14,4 @@ __pycache__
 *.sln
 *.code-workspace
 GUI_Management/GUI Management.code-workspace
+*.vs
