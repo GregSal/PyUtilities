@@ -906,6 +906,7 @@ class CustomVariableSet(OrderedDict):
     variable_definitions = list() # type: List[Dict[str, Any]]
     defaults = {'required': True, 'on_update': None}
     logger = logging_tools.config_logger(level='WARNING')
+
     def __init__(self, variable_definitions: List[Dict[str, Any]] = None, **variable_values):
         '''Create a new instance of the CustomVariableSet.
          Arguments:
@@ -929,10 +930,10 @@ class CustomVariableSet(OrderedDict):
         ]
 
        '''
-       #FIXME add ability to pass new variable definitions to init
        #FIXME variable_values should only pass values and not set other attributes
         super().__init__()
-#append passed variable definitions to class variable definition and pass to define_variables
+        if variable_definitions:
+            self.variable_definitions.extend(variable_definitions)
         self.define_variables()
         remaining_items = self.initialize_variables(variable_values)
         self.update(remaining_items)
