@@ -23,10 +23,8 @@ import time
 from pathlib import Path
 from collections.abc import Iterable
 from typing import Dict, Union
-import pandas as pd
 
 
-Data = pd.DataFrame
 PathInput = Union[Path, str]
 
 
