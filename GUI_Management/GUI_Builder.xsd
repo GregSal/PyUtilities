@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<<<<<<< HEAD
 <xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
   <xs:include schemaLocation="Tkinter_GUI.xsd" />
   <xs:complexType name="VariableType">
@@ -252,6 +253,364 @@ Examples are Frame, LabelFrame and Canvas</xs:documentation>
         <xs:sequence>
           <xs:element minOccurs="0" name="GridConfigure" type="GridConfigureType" />
           <xs:element minOccurs="0" maxOccurs="1" ref="WidgetSet" />
+=======
+<xs:schema attributeFormDefault="unqualified"
+           elementFormDefault="qualified"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:include schemaLocation=".\Tkinter_GUI.xsd" />
+  <!--For object Reference:
+  T::{tk, ttk}.{widget name}
+  G::{global function or object}
+  V::{variable name}
+  W::{Widget or Window name}
+  C::{Command Name}
+  I::{Image name}-->
+  <xs:element name="GuiDefinition">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0"
+                    maxOccurs="1"
+                    name="VariableSet">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element minOccurs="1"
+                          maxOccurs="unbounded"
+                          name="Variable"
+                          type="VariableType" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element minOccurs="0"
+                    maxOccurs="1"
+                    name="ImageSet">
+          <xs:complexType>
+            <xs:choice minOccurs="1"
+                       maxOccurs="unbounded">
+              <xs:element name="PhotoImage">
+                <xs:complexType>
+                  <xs:attribute name="name"
+                                type="xs:string"
+                                use="required"/>
+                  <xs:attribute name="file_path"
+                                type="xs:anyURI"
+                                use="required"/>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="BitmapImage">
+                <xs:complexType>
+                  <xs:attribute name="name"
+                                type="xs:string"
+                                use="required"/>
+                  <xs:attribute name="file_path"
+                                type="xs:anyURI"
+                                use="required"/>
+                  <xs:attribute name="foreground"
+                                type="xs:string"
+                                use="optional" />
+                  <xs:attribute name="background"
+                                type="xs:string"
+                                use="optional" />
+                </xs:complexType>
+              </xs:element>
+            </xs:choice>
+          </xs:complexType>
+        </xs:element>
+        <xs:element minOccurs="0"
+                    maxOccurs="1"
+                    name="CommandSet">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element minOccurs="1"
+                          maxOccurs="unbounded"
+                          name="Command"
+                          type="CommandType" />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element minOccurs="0"
+                    maxOccurs="1"
+                    name="Styles">
+          <xs:complexType>
+            <xs:choice  minOccurs="1"
+                        maxOccurs="unbounded">
+              <xs:element name="Theme"
+                          type="xs:string" />
+              <xs:element name="Font"
+                          type="FontType" />
+            </xs:choice>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="RootWindow"
+                    type="WindowType" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="VariableType">
+    <xs:sequence>
+      <xs:element name="variable_class"
+                  type="xs:string" />
+      <xs:element minOccurs="0"
+                  name="data_reference"
+                  type="xs:string" />
+    </xs:sequence>
+    <xs:attribute name="name"
+                  type="xs:string"
+                  use="required" />
+  </xs:complexType>
+  <xs:complexType name="CommandType">
+    <xs:sequence>
+      <xs:element name="function"
+                  type="xs:string" />
+      <xs:element minOccurs="0"
+                  name="update_data"
+                  type="xs:boolean" />
+      <xs:element name="PositionalArgs">
+        <xs:complexType>
+          <xs:sequence minOccurs="0"
+                       maxOccurs="unbounded">
+            <xs:element name="Arg"
+                        type="xs:string" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="KeywordArgs">
+        <xs:complexType>
+          <xs:anyAttribute namespace=""
+                           processContents="skip" />
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="name"
+                  type="xs:string"
+                  use="required" />
+  </xs:complexType>
+  <xs:complexType name="FontType">
+    <xs:sequence>
+      <xs:element name="family"
+                  type="xs:string" />
+      <xs:element name="size"
+                  type="xs:float" />
+      <xs:element minOccurs="0"
+                  name="weight"
+                  type="xs:string" />
+    </xs:sequence>
+    <xs:attribute name="name"
+                  type="xs:string"
+                  use="required" />
+  </xs:complexType>
+
+  <xs:element name="WindowSet">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0"
+                    maxOccurs="unbounded"
+                    name="Window"
+                    type="WindowType" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="WidgetSet">
+    <xs:complexType>
+      <xs:choice minOccurs="1"
+                 maxOccurs="unbounded">
+        <xs:element minOccurs="0"
+                    name="WidgetContainer"
+                    type="WidgetContainerType">
+          <xs:annotation>
+            <xs:documentation xml:lang="EN">
+              The container Widget is for widgets used to store other widgets.
+              Examples are Frame, LabelFrame and Canvas
+            </xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element minOccurs="0"
+                    name="Widget"
+                    type="WidgetType" />
+        <xs:element minOccurs="0"
+                    name="Tree"
+                    type="TreeWidget" />
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="WindowType">
+    <xs:sequence>
+      <xs:element minOccurs="0"
+                  name="Settings"
+                  type="WindowsSettingsType" />
+      <xs:element minOccurs="0"
+                  maxOccurs="1"
+                  ref="Configure" />
+      <xs:element minOccurs="0"
+                  ref="WindowSet" />
+      <xs:element minOccurs="0"
+                  ref="WidgetSet" />
+    </xs:sequence>
+    <xs:attribute name="name"
+                  type="xs:string"
+                  use="required" />
+  </xs:complexType>
+  <xs:complexType name="WidgetType">
+    <xs:complexContent mixed="false">
+      <xs:extension base="WidgetBasicType">
+        <xs:sequence>
+          <xs:element name="Settings"
+                      type="WidgetSettingsType" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="WidgetContainerType">
+    <xs:complexContent mixed="false">
+      <xs:extension base="WidgetBasicType">
+        <xs:sequence>
+          <xs:element name="Settings"
+                      type="WidgetContainerSettingsType" />
+          <xs:element minOccurs="0"
+                      ref="WidgetSet" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="TreeWidget">
+    <xs:complexContent mixed="false">
+      <xs:extension base="WidgetType">
+        <xs:sequence>
+          <xs:element name="ColumnSet"
+                      minOccurs="0">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="ItemData"
+                            type="xs:string">
+                </xs:element>
+                <xs:element minOccurs="1"
+                            maxOccurs="unbounded"
+                            name="Column">
+                  <xs:complexType>
+                    <xs:all>
+                      <xs:element minOccurs="0"
+                                  maxOccurs="1"
+                                  name="ColumnDef">
+                        <xs:complexType>
+                          <xs:attribute name="anchor"
+                                        type="AnchorType"
+                                        use="optional" />
+                          <xs:attribute name="width"
+                                        type="xs:unsignedInt"
+                                        use="optional" />
+                          <xs:attribute name="stretch"
+                                        type="xs:boolean"
+                                        use="optional" />
+                          <xs:attribute name="minwidth"
+                                        type="xs:unsignedInt"
+                                        use="optional" />
+                        </xs:complexType>
+                      </xs:element>
+                      <xs:element minOccurs="0"
+                                  maxOccurs="1"
+                                  name="HeaderDef">
+                        <xs:complexType>
+                          <xs:attribute name="text"
+                                        type="xs:string"
+                                        use="optional" />
+                          <xs:attribute name="image"
+                                        type="xs:string"
+                                        use="optional" />
+                          <xs:attribute name="anchor"
+                                        type="AnchorType"
+                                        use="optional" />
+                          <xs:attribute name="command"
+                                        type="xs:string"
+                                        use="optional" />
+                        </xs:complexType>
+                      </xs:element>
+                    </xs:all>
+                    <xs:attribute name="name"
+                                  type="xs:string"
+                                  use="required" />
+                    <xs:attribute name="data_reference"
+                                  type="xs:string"
+                                  use="optional" />
+                    <xs:attribute name="show"
+                                  use="required">
+                      <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                          <xs:enumeration value="y" />
+                          <xs:enumeration value="n" />
+                          <xs:enumeration value="tree" />
+                        </xs:restriction>
+                      </xs:simpleType>
+                    </xs:attribute>
+                  </xs:complexType>
+                </xs:element>
+
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="LevelSet"
+                      minOccurs="0">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="Level"
+                            minOccurs="1"
+                            maxOccurs="unbounded">
+                  <xs:complexType>
+                    <xs:choice minOccurs="1"
+                               maxOccurs="unbounded">
+                      <xs:element name="GroupBy">
+                        <xs:simpleType>
+                          <xs:list itemType="xs:string" />
+                        </xs:simpleType>
+                      </xs:element>
+                      <xs:element name="DisplayValues"
+                                  minOccurs="0">
+                        <xs:simpleType>
+                          <xs:list itemType="xs:string" />
+                        </xs:simpleType>
+                      </xs:element>
+                      <xs:element name="Tags"
+                                  minOccurs="0">
+                        <xs:simpleType>
+                          <xs:list itemType="xs:string" />
+                        </xs:simpleType>
+                      </xs:element>
+                    </xs:choice>
+                    <xs:attribute name="name"
+                                  type="xs:string"
+                                  use="required" />
+                    <xs:attribute name="AddGroupItem"
+                                  type="xs:boolean"
+                                  use="optional" />
+                  </xs:complexType>
+                </xs:element>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="TagSet"
+                      minOccurs="0"
+                      maxOccurs="1">
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element minOccurs="1"
+                            maxOccurs="unbounded"
+                            name="tag">
+                  <xs:complexType>
+                    <xs:all>
+                      <xs:element minOccurs="0"
+                                  name="Appearance"
+                                  type="AppearanceType" />
+                      <xs:element minOccurs="0"
+                                  name="Bindings"
+                                  type="BindingsType" />
+                    </xs:all>
+                    <xs:attribute name="name"
+                                  type="xs:string"
+                                  use="required" />
+                  </xs:complexType>
+                </xs:element>
+              </xs:sequence>
+            </xs:complexType>
+          </xs:element>
+>>>>>>> origin/master
         </xs:sequence>
       </xs:extension>
     </xs:complexContent>

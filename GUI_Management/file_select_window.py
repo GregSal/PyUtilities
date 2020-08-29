@@ -11,14 +11,12 @@ Classes
         sub class of TKinter.Frame
 
 '''
-from typing import Union, Callable, List, Dict, Tuple, Any
+from typing import Union, List, Dict, Tuple, Any
 from pathlib import Path
-from functools import partial
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.filedialog as tkf
-from tkinter import messagebox
-from file_utilities import FileTypes, get_file_path
+from file_utilities import FileTypes, get_file_path, make_full_path
 from file_utilities import set_base_dir, PathInput
 
 FileTypeSelection = Union[List[str], FileTypes]
@@ -45,7 +43,7 @@ class SelectFile():
         initialdir: {optional, PathInput} -- The initial path, possibly
             including a default file name, for the file selection.
             Default is the path returned by set_base_dir().
-	    master: {tk.Tk} -- The logical parent of the file dialog. The file
+        master: {tk.Tk} -- The logical parent of the file dialog. The file
             dialog is displayed on top of its parent window.
     Directory Window:
         mustexist: {bool} -- Specifies whether the user may specify
@@ -72,9 +70,10 @@ class SelectFile():
             dialog be presented to the user when the selected file already
             exists. A false value ignores existing files. Default is False.
     Open File Selection Window
-	    multiple: {bool} -- If True, Allows the user to choose multiple files
+        multiple: {bool} -- If True, Allows the user to choose multiple files
             from the Open dialog.
         '''
+    # TODO explicitly define the dialog defaults in
     all_dialogue_options = ('master',
                             'title',
                             'initialdir')
@@ -85,7 +84,7 @@ class SelectFile():
     save_dialogue_options = file_dialogue_options + ('confirmoverwrite',
                                                      'defaultextension')
     open_dialogue_options = file_dialogue_options + ('multiple',)
-    initialdir=None
+    initialdir = None
     default_attributes = dict(
         action='save', filetypes=FileTypes(), check_validity=False,
         master=None, title='', initialdir=str(set_base_dir()),
@@ -96,6 +95,9 @@ class SelectFile():
     def __init__(self, **file_params):
         '''
         '''
+        # TODO Do not set defaults as SelectFile object attributes
+        # Initialize filetypes, dialog, options
+        #
         # Set defaults
         for attr, value in self.default_attributes.items():
             self.__setattr__(attr, value)
@@ -269,16 +271,18 @@ class SelectFile():
 
 
 class FileSelectGUI(ttk.LabelFrame):
-    entry_layout=dict(layout_method='grid', padx=10, pady=10, row=0, column=0)
-    button_layout=dict(layout_method='grid', padx=10, pady=10, row=0, column=1)
+    entry_layout = dict(layout_method='grid',
+                        padx=10, pady=10, row=0, column=0)
+    button_layout = dict(layout_method='grid',
+                         padx=10, pady=10, row=0, column=1)
 
     def __init__(self, master: tk.Tk, **options):
-        super().__init__(master=master)
+        super().__init__(master=master, **options)
         self.browse_window = SelectFile(master=master)
         self.file_entry = ttk.Entry(master=self)
         self.browse_button = ttk.Button(text='Browse', master=self)
 
-    def config(self, **options):
+    def configure(self, **options):
         reduced_options = self.entry_config(**options)
         reduced_options = self.browse_window.configure(**reduced_options)
         reduced_options = self.button_config(**reduced_options)
@@ -319,15 +323,17 @@ class FileSelectGUI(ttk.LabelFrame):
         self.browse_button.configure(**browse_options)
         return unused_parameters
 
-    def build(self, **build_instructions):
+    def grid(self, **build_instructions):
         reduced_instructions = self.build_entry(**build_instructions)
         unused_parameters = self.build_button(**reduced_instructions)
         self.columnconfigure(0, weight=1)
-        layout_method = unused_parameters.pop('layout_method', None)
-        if 'pack' in layout_method:
-            self.pack(**unused_parameters)
-        else:
-            self.grid(**unused_parameters)
+        super().grid(**unused_parameters)
+
+    def pack(self, **build_instructions):
+        reduced_instructions = self.build_entry(**build_instructions)
+        unused_parameters = self.build_button(**reduced_instructions)
+        self.columnconfigure(0, weight=1)
+        super().pack(**unused_parameters)
 
     def build_entry(self, **build_instructions):
         option_prefix = 'entry_'
@@ -369,16 +375,6 @@ class FileSelectGUI(ttk.LabelFrame):
     def set(self, file_path: PathInput):
         return self.path_variable.set(str(file_path))
 
-
-def message_window(parent_window: tk.Widget, window_text: StringValue = '',
-                   variable: StringValue = 'Nothing to say'):
-    '''Display the sting message or variable content.'''
-    if isinstance(variable, tk.StringVar):
-        str_message = variable.get()
-    else:
-        str_message = str(variable)
-    messagebox.showinfo(title=window_text, message=variable.get(),
-                        parent=parent_window)
 
 def main():
     '''open test selection window.
