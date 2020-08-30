@@ -4,11 +4,56 @@
 #%% Imports
 from pathlib import Path
 from pprint import pprint
+from collections import deque
 import csv
 from file_utilities import clean_ascii_text
 
 #%% Exceptions
-class StopSection(Exception): pass
+class StopSection(GeneratorExit): pass
+
+#%% Classes
+class LineIterator():
+    '''Iterate through line sequence.
+    '''
+    def __init__(self, source, max_lines=5):
+        self.source = source
+        self.previous_lines = deque(maxlen=max_lines)
+        self._step_back = 0
+        return 
+
+    @property
+    def step_back(self):
+        return self._step_back
+
+    @step_back.setter
+    def step_back(self, num_lines):
+        if num_lines < 0:
+            raise ValueError("Can't step back negative lines")
+        if len(self.previous_lines) < num_lines:
+            self._step_back = len(self.previous_lines)
+        else:
+            self._step_back =  num_lines
+
+    def __iter__(self):
+        for line in self.source:
+            self.previous_lines.append(line)
+            if self._step_back:
+                yield from self.rewind()
+            yield line
+
+    def rewind(self):
+        previous_lines_list = list()
+        for step in range(self._step_back):
+            self._step_back -= 1
+            try:
+                previous_lines_list.append(self.previous_lines.pop())
+            except IndexError:
+                self._step_back = 0
+        
+        previous_lines_list.reverse()
+        return previous_lines_list
+                
+
 
 #%% Test File
 base_path = Path.cwd()
@@ -84,9 +129,10 @@ def drop_units(text: str)->float:
 
 
 #%% Main Iteration
+
 with open(test_file, newline='') as csvfile:
-    cleaned_lines = clean_lines(csvfile)
-    section = dvh_info_section(cleaned_lines)
+    cleaned_lines = LineIterator(clean_lines(csvfile))
+    section = LineIterator(dvh_info_section(cleaned_lines))
     csvreader = csv.reader(section, delimiter=':', quotechar='"')
     trimmed_lined = trim_lines(csvreader)
     for rownum in range(25):
@@ -94,6 +140,7 @@ with open(test_file, newline='') as csvfile:
             row = trimmed_lined.__next__()
             print(row)
         except StopSection:
+            cleaned_lines.step_back = 2
             section = plan_data_section(cleaned_lines)
             csvreader = csv.reader(section, delimiter=':', quotechar='"')
             trimmed_lined = trim_lines(csvreader)
@@ -103,13 +150,21 @@ with open(test_file, newline='') as csvfile:
                     print(row)
                 except StopSection as stop_sign:
                     pprint(stop_sign)
-                    print('end of the line')
+                    #print('end of the section')
+                    break
+                except IndexError as eof:
+                    pprint(eof)
+                    #print('End of lines')
                     break
                 else:
+                    #print('next line')
                     continue
         else:
+            #print('next outer line')
             continue
+        #print(' top section done')
         break
-print('done')
 
+
+print('done')
 

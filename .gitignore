@@ -274,9 +274,8 @@ tmp
 CodeGraphData
 __pycache__
 *.sln
-*.pyproj*
-*.pyproj
+#*.pyproj*
+#*.pyproj
 *.sln
 *.code-workspace
-GUI_Management/GUI Management.code-workspace
 *.vs
