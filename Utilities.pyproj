@@ -44,18 +44,6 @@
     <InterpreterReference Include="Global|ContinuumAnalytics|Anaconda37-64" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\EclipseRelated\EclipseTemplates\ManageStructuresTemplates\ManageStructuresTemplates.pyproj">
-      <Name>ManageStructuresTemplates</Name>
-      <Project>{e332936f-0e17-4f36-944d-fb377ee415a9}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="GUI_Management\GUI_Management.pyproj">
-      <Name>GUI_Management</Name>
-      <Project>{56be436a-57e4-4c95-a047-13875f1ad6fd}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="Testing\" />
     <Folder Include="Testing\misc_testing\" />
     <Folder Include="Testing\misc_testing\__pycache__\" />
