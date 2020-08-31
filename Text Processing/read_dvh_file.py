@@ -7,6 +7,11 @@ from pprint import pprint
 from collections import deque
 import csv
 from file_utilities import clean_ascii_text
+import logging_tools as lg
+
+
+#%% Logging
+logger = lg.config_logger(prefix='read_dvh.file')
 
 #%% Exceptions
 class StopSection(GeneratorExit): pass
@@ -19,6 +24,7 @@ class LineIterator():
         self.source = source
         self.previous_lines = deque(maxlen=max_lines)
         self._step_back = 0
+        self.repeat_lines = deque(maxlen=max_lines)
         return 
 
     @property
@@ -30,29 +36,35 @@ class LineIterator():
         if num_lines < 0:
             raise ValueError("Can't step back negative lines")
         if len(self.previous_lines) < num_lines:
-            self._step_back = len(self.previous_lines)
+            msg = (f"Can't step back {num_lines} lines.\n\t"
+                   f"only have {len(self.previous_lines)} previous lines "
+                    "available.")
+            raise ValueError(msg)
         else:
             self._step_back =  num_lines
 
     def __iter__(self):
-        for line in self.source:
-            self.previous_lines.append(line)
+        '''Step through a line sequence allowing for retracing steps.
+        '''
+        for line in self.source:            
             if self._step_back:
-                yield from self.rewind()
+                self.rewind()
+            while len(self.repeat_lines) > 0:
+                old_line = self.repeat_lines.pop()
+                self.previous_lines.append(old_line)
+                logger.debug(f'In LineIterator.__iter__, yielding old_line: {old_line}')
+                yield old_line
+            self.previous_lines.append(line)
+            logger.debug(f'In LineIterator.__iter__, yielding line: {line}')
             yield line
+        return
 
     def rewind(self):
-        previous_lines_list = list()
         for step in range(self._step_back):
             self._step_back -= 1
-            try:
-                previous_lines_list.append(self.previous_lines.pop())
-            except IndexError:
-                self._step_back = 0
-        
-        previous_lines_list.reverse()
-        return previous_lines_list
-                
+            if len(self.previous_lines) > 0:
+                self.repeat_lines.append(self.previous_lines.pop())
+        self._step_back = 0
 
 
 #%% Test File
@@ -64,42 +76,14 @@ test_file = base_path / test_file_path / 'PlanSum vs Original.dvh'
 #%% Functions
 def clean_lines(file):
     for raw_line in file:
+        #logger.debug(f'In clean_lines, yielding raw_line: {raw_line}')
         yield clean_ascii_text(raw_line)
 
 def trim_lines(parsed_lines):
     for parsed_line in parsed_lines:
-        yield[item.strip() for item in parsed_line]
-
-def dvh_info_section(cleaned_lines):
-    yield 'in dvh_info section'
-    for cleaned_line in cleaned_lines:
-        if 'Plan:' in cleaned_line:
-            raise StopSection
-        elif 'Plan sum:' in cleaned_line:
-            raise StopSection
-        else:
-            yield cleaned_line
-
-def plan_info_section(cleaned_lines):
-    yield 'in plan_info section'
-    for cleaned_line in cleaned_lines:
-        if '% for dose (%)' in cleaned_line:
-            yield cleaned_line
-            raise StopSection
-        else:
-            yield cleaned_line
-
-def plan_data_section(cleaned_lines):
-    yield 'in plan_data section'
-    for cleaned_line in cleaned_lines:
-        if 'Plan:' in cleaned_line:
-            yield from plan_info_section(cleaned_lines)
-        elif 'Plan sum:' in cleaned_line:
-            yield from plan_info_section(cleaned_lines)
-        elif 'Structure' in cleaned_line:
-            raise StopSection
-        else:
-            continue
+        trimed_lines = [item.strip() for item in parsed_line]
+        #logger.debug(f'In trim_lines, yielding trimed_lines: {trimed_lines}')
+        yield trimed_lines
 
 
 def drop_units(text: str)->float:
@@ -128,43 +112,88 @@ def drop_units(text: str)->float:
 
 
 
-#%% Main Iteration
+#%% Section definitions
+# FIXME Create BreakTrigger class, add Before or after options
+# FIXME Create BreakRules as collection of BreakTrigger instances
+# TODO Create Trigger class
+def section_breaks(source, context, break_triggers):
+    logger.debug('in section_breaks')
+    for line in source:
+        for trigger in break_triggers:
+            if trigger in line:    
+                context['Source'].step_back = 1
+                raise StopSection
+        else:
+            yield line
 
-with open(test_file, newline='') as csvfile:
-    cleaned_lines = LineIterator(clean_lines(csvfile))
-    section = LineIterator(dvh_info_section(cleaned_lines))
+def scan_section(context, break_triggers):    
+    cleaned_lines = clean_lines(context['Source'])
+    section = section_breaks(cleaned_lines, context, break_triggers)
     csvreader = csv.reader(section, delimiter=':', quotechar='"')
     trimmed_lined = trim_lines(csvreader)
-    for rownum in range(25):
+    section_lines = list()
+    while True:
         try:
             row = trimmed_lined.__next__()
-            print(row)
-        except StopSection:
-            cleaned_lines.step_back = 2
-            section = plan_data_section(cleaned_lines)
-            csvreader = csv.reader(section, delimiter=':', quotechar='"')
-            trimmed_lined = trim_lines(csvreader)
-            for rownum in range(25):
-                try:
-                    row = trimmed_lined.__next__()
-                    print(row)
-                except StopSection as stop_sign:
-                    pprint(stop_sign)
-                    #print('end of the section')
-                    break
-                except IndexError as eof:
-                    pprint(eof)
-                    #print('End of lines')
-                    break
-                else:
-                    #print('next line')
-                    continue
+            logger.debug(f'found row: {row}.')
+            section_lines.append(row)
+        except StopSection as stop_sign:
+            pprint(stop_sign)            
+            logger.debug('end of the section')
+            break
+        except IndexError as eof:
+            pprint(eof)
+            logger.debug('End of Source')
+            break
         else:
-            #print('next outer line')
+            #logger.debug('next line')
             continue
-        #print(' top section done')
-        break
+    return section_lines
+
+def plan_info_section(cleaned_lines):
+    logger.debug('in plan_info section')
+    for cleaned_line in cleaned_lines:
+        if '% for dose (%)' in cleaned_line:
+            logger.debug(f'In plan_info_section, yielding cleaned_line: {cleaned_line}')
+            yield cleaned_line
+            raise StopSection
+        else:
+            logger.debug(f'In plan_info_section, yielding cleaned_line: {cleaned_line}')
+            yield cleaned_line
+
+def plan_data_section(cleaned_lines):
+    logger.debug('in plan_data section')
+    for cleaned_line in cleaned_lines:
+        if 'Plan:' in cleaned_line:
+            cleaned_lines.step_back = 2
+            logger.debug(f'In plan_data_section, yielding cleaned_lines')
+            yield from plan_info_section(cleaned_lines)
+        elif 'Plan sum:' in cleaned_line:
+            cleaned_lines.step_back = 2
+            logger.debug(f'In plan_data_section, yielding cleaned_lines')
+            yield from plan_info_section(cleaned_lines)
+        elif 'Structure' in cleaned_line:
+            cleaned_lines.step_back = 2
+            raise StopSection
+        else:
+            continue
 
 
+
+#%% Main Iteration
+
+
+with open(test_file, newline='') as csvfile:
+    raw_lines = LineIterator(csvfile)
+    context = {
+        'File Name': test_file.name,
+        'File Path': test_file.parent,
+        'Line Count': 0,
+        'Source': raw_lines
+        }
+    section_lines = scan_section(context, break_triggers = ['Plan:', 'Plan sum:'])
+    pprint(section_lines)
+    section_lines = scan_section(context, break_triggers = ['% for dose (%):', 'Structure'])
+    pprint(section_lines)
 print('done')
 
