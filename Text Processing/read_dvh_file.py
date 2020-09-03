@@ -5,6 +5,7 @@
 from pathlib import Path
 from pprint import pprint
 from collections import deque
+from typing import List, Dict, Any
 import csv
 from file_utilities import clean_ascii_text
 import logging_tools as lg
@@ -14,9 +15,127 @@ import logging_tools as lg
 logger = lg.config_logger(prefix='read_dvh.file')
 
 #%% Exceptions
-class StopSection(GeneratorExit): pass
+class StopSection(GeneratorExit): 
+    def __init__(self, *args, context=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.context = context
+
+    def get_context(self):
+        return self.context
+
 
 #%% Classes
+#Test class 
+#Starting Identifier	string, Regex or callable	No	None	Used to identify starting text line
+
+class TextTrigger():
+    def __init__(self, sentinal_list: List[str], name='TextTrigger'):
+        '''Define Text strings that signal a trigger event.
+        '''
+        self.sentinals = sentinal_list
+        
+    def apply(self, context: Dict[str, any], line: str)->(bool, str):
+        logger.debug('in apply trigger')
+        for sentinal in self.sentinals:
+            if sentinal in line:
+                return True,  sentinal
+            else:
+                return False
+# Trigger Types:
+# None
+# List[str] 
+# Regex 
+# Callable	
+#n
+# If None continue  to end of file  / Stream
+# If list of strings, a match with any string in the list will be a pass
+# The matched string will be added to the Context dict.
+# If Regex the re.match object will be added to the Context dict.
+# If Callable, a non-None return value will be a pass
+# The return value will be added to the Context dict.
+# Triggers can be chained for "AND" operations. 
+# If n skip n lines then trigger
+# If Repeating sub-sections, can be number of repetitions
+                
+                
+class SectionBreak():
+    def __init__(self, trigger: TextTrigger, name='SectionBreak',
+                 offset='Before'):
+        self.step_back = 0
+        self.set_step_back(offset)
+        self.trigger = trigger            
+# starting_offset	[Int or str] if str, one of Before or After
+# if 0 or 'Before, Include the line that activates the Trigger in the section.
+# if 1 or 'After, Skip the line that activates the Trigger.
+
+    def set_step_back(self, offset):
+        try:
+            self.step_back = -(int(offset) - 1)
+        except ValueError:
+            if isinstance(offset, str):
+                if 'Before' in offset:
+                    self.step_back = 1
+                elif 'After' in offset:
+                    self.step_back = 0
+               
+    def check(self, context: Dict[str, any], line: str):
+        logger.debug('in section_break.check')
+        is_pass, sentinal = self.trigger.apply(context, line)
+        if is_pass:
+            context['sentinal'] = sentinal  
+            raise StopSection(context=context)
+        return is_pass, context
+        #for line in source:
+        #    for trigger in break_triggers:
+        #        if trigger in line:    
+        #            context['Source'].step_back = 1
+        #            raise StopSection
+        #        else:
+        #            yield line
+
+    def __iter__(self):
+        '''Step through a line sequence allowing for retracing steps.
+        '''
+        for line in self.source:            
+            if self._step_back:
+                self.rewind()
+            while len(self.repeat_lines) > 0:
+                old_line = self.repeat_lines.pop()
+                self.previous_lines.append(old_line)
+                logger.debug(f'In LineIterator.__iter__, yielding old_line: {old_line}')
+                yield old_line
+            self.previous_lines.append(line)
+            logger.debug(f'In LineIterator.__iter__, yielding line: {line}')
+            yield line
+
+def section_breaks(source, context, break_triggers):
+    logger.debug('in section_breaks')
+    for line in source:
+        for trigger in break_triggers:
+            if trigger in line:    
+                context['Source'].step_back = 1
+                raise StopSection
+        else:
+            yield line
+                                              
+#Break class
+#	Apply Test 
+#	Update Context(is_pass, *results)
+#	If is_pass is True 
+#		Do True action 
+#	else
+#		Do False
+#		
+#Different types depending on test method 
+#	Trigger as string, list of Strings or compiled regex
+#	Apply(context, line)
+#		If Trigger is str
+#			is_pass = Trigger in line
+#			match = Trigger.search(line)
+#			
+#		If Trigger is re apply search 
+#		Returns is_pass,  Trigger or match 
+
 class LineIterator():
     '''Iterate through line sequence.
     '''
@@ -40,8 +159,7 @@ class LineIterator():
                    f"only have {len(self.previous_lines)} previous lines "
                     "available.")
             raise ValueError(msg)
-        else:
-            self._step_back =  num_lines
+        self._step_back =  num_lines
 
     def __iter__(self):
         '''Step through a line sequence allowing for retracing steps.
@@ -57,7 +175,7 @@ class LineIterator():
             self.previous_lines.append(line)
             logger.debug(f'In LineIterator.__iter__, yielding line: {line}')
             yield line
-        return
+        
 
     def rewind(self):
         for step in range(self._step_back):
@@ -113,18 +231,7 @@ def drop_units(text: str)->float:
 
 
 #%% Section definitions
-# FIXME Create BreakTrigger class, add Before or after options
-# FIXME Create BreakRules as collection of BreakTrigger instances
-# TODO Create Trigger class
-def section_breaks(source, context, break_triggers):
-    logger.debug('in section_breaks')
-    for line in source:
-        for trigger in break_triggers:
-            if trigger in line:    
-                context['Source'].step_back = 1
-                raise StopSection
-        else:
-            yield line
+
 
 def scan_section(context, break_triggers):    
     cleaned_lines = clean_lines(context['Source'])
