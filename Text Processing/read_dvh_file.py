@@ -1,5 +1,6 @@
-'''Initial testing of dvh read
+'''Initial testing of DVH read
 '''
+# pylint: disable=anomalous-backslash-in-string
 
 #%% Imports
 from pathlib import Path
@@ -7,6 +8,7 @@ from pprint import pprint
 from collections import deque
 from typing import List, Dict, Any
 import csv
+import re
 from file_utilities import clean_ascii_text
 import logging_tools as lg
 
@@ -15,58 +17,67 @@ import logging_tools as lg
 logger = lg.config_logger(prefix='read_dvh.file')
 
 #%% Exceptions
-class StopSection(GeneratorExit): 
-    def __init__(self, *args, context=None, **kwargs):
+class TextReadException(Exception): pass
+
+
+class StopSection(GeneratorExit):
+    def __init__(self, *args, context=None, step_back=0, **kwargs):
         super().__init__(*args, **kwargs)
         self.context = context
+        self.step_back = step_back
 
     def get_context(self):
         return self.context
 
+    def get_step_back(self):
+        return self.step_back
+
 
 #%% Classes
-#Test class 
-#Starting Identifier	string, Regex or callable	No	None	Used to identify starting text line
-
 class TextTrigger():
-    def __init__(self, sentinal_list: List[str], name='TextTrigger'):
+    '''
+     Trigger Types:
+     None
+     List[str]
+     Regex
+     Callable
+     n
+     If None continue  to end of file  / Stream
+     If list of strings, a match with any string in the list will be a pass
+     The matched string will be added to the Context dict.
+     If Regex the re.match object will be added to the Context dict.
+     If Callable, a non-None return value will be a pass
+     The return value will be added to the Context dict.
+     Triggers can be chained for "AND" operations.
+     If n skip n lines then trigger
+     If Repeating sub-sections, can be number of repetitions
+     '''
+    def __init__(self, sentinel_list: List[str], name='TextTrigger'):
         '''Define Text strings that signal a trigger event.
+        sentinel
         '''
-        self.sentinals = sentinal_list
-        
+        self.sentinels = sentinel_list
+
     def apply(self, context: Dict[str, any], line: str)->(bool, str):
         logger.debug('in apply trigger')
-        for sentinal in self.sentinals:
-            if sentinal in line:
-                return True,  sentinal
+        for sentinel in self.sentinels:
+            if sentinel in line:
+                return True,  sentinel
             else:
-                return False
-# Trigger Types:
-# None
-# List[str] 
-# Regex 
-# Callable	
-#n
-# If None continue  to end of file  / Stream
-# If list of strings, a match with any string in the list will be a pass
-# The matched string will be added to the Context dict.
-# If Regex the re.match object will be added to the Context dict.
-# If Callable, a non-None return value will be a pass
-# The return value will be added to the Context dict.
-# Triggers can be chained for "AND" operations. 
-# If n skip n lines then trigger
-# If Repeating sub-sections, can be number of repetitions
-                
-                
+                return False, None
+
+
 class SectionBreak():
-    def __init__(self, trigger: TextTrigger, name='SectionBreak',
-                 offset='Before'):
+    def __init__(self, trigger: TextTrigger,
+                 offset='Before', name='SectionBreak'):
+        '''
+        starting_offset	[Int or str] if str, one of Before or After
+        if 0 or 'Before, Include the line that activates the Trigger in the section.
+        if 1 or 'After, Skip the line that activates the Trigger.
+        '''
         self.step_back = 0
         self.set_step_back(offset)
-        self.trigger = trigger            
-# starting_offset	[Int or str] if str, one of Before or After
-# if 0 or 'Before, Include the line that activates the Trigger in the section.
-# if 1 or 'After, Skip the line that activates the Trigger.
+        self.trigger = trigger
 
     def set_step_back(self, offset):
         try:
@@ -77,64 +88,14 @@ class SectionBreak():
                     self.step_back = 1
                 elif 'After' in offset:
                     self.step_back = 0
-               
+
     def check(self, context: Dict[str, any], line: str):
         logger.debug('in section_break.check')
-        is_pass, sentinal = self.trigger.apply(context, line)
-        if is_pass:
-            context['sentinal'] = sentinal  
-            raise StopSection(context=context)
-        return is_pass, context
-        #for line in source:
-        #    for trigger in break_triggers:
-        #        if trigger in line:    
-        #            context['Source'].step_back = 1
-        #            raise StopSection
-        #        else:
-        #            yield line
+        is_break, sentinel = self.trigger.apply(context, line)
+        if is_break:
+            context['sentinel'] = sentinel
+        return is_break, context
 
-    def __iter__(self):
-        '''Step through a line sequence allowing for retracing steps.
-        '''
-        for line in self.source:            
-            if self._step_back:
-                self.rewind()
-            while len(self.repeat_lines) > 0:
-                old_line = self.repeat_lines.pop()
-                self.previous_lines.append(old_line)
-                logger.debug(f'In LineIterator.__iter__, yielding old_line: {old_line}')
-                yield old_line
-            self.previous_lines.append(line)
-            logger.debug(f'In LineIterator.__iter__, yielding line: {line}')
-            yield line
-
-def section_breaks(source, context, break_triggers):
-    logger.debug('in section_breaks')
-    for line in source:
-        for trigger in break_triggers:
-            if trigger in line:    
-                context['Source'].step_back = 1
-                raise StopSection
-        else:
-            yield line
-                                              
-#Break class
-#	Apply Test 
-#	Update Context(is_pass, *results)
-#	If is_pass is True 
-#		Do True action 
-#	else
-#		Do False
-#		
-#Different types depending on test method 
-#	Trigger as string, list of Strings or compiled regex
-#	Apply(context, line)
-#		If Trigger is str
-#			is_pass = Trigger in line
-#			match = Trigger.search(line)
-#			
-#		If Trigger is re apply search 
-#		Returns is_pass,  Trigger or match 
 
 class LineIterator():
     '''Iterate through line sequence.
@@ -144,7 +105,7 @@ class LineIterator():
         self.previous_lines = deque(maxlen=max_lines)
         self._step_back = 0
         self.repeat_lines = deque(maxlen=max_lines)
-        return 
+        return
 
     @property
     def step_back(self):
@@ -164,7 +125,7 @@ class LineIterator():
     def __iter__(self):
         '''Step through a line sequence allowing for retracing steps.
         '''
-        for line in self.source:            
+        for line in self.source:
             if self._step_back:
                 self.rewind()
             while len(self.repeat_lines) > 0:
@@ -175,7 +136,7 @@ class LineIterator():
             self.previous_lines.append(line)
             logger.debug(f'In LineIterator.__iter__, yielding line: {line}')
             yield line
-        
+
 
     def rewind(self):
         for step in range(self._step_back):
@@ -232,8 +193,23 @@ def drop_units(text: str)->float:
 
 #%% Section definitions
 
+def section_breaks(source, context, break_triggers: List[SectionBreak]):
+    logger.debug('in section_breaks')
+    for line in source:
+        for break_trigger in break_triggers:
+            is_break, context = break_trigger.check(context, line)
+            if is_break:
+                if break_trigger.step_back < 0: # Don't use current line
+                    context['Source'].step_back = break_trigger.step_back
+                else:
+                    for step in range(break_trigger.step_back + 1):
+                        yield line
+                raise StopSection(context=context)
+            else:
+                yield line
 
-def scan_section(context, break_triggers):    
+
+def scan_section(context, break_triggers):
     cleaned_lines = clean_lines(context['Source'])
     section = section_breaks(cleaned_lines, context, break_triggers)
     csvreader = csv.reader(section, delimiter=':', quotechar='"')
@@ -245,7 +221,7 @@ def scan_section(context, break_triggers):
             logger.debug(f'found row: {row}.')
             section_lines.append(row)
         except StopSection as stop_sign:
-            pprint(stop_sign)            
+            pprint(stop_sign)
             logger.debug('end of the section')
             break
         except IndexError as eof:
@@ -273,11 +249,11 @@ def plan_data_section(cleaned_lines):
     for cleaned_line in cleaned_lines:
         if 'Plan:' in cleaned_line:
             cleaned_lines.step_back = 2
-            logger.debug(f'In plan_data_section, yielding cleaned_lines')
+            logger.debug('In plan_data_section, yielding cleaned_lines')
             yield from plan_info_section(cleaned_lines)
         elif 'Plan sum:' in cleaned_line:
             cleaned_lines.step_back = 2
-            logger.debug(f'In plan_data_section, yielding cleaned_lines')
+            logger.debug('In plan_data_section, yielding cleaned_lines')
             yield from plan_info_section(cleaned_lines)
         elif 'Structure' in cleaned_line:
             cleaned_lines.step_back = 2
@@ -298,9 +274,12 @@ with open(test_file, newline='') as csvfile:
         'Line Count': 0,
         'Source': raw_lines
         }
-    section_lines = scan_section(context, break_triggers = ['Plan:', 'Plan sum:'])
+    dvh_info_break = SectionBreak(TextTrigger(['Plan:', 'Plan sum:']))
+    section_lines = scan_section(context, break_triggers = [dvh_info_break])
     pprint(section_lines)
-    section_lines = scan_section(context, break_triggers = ['% for dose (%):', 'Structure'])
+    plan_info_break = SectionBreak(TextTrigger(['% for dose (%):', 
+                                                'Structure']))
+    section_lines = scan_section(context, break_triggers = [plan_info_break])
     pprint(section_lines)
 print('done')
 

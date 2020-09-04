@@ -5,13 +5,9 @@ VisualStudioVersion = 16.0.28803.202
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Utilities", "Utilities.pyproj", "{167F98FF-F940-4216-A4B3-0ED2DF5E40CD}"
 EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "GUI_Management", "GUI_Management\GUI_Management.pyproj", "{56BE436A-57E4-4C95-A047-13875F1AD6FD}"
-EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "CustomVariableSet", "CustomVariableSet\CustomVariableSet.pyproj", "{7FD5D963-2E83-4AE8-A878-B831529CE827}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "DataFitting", "DataFitting\DataFitting.pyproj", "{F3F35AA3-0E41-4AD7-BD08-E1F2AF7CD7A0}"
-EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "template_gui", "template_gui\template_gui.pyproj", "{E332936F-0E17-4F36-944D-FB377EE415A9}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Text Processing", "Text Processing\Text Processing.pyproj", "{F0B75EF5-E1D5-4A3E-978C-9A8DCF445620}"
 EndProject
@@ -23,14 +19,10 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{167F98FF-F940-4216-A4B3-0ED2DF5E40CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{167F98FF-F940-4216-A4B3-0ED2DF5E40CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{56BE436A-57E4-4C95-A047-13875F1AD6FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{56BE436A-57E4-4C95-A047-13875F1AD6FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7FD5D963-2E83-4AE8-A878-B831529CE827}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7FD5D963-2E83-4AE8-A878-B831529CE827}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F3F35AA3-0E41-4AD7-BD08-E1F2AF7CD7A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F3F35AA3-0E41-4AD7-BD08-E1F2AF7CD7A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E332936F-0E17-4F36-944D-FB377EE415A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E332936F-0E17-4F36-944D-FB377EE415A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F0B75EF5-E1D5-4A3E-978C-9A8DCF445620}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F0B75EF5-E1D5-4A3E-978C-9A8DCF445620}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
