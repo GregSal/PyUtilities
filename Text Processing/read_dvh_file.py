@@ -59,9 +59,10 @@ class TextTrigger():
         self.sentinels = sentinel_list
 
     def apply(self, context: Dict[str, any], line: str)->(bool, str):
-        logger.debug('in apply trigger')
+        #logger.debug('in apply trigger')
         for sentinel in self.sentinels:
             if sentinel in line:
+                logger.debug(f'Triggered on {sentinel}')
                 return True,  sentinel
             else:
                 return False, None
@@ -90,9 +91,10 @@ class SectionBreak():
                     self.step_back = 0
 
     def check(self, context: Dict[str, any], line: str):
-        logger.debug('in section_break.check')
+        #logger.debug('in section_break.check')
         is_break, sentinel = self.trigger.apply(context, line)
         if is_break:
+            logger.debug(f'Break triggered by {sentinel}')
             context['sentinel'] = sentinel
         return is_break, context
 
@@ -134,7 +136,7 @@ class LineIterator():
                 logger.debug(f'In LineIterator.__iter__, yielding old_line: {old_line}')
                 yield old_line
             self.previous_lines.append(line)
-            logger.debug(f'In LineIterator.__iter__, yielding line: {line}')
+            #logger.debug(f'In LineIterator.__iter__, yielding line: {line}')
             yield line
 
 
@@ -145,12 +147,6 @@ class LineIterator():
                 self.repeat_lines.append(self.previous_lines.pop())
         self._step_back = 0
 
-
-#%% Test File
-base_path = Path.cwd()
-
-test_file_path = r'..\Testing\Test Data\Text Files'
-test_file = base_path / test_file_path / 'PlanSum vs Original.dvh'
 
 #%% Functions
 def clean_lines(file):
@@ -194,15 +190,20 @@ def drop_units(text: str)->float:
 #%% Section definitions
 
 def section_breaks(source, context, break_triggers: List[SectionBreak]):
-    logger.debug('in section_breaks')
+    #logger.debug('in section_breaks')
     for line in source:
+        logger.debug(f'In section_breaks, received line: {line}')
         for break_trigger in break_triggers:
             is_break, context = break_trigger.check(context, line)
             if is_break:
-                if break_trigger.step_back < 0: # Don't use current line
+                logger.debug(f'Section Break Detected')
+                if break_trigger.step_back > 0: # Don't use current line
+                    logger.debug(f'Stepping back {break_trigger.step_back + 1} lines')                    
                     context['Source'].step_back = break_trigger.step_back
                 else:
+                    logger.debug(f'Using {break_trigger.step_back + 1} more lines before break')                    
                     for step in range(break_trigger.step_back + 1):
+                        logger.debug(f'Using {step} more lines')
                         yield line
                 raise StopSection(context=context)
             else:
@@ -261,11 +262,15 @@ def plan_data_section(cleaned_lines):
         else:
             continue
 
+#%% Test File
+base_path = Path.cwd()
+
+test_file_path = r'..\Testing\Test Data\Text Files'
+test_file = base_path / test_file_path / 'PlanSum vs Original.dvh'
+#test_file = Path.cwd() / 'PlanSum vs Original.dvh'
 
 
 #%% Main Iteration
-
-
 with open(test_file, newline='') as csvfile:
     raw_lines = LineIterator(csvfile)
     context = {
@@ -274,12 +279,13 @@ with open(test_file, newline='') as csvfile:
         'Line Count': 0,
         'Source': raw_lines
         }
-    dvh_info_break = SectionBreak(TextTrigger(['Plan:', 'Plan sum:']))
+    dvh_info_break = SectionBreak(TextTrigger(['Plan', 'Plan sum']))
     section_lines = scan_section(context, break_triggers = [dvh_info_break])
     pprint(section_lines)
-    plan_info_break = SectionBreak(TextTrigger(['% for dose (%):', 
-                                                'Structure']))
-    section_lines = scan_section(context, break_triggers = [plan_info_break])
+    plan_info_break = SectionBreak(TextTrigger(['% for dose (%):']), offset='After')
+    plan_data_break = SectionBreak(TextTrigger(['Structure']), offset='Before')
+    section_lines = scan_section(context, break_triggers = [plan_info_break,
+                                                            plan_data_break])
     pprint(section_lines)
 print('done')
 
