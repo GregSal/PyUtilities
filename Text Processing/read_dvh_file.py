@@ -21,16 +21,12 @@ class TextReadException(Exception): pass
 
 
 class StopSection(GeneratorExit):
-    def __init__(self, *args, context=None, step_back=0, **kwargs):
+    def __init__(self, *args, context=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.context = context
-        self.step_back = step_back
 
     def get_context(self):
         return self.context
-
-    def get_step_back(self):
-        return self.step_back
 
 
 #%% Classes
@@ -59,7 +55,7 @@ class TextTrigger():
         self.sentinels = sentinel_list
 
     def apply(self, context: Dict[str, any], line: str)->(bool, str):
-        #logger.debug('in apply trigger')
+        logger.debug('in apply trigger')
         for sentinel in self.sentinels:
             if sentinel in line:
                 logger.debug(f'Triggered on {sentinel}')
@@ -76,6 +72,7 @@ class SectionBreak():
         if 0 or 'Before, Include the line that activates the Trigger in the section.
         if 1 or 'After, Skip the line that activates the Trigger.
         '''
+        self.name = name
         self.step_back = 0
         self.set_step_back(offset)
         self.trigger = trigger
@@ -91,7 +88,7 @@ class SectionBreak():
                     self.step_back = 0
 
     def check(self, context: Dict[str, any], line: str):
-        #logger.debug('in section_break.check')
+        logger.debug('in section_break.check')
         is_break, sentinel = self.trigger.apply(context, line)
         if is_break:
             logger.debug(f'Break triggered by {sentinel}')
@@ -133,10 +130,10 @@ class LineIterator():
             while len(self.repeat_lines) > 0:
                 old_line = self.repeat_lines.pop()
                 self.previous_lines.append(old_line)
-                logger.debug(f'In LineIterator.__iter__, yielding old_line: {old_line}')
+                logger.debug(f'\n\nIn LineIterator.__iter__, yielding old_line: {old_line}')
                 yield old_line
             self.previous_lines.append(line)
-            #logger.debug(f'In LineIterator.__iter__, yielding line: {line}')
+            logger.debug(f'\n\nIn LineIterator.__iter__, yielding line: {line}')
             yield line
 
 
@@ -151,13 +148,13 @@ class LineIterator():
 #%% Functions
 def clean_lines(file):
     for raw_line in file:
-        #logger.debug(f'In clean_lines, yielding raw_line: {raw_line}')
+        logger.debug(f'In clean_lines, yielding raw_line: {raw_line}')
         yield clean_ascii_text(raw_line)
 
 def trim_lines(parsed_lines):
     for parsed_line in parsed_lines:
         trimed_lines = [item.strip() for item in parsed_line]
-        #logger.debug(f'In trim_lines, yielding trimed_lines: {trimed_lines}')
+        logger.debug(f'In trim_lines, yielding trimed_lines: {trimed_lines}')
         yield trimed_lines
 
 
@@ -190,60 +187,55 @@ def drop_units(text: str)->float:
 #%% Section definitions
 
 def section_breaks(source, context, break_triggers: List[SectionBreak]):
-    #logger.debug('in section_breaks')
+    logger.debug('in section_breaks')
     for line in source:
         logger.debug(f'In section_breaks, received line: {line}')
         for break_trigger in break_triggers:
+            logger.debug(f'Checking Trigger: {break_trigger.name}')            
             is_break, context = break_trigger.check(context, line)
             if is_break:
                 logger.debug(f'Section Break Detected')
                 if break_trigger.step_back > 0: # Don't use current line
-                    logger.debug(f'Stepping back {break_trigger.step_back + 1} lines')                    
+                    logger.debug(f'Stepping back {break_trigger.step_back} lines')                    
                     context['Source'].step_back = break_trigger.step_back
-                else:
+                else: # Use more lines before activating break
                     logger.debug(f'Using {break_trigger.step_back + 1} more lines before break')                    
                     for step in range(break_trigger.step_back + 1):
                         logger.debug(f'Using {step} more lines')
                         yield line
-                raise StopSection(context=context)
-            else:
-                yield line
+                raise StopSection(context=context)        
+        logger.debug('No Break Triggered')
+        yield line
+    raise StopSection(context=context)
 
-
-def scan_section(context, break_triggers):
+def scan_section(context, section_name, break_triggers):
+    context['Current Section'] = section_name
+    logger.debug(f'Starting New Section: {section_name}.')
     cleaned_lines = clean_lines(context['Source'])
     section = section_breaks(cleaned_lines, context, break_triggers)
     csvreader = csv.reader(section, delimiter=':', quotechar='"')
     trimmed_lined = trim_lines(csvreader)
     section_lines = list()
     while True:
+        row = None
         try:
             row = trimmed_lined.__next__()
-            logger.debug(f'found row: {row}.')
-            section_lines.append(row)
         except StopSection as stop_sign:
             pprint(stop_sign)
+            print()
             logger.debug('end of the section')
             break
         except IndexError as eof:
             pprint(eof)
+            print()
             logger.debug('End of Source')
             break
-        else:
-            #logger.debug('next line')
-            continue
+        logger.debug(f'found row: {row}.')
+        if row is not None:
+            section_lines.append(row)
+        logger.debug('next line')
     return section_lines
 
-def plan_info_section(cleaned_lines):
-    logger.debug('in plan_info section')
-    for cleaned_line in cleaned_lines:
-        if '% for dose (%)' in cleaned_line:
-            logger.debug(f'In plan_info_section, yielding cleaned_line: {cleaned_line}')
-            yield cleaned_line
-            raise StopSection
-        else:
-            logger.debug(f'In plan_info_section, yielding cleaned_line: {cleaned_line}')
-            yield cleaned_line
 
 def plan_data_section(cleaned_lines):
     logger.debug('in plan_data section')
@@ -279,13 +271,19 @@ with open(test_file, newline='') as csvfile:
         'Line Count': 0,
         'Source': raw_lines
         }
-    dvh_info_break = SectionBreak(TextTrigger(['Plan', 'Plan sum']))
-    section_lines = scan_section(context, break_triggers = [dvh_info_break])
+    dvh_info_break = SectionBreak(TextTrigger(['Plan', 'Plan sum']), 
+                                   name='dvh_info')
+    section_lines = scan_section(context, section_name = 'DVH Info',
+                                 break_triggers = [dvh_info_break])
     pprint(section_lines)
-    plan_info_break = SectionBreak(TextTrigger(['% for dose (%):']), offset='After')
-    plan_data_break = SectionBreak(TextTrigger(['Structure']), offset='Before')
-    section_lines = scan_section(context, break_triggers = [plan_info_break,
-                                                            plan_data_break])
+    plan_info_break = SectionBreak(TextTrigger(['% for dose (%):']), 
+                                   offset='After', 
+                                   name='plan_info')
+    plan_data_break = SectionBreak(TextTrigger(['Structure']), 
+                                   offset='Before', 
+                                   name='plan_data')
+    section_lines = scan_section(context, section_name = 'Plan Info',
+                                 break_triggers = [plan_info_break,                                                            
+                                                   plan_data_break])
     pprint(section_lines)
 print('done')
-
