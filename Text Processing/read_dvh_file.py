@@ -20,7 +20,19 @@ logger = lg.config_logger(prefix='read_dvh.file')
 class TextReadException(Exception): pass
 
 
-class StopSection(GeneratorExit):
+class StopSection(TextReadException):
+    '''A Section has ended through activation of a trigger.
+    '''
+    def __init__(self, *args, context=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.context = context
+
+    def get_context(self):
+        return self.context
+
+class EOF(TextReadException):
+    '''A Section has ended through reaching the end of the source.
+    '''
     def __init__(self, *args, context=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.context = context
@@ -30,72 +42,6 @@ class StopSection(GeneratorExit):
 
 
 #%% Classes
-class TextTrigger():
-    '''
-     Trigger Types:
-     None
-     List[str]
-     Regex
-     Callable
-     n
-     If None continue  to end of file  / Stream
-     If list of strings, a match with any string in the list will be a pass
-     The matched string will be added to the Context dict.
-     If Regex the re.match object will be added to the Context dict.
-     If Callable, a non-None return value will be a pass
-     The return value will be added to the Context dict.
-     Triggers can be chained for "AND" operations.
-     If n skip n lines then trigger
-     If Repeating sub-sections, can be number of repetitions
-     '''
-    def __init__(self, sentinel_list: List[str], name='TextTrigger'):
-        '''Define Text strings that signal a trigger event.
-        sentinel
-        '''
-        self.sentinels = sentinel_list
-
-    def apply(self, context: Dict[str, any], line: str)->(bool, str):
-        logger.debug('in apply trigger')
-        for sentinel in self.sentinels:
-            if sentinel in line:
-                logger.debug(f'Triggered on {sentinel}')
-                return True,  sentinel
-            else:
-                return False, None
-
-
-class SectionBreak():
-    def __init__(self, trigger: TextTrigger,
-                 offset='Before', name='SectionBreak'):
-        '''
-        starting_offset	[Int or str] if str, one of Before or After
-        if 0 or 'Before, Include the line that activates the Trigger in the section.
-        if 1 or 'After, Skip the line that activates the Trigger.
-        '''
-        self.name = name
-        self.step_back = 0
-        self.set_step_back(offset)
-        self.trigger = trigger
-
-    def set_step_back(self, offset):
-        try:
-            self.step_back = -(int(offset) - 1)
-        except ValueError:
-            if isinstance(offset, str):
-                if 'Before' in offset:
-                    self.step_back = 1
-                elif 'After' in offset:
-                    self.step_back = 0
-
-    def check(self, context: Dict[str, any], line: str):
-        logger.debug('in section_break.check')
-        is_break, sentinel = self.trigger.apply(context, line)
-        if is_break:
-            logger.debug(f'Break triggered by {sentinel}')
-            context['sentinel'] = sentinel
-        return is_break, context
-
-
 class LineIterator():
     '''Iterate through line sequence.
     '''
@@ -145,6 +91,121 @@ class LineIterator():
         self._step_back = 0
 
 
+class TextTrigger():
+    '''
+     Trigger Types:
+     None
+     List[str]
+     Regex
+     Callable
+     n
+     If None continue  to end of file  / Stream
+     If list of strings, a match with any string in the list will be a pass
+     The matched string will be added to the Context dict.
+     If Regex the re.match object will be added to the Context dict.
+     If Callable, a non-None return value will be a pass
+     The return value will be added to the Context dict.
+     Triggers can be chained for "AND" operations.
+     If n skip n lines then trigger
+     If Repeating sub-sections, can be number of repetitions
+     '''
+    def __init__(self, sentinel_list: List[str], name='TextTrigger'):
+        '''Define Text strings that signal a trigger event.
+        sentinel
+        '''
+        self.sentinels = sentinel_list
+
+    def apply(self, context: Dict[str, any], line: str)->(bool, str):
+        logger.debug('in apply trigger')
+        for sentinel in self.sentinels:
+            if sentinel in line:
+                logger.debug(f'Triggered on {sentinel}')
+                return True,  sentinel
+            else:
+                return False, None
+
+
+class SectionBreak():
+    def __init__(self, trigger: TextTrigger,
+                 offset='Before', name='SectionBreak'):
+        '''
+        starting_offset	[Int or str] if str, one of Before or After
+        if 0 or 'Before, Include the line that activates the Trigger in the section.
+        if 1 or 'After, Skip the line that activates the Trigger.
+        '''
+        self.name = name
+        self.trigger = trigger
+        self.offset = self.get_offset(offset)
+
+        self.count_down = None
+        self.active_sentinel = None
+
+    @staticmethod
+    def get_offset(offset):
+        '''Calculate the appropriate step_back value to store.
+        Before is a step back of -1
+        After is a step back of 1
+        An offset of 0 will cause the line that activated the trigger to be
+        dropped.
+        '''
+        offset_value = None
+        try:
+            offset_value = int(offset)
+        except ValueError as err:
+            if isinstance(offset, str):
+                if 'Before' in offset:
+                    offset_value = -1
+                elif 'After' in offset:
+                    offset_value = 1
+            else:
+                raise err('Offset must be an integer or one of'
+                          '"Before" or "After"\t Got {repr(offset)}')
+        return offset_value
+
+    def check(self, context: Dict[str, any], line: str):
+        '''Check for a Break condition
+        If an Active count down situation exists, continue the count down.
+        Otherwise, apply the trigger test.
+        If the Trigger signals a break, set the appropriate line location for
+        the break based on the offset value.
+        '''
+        logger.debug('in section_break.check')
+        if self.count_down is None:  # No Active Count Down
+            is_break, sentinel = self.trigger.apply(context, line)
+            if is_break:
+                is_break, context = self.set_line_location(context,
+                                                           is_break, sentinel)
+        elif self.count_down == 0:  # End of Count Down Reached
+            logger.debug(f'Line count down in {self.name} completed.')
+            self.count_down = None  # Remove Active Count Down
+            is_break = True
+            context['sentinel'] = self.active_sentinel
+        elif self.count_down > 0:  #  Active Count Down Exists
+            logger.debug(f'Line count down in {self.name} Continuing;\t'
+                         f'Count down now at {self.count_down}')
+            self.count_down -= 1   #  Continue Count Down
+            is_break = False
+            sentinel = self.active_sentinel
+        return is_break, context
+
+    def set_line_location(self, context, is_break, sentinel):
+        '''Set the appropriate line location for a break based on the offset
+        value.
+        '''
+        logger.debug(f'Break triggered by {sentinel}')
+        self.active_sentinel = sentinel
+        if self.offset < 0: # Don't use current line
+            logger.debug(f'Stepping back {-self.offset} lines')
+            context['sentinel'] = sentinel
+            context['Source'].step_back = -self.offset
+        else: # Use more lines before activating break
+            logger.debug(f'Using {self.offset} more lines.')
+            self.count_down = self.offset  # Begin Active Count Down
+        return is_break, context
+
+
+
+
 #%% Functions
 def clean_lines(file):
     for raw_line in file:
@@ -185,36 +246,30 @@ def drop_units(text: str)->float:
 
 
 #%% Section definitions
-
-def section_breaks(source, context, break_triggers: List[SectionBreak]):
-    logger.debug('in section_breaks')
+def break_iterator(source, context, break_triggers: List[SectionBreak]):
+    logger.debug('In break_iterator')
     for line in source:
         logger.debug(f'In section_breaks, received line: {line}')
         for break_trigger in break_triggers:
-            logger.debug(f'Checking Trigger: {break_trigger.name}')            
+            logger.debug(f'Checking Trigger: {break_trigger.name}')
             is_break, context = break_trigger.check(context, line)
             if is_break:
                 logger.debug(f'Section Break Detected')
-                if break_trigger.step_back > 0: # Don't use current line
-                    logger.debug(f'Stepping back {break_trigger.step_back} lines')                    
-                    context['Source'].step_back = break_trigger.step_back
-                else: # Use more lines before activating break
-                    logger.debug(f'Using {break_trigger.step_back + 1} more lines before break')                    
-                    for step in range(break_trigger.step_back + 1):
-                        logger.debug(f'Using {step} more lines')
-                        yield line
-                raise StopSection(context=context)        
+                raise StopSection(context=context)
         logger.debug('No Break Triggered')
         yield line
-    raise StopSection(context=context)
+    raise EOF(context=context)
 
-def scan_section(context, section_name, break_triggers):
+
+def scan_section(context, section_name, break_triggers: List[SectionBreak]):
     context['Current Section'] = section_name
     logger.debug(f'Starting New Section: {section_name}.')
     cleaned_lines = clean_lines(context['Source'])
-    section = section_breaks(cleaned_lines, context, break_triggers)
-    csvreader = csv.reader(section, delimiter=':', quotechar='"')
+    active_lines = break_iterator(cleaned_lines, context, break_triggers)
+    csvreader = csv.reader(active_lines, delimiter=':', quotechar='"')
     trimmed_lined = trim_lines(csvreader)
+
+    # Section iterator
     section_lines = list()
     while True:
         row = None
@@ -225,65 +280,77 @@ def scan_section(context, section_name, break_triggers):
             print()
             logger.debug('end of the section')
             break
-        except IndexError as eof:
+        except EOF as eof:
             pprint(eof)
             print()
             logger.debug('End of Source')
             break
-        logger.debug(f'found row: {row}.')
+        logger.debug(f'Found row: {row}.')
         if row is not None:
             section_lines.append(row)
         logger.debug('next line')
     return section_lines
 
 
-def plan_data_section(cleaned_lines):
-    logger.debug('in plan_data section')
-    for cleaned_line in cleaned_lines:
-        if 'Plan:' in cleaned_line:
-            cleaned_lines.step_back = 2
-            logger.debug('In plan_data_section, yielding cleaned_lines')
-            yield from plan_info_section(cleaned_lines)
-        elif 'Plan sum:' in cleaned_line:
-            cleaned_lines.step_back = 2
-            logger.debug('In plan_data_section, yielding cleaned_lines')
-            yield from plan_info_section(cleaned_lines)
-        elif 'Structure' in cleaned_line:
-            cleaned_lines.step_back = 2
-            raise StopSection
-        else:
-            continue
+def section_manager(context):
+    dvh_info_break = [
+        SectionBreak(TextTrigger(['Plan:', 'Plan sum:']),name='dvh_info')
+        ]
 
-#%% Test File
-base_path = Path.cwd()
+    plan_info_break = [
+        SectionBreak(TextTrigger(['% for dose (%):']), offset='After',
+                     name='End of Plan Info')
+        ]
 
-test_file_path = r'..\Testing\Test Data\Text Files'
-test_file = base_path / test_file_path / 'PlanSum vs Original.dvh'
-#test_file = Path.cwd() / 'PlanSum vs Original.dvh'
+    plan_data_break = [
+        SectionBreak(TextTrigger(['Structure:']), offset='Before',
+                     name='End of Plan Info')
+        ]
 
+    section_lines = scan_section(context, section_name = 'DVH Info',
+                                 break_triggers = dvh_info_break)
+    pprint(section_lines)
+    section_lines = scan_section(context, section_name = 'Plan Info',
+                                 break_triggers = plan_info_break)
+    pprint(section_lines)
+    section_lines = scan_section(context, section_name = 'Plan Info',
+                                 break_triggers = plan_data_break)
+    pprint(section_lines)
+    return context, section_lines
+
+def file_reader(test_file):
+    with open(test_file, newline='') as csvfile:
+        raw_lines = LineIterator(csvfile)
+        context = {
+            'File Name': test_file.name,
+            'File Path': test_file.parent,
+            'Line Count': 0,
+            'Source': raw_lines
+            }
+        context, section_lines = section_manager(context)
+    return context, section_lines
 
 #%% Main Iteration
-with open(test_file, newline='') as csvfile:
-    raw_lines = LineIterator(csvfile)
-    context = {
-        'File Name': test_file.name,
-        'File Path': test_file.parent,
-        'Line Count': 0,
-        'Source': raw_lines
-        }
-    dvh_info_break = SectionBreak(TextTrigger(['Plan', 'Plan sum']), 
-                                   name='dvh_info')
-    section_lines = scan_section(context, section_name = 'DVH Info',
-                                 break_triggers = [dvh_info_break])
-    pprint(section_lines)
-    plan_info_break = SectionBreak(TextTrigger(['% for dose (%):']), 
-                                   offset='After', 
-                                   name='plan_info')
-    plan_data_break = SectionBreak(TextTrigger(['Structure']), 
-                                   offset='Before', 
-                                   name='plan_data')
-    section_lines = scan_section(context, section_name = 'Plan Info',
-                                 break_triggers = [plan_info_break,                                                            
-                                                   plan_data_break])
-    pprint(section_lines)
-print('done')
+def main():
+    # Test File
+    base_path = Path.cwd()
+
+    #test_file = Path.cwd() / 'PlanSum vs Original.dvh'
+
+    test_file_path = r'..\Testing\Test Data\Text Files'
+    test_file = base_path / test_file_path / 'PlanSum vs Original.dvh'
+
+    # Call Primary routine
+    context, section_lines = file_reader(test_file)
+    print('done')
+
+
+
+
+if __name__ == '__main__':
+    main()
+
+
+
+
+
