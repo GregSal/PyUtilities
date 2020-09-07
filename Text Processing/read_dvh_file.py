@@ -14,7 +14,7 @@ import logging_tools as lg
 
 
 #%% Logging
-logger = lg.config_logger(prefix='read_dvh.file')
+logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
 
 #%% Exceptions
 class TextReadException(Exception): pass
@@ -121,8 +121,7 @@ class TextTrigger():
             if sentinel in line:
                 logger.debug(f'Triggered on {sentinel}')
                 return True,  sentinel
-            else:
-                return False, None
+        return False, None
 
 
 class SectionBreak():
@@ -130,8 +129,8 @@ class SectionBreak():
                  offset='Before', name='SectionBreak'):
         '''
         starting_offset	[Int or str] if str, one of Before or After
-        if 0 or 'Before, Include the line that activates the Trigger in the section.
-        if 1 or 'After, Skip the line that activates the Trigger.
+        if -1 or 'Before', Save the line that activates the Trigger for next section.
+        if 0 or 'After', Include the line that activates the Trigger in the section.
         '''
         self.name = name
         self.trigger = trigger
@@ -144,9 +143,7 @@ class SectionBreak():
     def get_offset(offset):
         '''Calculate the appropriate step_back value to store.
         Before is a step back of -1
-        After is a step back of 1
-        An offset of 0 will cause the line that activated the trigger to be
-        dropped.
+        After is a step back of 0.
         '''
         offset_value = None
         try:
@@ -156,10 +153,10 @@ class SectionBreak():
                 if 'Before' in offset:
                     offset_value = -1
                 elif 'After' in offset:
-                    offset_value = 1
+                    offset_value = 0
             else:
                 raise err('Offset must be an integer or one of'
-                          '"Before" or "After"\t Got {repr(offset)}')
+                          '"Before" or "After";\t Got {repr(offset)}')
         return offset_value
 
     def check(self, context: Dict[str, any], line: str):
@@ -179,6 +176,7 @@ class SectionBreak():
             logger.debug(f'Line count down in {self.name} completed.')
             self.count_down = None  # Remove Active Count Down
             is_break = True
+            context['Source'].step_back = 1  # Save current line for next section
             context['sentinel'] = self.active_sentinel
         elif self.count_down > 0:  #  Active Count Down Exists
             logger.debug(f'Line count down in {self.name} Continuing;\t'
@@ -194,16 +192,15 @@ class SectionBreak():
         '''
         logger.debug(f'Break triggered by {sentinel}')
         self.active_sentinel = sentinel
-        if self.offset < 0: # Don't use current line
+        if self.offset < 0: # Save current line for next section
             logger.debug(f'Stepping back {-self.offset} lines')
             context['sentinel'] = sentinel
             context['Source'].step_back = -self.offset
         else: # Use more lines before activating break
             logger.debug(f'Using {self.offset} more lines.')
             self.count_down = self.offset  # Begin Active Count Down
+            is_break = False
         return is_break, context
-
-
 
 
 #%% Functions
