@@ -85,7 +85,7 @@ merge_columns(data_table: pd.DataFrame, columns: List[str],
             A Pandas DataFrame or Series with the merged columns and data.
 '''
 from collections.abc import Iterable
-from typing import List, Dict, Tuple, Any, Union, Set, NamedTuple 
+from typing import List, Dict, Tuple, Any, Union, Set, NamedTuple
 import pandas as pd
 
 
@@ -134,12 +134,87 @@ class DataElement(NamedTuple):
             raise ValueError('Unknown units') from err
         new_value = float(self.Value)*conversion_factor
         return DataElement(new_value, target_units)
-    
-    
+
+
+def drop_units(text: str)->float:
+    number_value_pattern = (
+        '^'                # beginning of string
+        '\s*'              # Skip leading whitespace
+        '(?P<value>'       # beginning of value integer group
+        '[-+]?'            # initial sign
+        '\d+'              # float value before decimal
+        '[.]?'             # decimal Place
+        '\d*'              # float value after decimal
+        ')'                # end of value string group
+        '\s*'              # skip whitespace
+        '(?P<unit>'        # beginning of value integer group
+        '[^\s]*'           # units do not contain spaces
+        ')'                # end of unit string group
+        '\s*'              # drop trailing whitespace
+        '$'                # end of string
+        )
+    #find_num = re.compile(number_value_pattern)
+    find_num = re.findall(number_value_pattern, text)
+    if find_num:
+        value, unit = find_num[0]
+        return value
+    return text
+
+
+def value_parse(value_string: str)->Value:
+    '''Convert a string number with units to separate number and unit.
+    Split based on a space between number and unit. If no space, in the
+        value string, try converting value to a float and return unit as an
+        empty string.
+    Args:
+        value_string: A string containing a number or a number a space and a
+            unit.
+    Raises:
+        ValueError
+    Returns:
+        A tuple:
+            The number as float,
+            The unit as string
+    '''
+    # TODO allow value_parse to identify units even when no space is present.
+    try:
+        (num, unit) = value_string.split(sep=' ', maxsplit=1)
+    except (AttributeError, ValueError):
+        number = float(value_string) # type: float
+        unit = ''
+    else:
+        try:
+            number = float(num) # type: ignore
+            unit = unit.strip()
+        except ValueError:
+            number = float(value_string)
+            unit = ''
+    return (number, unit)
+
+
+def value2num(value_string: str)->float:
+    '''Convert a string type value to a number by removing the unit
+    portion of the string.
+    The number portion of the string is identified by a space between the
+    number and the unit. If there is no space, in value_string, it will try
+    converting value_string to a float.
+    Args:
+        value_string: A string containing a number or a number a space and a
+            unit.
+    Raises:
+        ValueError
+    Returns:
+        A tuple:
+            The number as float,
+            The unit as string
+    '''
+    return value_parse(value_string)[0]
+
+
 def sort_dict(dict_data: Dict[str, Any],# FIXME Use Generic typing for Dict Value
               sort_list: List[str] = None
               )->List[Any]:
-    '''Generate a sorted list of from dictionary values. 
+    '''Generate a sorted list of from dictionary values.
     Arguments:
         dict_data {Dict[str, Any]} -- A dictionary containing values with
             multiple sortable attributes.
@@ -226,56 +301,6 @@ def nearest_step(value: float, step_size: float = 1.0,
         rounded = (-abs(value)//step_size)*step_size  # rounded up
     rounded = sign*rounded
     return rounded
-
-
-def value_parse(value_string: str)->Value:
-    '''Convert a string number with units to separate number and unit.
-    Split based on a space between number and unit. If no space, in the
-        value string, try converting value to a float and return unit as an
-        empty string.
-    Args:
-        value_string: A string containing a number or a number a space and a
-            unit.
-    Raises:
-        ValueError
-    Returns:
-        A tuple:
-            The number as float,
-            The unit as string
-    '''
-    # TODO allow value_parse to identify units even when no space is present.
-    try:
-        (num, unit) = value_string.split(sep=' ', maxsplit=1)
-    except (AttributeError, ValueError):
-        number = float(value_string) # type: float
-        unit = ''
-    else:
-        try:
-            number = float(num) # type: ignore
-            unit = unit.strip()
-        except ValueError:
-            number = float(value_string)
-            unit = ''
-    return (number, unit)
-
-
-def value2num(value_string: str)->float:
-    '''Convert a string type value to a number by removing the unit
-    portion of the string.
-    The number portion of the string is identified by a space between the
-    number and the unit. If there is no space, in value_string, it will try
-    converting value_string to a float.
-    Args:
-        value_string: A string containing a number or a number a space and a
-            unit.
-    Raises:
-        ValueError
-    Returns:
-        A tuple:
-            The number as float,
-            The unit as string
-    '''
-    return value_parse(value_string)[0]
 
 
 def select_data(data: pd.DataFrame,

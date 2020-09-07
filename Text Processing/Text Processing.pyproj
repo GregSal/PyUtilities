@@ -10,6 +10,9 @@
     <OutputPath>.</OutputPath>
     <Name>Text Processing</Name>
     <RootNamespace>Text Processing</RootNamespace>
+    <TestFramework>unittest</TestFramework>
+    <UnitTestPattern>test*.py</UnitTestPattern>
+    <UnitTestRootDirectory>.</UnitTestRootDirectory>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -34,6 +37,15 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Exception Test Output.txt" />
+    <Content Include="Text Files\ESOI.dvh" />
+    <Content Include="Text Files\Old vs new.dvh" />
+    <Content Include="Text Files\PlanCheck Plan Sum.dvh" />
+    <Content Include="Text Files\PlanSum Only.dvh" />
+    <Content Include="Text Files\PlanSum vs Original.dvh" />
+    <Content Include="Text Files\Test1.dvh" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Text Files\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

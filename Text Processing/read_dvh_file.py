@@ -16,6 +16,7 @@ import logging_tools as lg
 #%% Logging
 logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
 
+
 #%% Exceptions
 class TextReadException(Exception): pass
 
@@ -29,6 +30,7 @@ class StopSection(TextReadException):
 
     def get_context(self):
         return self.context
+
 
 class EOF(TextReadException):
     '''A Section has ended through reaching the end of the source.
@@ -209,6 +211,7 @@ def clean_lines(file):
         logger.debug(f'In clean_lines, yielding raw_line: {raw_line}')
         yield clean_ascii_text(raw_line)
 
+
 def trim_lines(parsed_lines):
     for parsed_line in parsed_lines:
         trimed_lines = [item.strip() for item in parsed_line]
@@ -241,7 +244,6 @@ def drop_units(text: str)->float:
     return text
 
 
-
 #%% Section definitions
 def break_iterator(source, context, break_triggers: List[SectionBreak]):
     logger.debug('In break_iterator')
@@ -257,8 +259,37 @@ def break_iterator(source, context, break_triggers: List[SectionBreak]):
         yield line
     raise EOF(context=context)
 
+def line_parser():
+    pass
+
+def prescribed_dose_parse():
+    pass
+
+def plan_status_parse():
+    pass
+
+def merge_rows():
+    pass
+
+def drop_blanks():
+    pass
+
+def date_processing():
+    pass
+
+def number_processing():
+    pass
+
 
 def scan_section(context, section_name, break_triggers: List[SectionBreak]):
+# Apply Section Cleaning -> clean_lines
+# Check for End of Section Break -> break_triggers
+
+# Call Line Parser, passing Context & Lines -> Dialect, Special Lines
+
+# Apply Line Processing Rules -> trim_lines
+
+# Apply Section Formatting ->
     context['Current Section'] = section_name
     logger.debug(f'Starting New Section: {section_name}.')
     cleaned_lines = clean_lines(context['Source'])
@@ -273,12 +304,12 @@ def scan_section(context, section_name, break_triggers: List[SectionBreak]):
         try:
             row = trimmed_lined.__next__()
         except StopSection as stop_sign:
-            pprint(stop_sign)
+            #pprint(stop_sign)
             print()
             logger.debug('end of the section')
             break
         except EOF as eof:
-            pprint(eof)
+            #pprint(eof)
             print()
             logger.debug('End of Source')
             break
@@ -315,6 +346,7 @@ def section_manager(context):
     pprint(section_lines)
     return context, section_lines
 
+
 def file_reader(test_file):
     with open(test_file, newline='') as csvfile:
         raw_lines = LineIterator(csvfile)
@@ -327,6 +359,7 @@ def file_reader(test_file):
         context, section_lines = section_manager(context)
     return context, section_lines
 
+
 #%% Main Iteration
 def main():
     # Test File
@@ -334,7 +367,7 @@ def main():
 
     #test_file = Path.cwd() / 'PlanSum vs Original.dvh'
 
-    test_file_path = r'..\Testing\Test Data\Text Files'
+    test_file_path = r'Text Files'
     test_file = base_path / test_file_path / 'PlanSum vs Original.dvh'
 
     # Call Primary routine
@@ -342,12 +375,5 @@ def main():
     print('done')
 
 
-
-
 if __name__ == '__main__':
     main()
-
-
-
-
-
