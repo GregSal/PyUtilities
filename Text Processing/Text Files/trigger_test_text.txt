@@ -1,0 +1,49 @@
+Comment              : DVHs for a plan sum
+Date                 : Thursday, August 13, 2020 15:21:06
+Type                 : Cumulative Dose Volume Histogram
+Description          : The cumulative DVH displays the percentage (relative)
+                       or volume (absolute) of structures that receive a dose
+Plan sum: Plan Sum
+Course: C1
+Prescribed dose [cGy]: not defined
+% for dose (%): not defined
+ Dose [cGy]: 1483.4
+Dose [cGy] Ratio of Total Structure Volume [%]
+         0                       100
+Comment              : DVHs for multiple plans and plan sums
+Date                 : Friday, January 17, 2020 09:46:58
+
+Plan: PARR2-50Gy
+Course: PLAN SUM
+Plan Status: Unapproved
+Prescribed dose [cGy]: 5000.0
+% for dose (%): 100.0
+
+Plan: PARR
+Course: C1
+Plan Status: Treatment Approved Thursday, January 02, 2020 12:55:56 by gsal
+Prescribed dose [cGy]: 5000.0
+% for dose (%): 100.0
+
+Structure: PRV5 SpinalCanal
+Approval Status: Approved
+Plan: PARR2-50Gy
+Course: PLAN SUM
+Exported by          : gsal
+Plan sum: Plan Sum
+Course: PLAN SUM
+Prescribed dose [cGy]: not defined
+% for dose (%): not defined
+
+Plan: PARR
+Course: C1
+Plan Status: Treatment Approved Thursday, January 02, 2020 12:55:56 by gsal
+Prescribed dose [cGy]: 5000.0
+% for dose (%): 100.0
+
+Structure: PRV5 SpinalCanal
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 121.5
+         1                       100

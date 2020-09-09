@@ -10,6 +10,7 @@ from typing import List, Dict, Any
 import csv
 import re
 from file_utilities import clean_ascii_text
+from data_utilities import true_iterable
 import logging_tools as lg
 
 
@@ -111,19 +112,120 @@ class TextTrigger():
      If n skip n lines then trigger
      If Repeating sub-sections, can be number of repetitions
      '''
-    def __init__(self, sentinel_list: List[str], name='TextTrigger'):
+    def __init__(self, sentinel: List[str], name='TextTrigger'):
         '''Define Text strings that signal a trigger event.
         sentinel
         '''
-        self.sentinels = sentinel_list
+        self.sentinel = sentinel
+        self.name = name
 
     def apply(self, context: Dict[str, any], line: str)->(bool, str):
         logger.debug('in apply trigger')
-        for sentinel in self.sentinels:
-            if sentinel in line:
-                logger.debug(f'Triggered on {sentinel}')
-                return True,  sentinel
+        for sentinel_string in self.sentinel:
+            if sentinel_string in line:
+                logger.debug(f'Triggered on {sentinel_string}')
+                return True,  sentinel_string
         return False, None
+
+
+class ReTrigger():
+    '''
+     Trigger Types:
+       Regex
+
+     If Regex the re.match object will be ??? added to the Context dict.
+
+     ???Triggers can be chained for "AND" operations.
+     If n skip n lines then trigger
+     If Repeating sub-sections, can be number of repetitions
+     '''
+    def __init__(self, sentinel: re.Pattern, name='ReTrigger'):
+        '''Define a regular expression that signal a trigger event.
+        sentinel
+        '''
+        self.sentinel = sentinel
+        self.name = name
+
+    def apply(self, context: Dict[str, any], line: str)->(bool, str):
+        logger.debug('in apply trigger')
+        sentinel_match = self.sentinel.search(line)
+        if sentinel_match is not None:
+            logger.debug(f'Triggered on {self.name}')
+            return True,  sentinel_match
+        return False, None
+
+class Trigger():
+    '''
+     Trigger Types:
+     None
+     List[str]
+     Regex
+     Callable
+     n
+     If None continue  to end of file  / Stream
+     If list of strings, a match with any string in the list will be a pass
+     The matched string will be added to the Context dict.
+     If Regex the re.match object will be added to the Context dict.
+     If Callable, a non-None return value will be a pass
+     The return value will be added to the Context dict.
+     Triggers can be chained for "AND" operations.
+     If n skip n lines then trigger
+     If Repeating sub-sections, can be number of repetitions
+     '''
+    def __init__(self, sentinel, name='TextTrigger'):
+        '''Define Text strings that signal a trigger event.
+        sentinel  : List[str], : re.Pattern
+        '''
+        self.sentinel = sentinel
+        self.name = name
+        self.sentinal_type = None
+        self.test = None
+        self.sentinal_type_test()
+
+    def sentinal_type_test(self):
+        if isinstance(self.sentinal, re.Pattern):
+            self.sentinal_type = 'RE'
+            self.test = self.re_test
+        elif true_iterable(self.sentinal):
+            if all(isinstance(snt, str) for snt in self.sentinal):
+                self.sentinal_type = 'List[str]'
+                self.test = self.list_str_test
+        elif isinstance(self.sentinal, str):
+            self.sentinal_type = 'string'
+            self.test = self.str_test
+        else:
+            self.sentinal_type = None
+            self.test = None
+
+    def list_str_test(self, line: str)->(bool, str):
+        for sentinel_string in self.sentinel:
+            if sentinel_string in line:
+                logger.debug(f'Triggered on {sentinel_string}')
+                return True, sentinel_string
+        return False, None
+
+    def str_test(self, line: str)->(bool, str):
+        if sentinel_string in line:
+            logger.debug(f'Triggered on {sentinel_string}')
+            return True, sentinel_string
+        return False, None
+
+    def re_test(self, line: str)->(bool, re.Match):
+        sentinel_match = self.sentinel.search(line)
+        if sentinel_match is not None:
+            logger.debug(f'Triggered on {self.name}')
+            return True,  sentinel_match
+        return False, None
+
+    def apply(self, context: Dict[str, any], line: str):
+        logger.debug('in apply trigger')
+        if self.test:
+            is_pass, sentinel_output = self.test(line)
+        else:
+            is_pass = False
+            sentinel_output = None
+
+        return is_pass, sentinel_output
 
 
 class SectionBreak():
@@ -259,8 +361,50 @@ def break_iterator(source, context, break_triggers: List[SectionBreak]):
         yield line
     raise EOF(context=context)
 
-def line_parser():
-    pass
+def line_parser(active_lines):
+    csv.register_dialect('test',
+                         delimiter=',',
+                         doublequote=True,
+                         quoting=csv.QUOTE_MINIMAL,
+                         quotechar='"',
+                         escapechar=None,
+                         lineterminator='\r\n',
+                         skipinitialspace=False,
+                         strict=False)
+    a = csv.get_dialect('test')
+    csvreader = csv.reader(active_lines, dialect='test')
+    csvreader = csv.reader(active_lines, delimiter=':', quotechar='"')
+    TextTrigger(['Prescribed dose'])
+    # Test: Cleaned Line contains 'Prescribed dose'
+    # Action -> Split  Prescribed dose [cGy]: 4140.0 into 2 lines:
+    # [['Prescribed dose', '4140.0'],
+    # ['Prescribed dose Unit', 'cGy']]
+    #
+    # Don't split date portion
+    # By -> new row
+    # Plan Status: Treatment Approved Thursday, January 02, 2020 12:55:56 by gsal
+    # Plan Status: Planning Approved
+    prescribed_dose_pattern = (
+        r'^'                # Beginning of string
+        r'Prescribed dose'  # Row Label
+        r'\s*'              # Skip whitespace
+        r'[[]'              # Unit start delimiter
+        r'(?P<unit>'        # Beginning of unit group
+        r'[A-Za-z]+'        # Unit text
+        r')'                # end of unit string group
+        r'[]]'              # Unit end delimiter
+        r'\s*'              # Skip whitespace
+        r':'                # Dose delimiter
+        r'\s*'              # Skip whitespace
+        r'(?P<dose>'        # Beginning of dose group
+        r'[0-9.]+'          # Dose value
+        r'|not defined'     # Undefined dose alternate
+        r')'                # end of value string group
+        r'\s*'              # drop trailing whitespace
+        r'$'                # end of string
+        )
+    find_dose_pattern = re.compile(prescribed_dose_pattern)
+
 
 def prescribed_dose_parse():
     pass
