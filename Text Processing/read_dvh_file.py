@@ -94,7 +94,7 @@ class LineIterator():
         self._step_back = 0
 
 
-class TextTrigger():
+class Trigger():
     '''
      Trigger Types:
      None
@@ -128,7 +128,7 @@ class TextTrigger():
         return False, None
 
 
-class ReTrigger():
+class Trigger():
     '''
      Trigger Types:
        Regex
@@ -178,23 +178,23 @@ class Trigger():
         '''
         self.sentinel = sentinel
         self.name = name
-        self.sentinal_type = None
+        self.sentinel_type = None
         self.test = None
-        self.sentinal_type_test()
+        self.sentinel_type_test()
 
-    def sentinal_type_test(self):
-        if isinstance(self.sentinal, re.Pattern):
-            self.sentinal_type = 'RE'
+    def sentinel_type_test(self):
+        if isinstance(self.sentinel, re.Pattern):
+            self.sentinel_type = 'RE'
             self.test = self.re_test
-        elif true_iterable(self.sentinal):
-            if all(isinstance(snt, str) for snt in self.sentinal):
-                self.sentinal_type = 'List[str]'
+        elif true_iterable(self.sentinel):
+            if all(isinstance(snt, str) for snt in self.sentinel):
+                self.sentinel_type = 'List[str]'
                 self.test = self.list_str_test
-        elif isinstance(self.sentinal, str):
-            self.sentinal_type = 'string'
+        elif isinstance(self.sentinel, str):
+            self.sentinel_type = 'string'
             self.test = self.str_test
         else:
-            self.sentinal_type = None
+            self.sentinel_type = None
             self.test = None
 
     def list_str_test(self, line: str)->(bool, str):
@@ -224,12 +224,11 @@ class Trigger():
         else:
             is_pass = False
             sentinel_output = None
-
         return is_pass, sentinel_output
 
 
 class SectionBreak():
-    def __init__(self, trigger: TextTrigger,
+    def __init__(self, trigger: Trigger,
                  offset='Before', name='SectionBreak'):
         '''
         starting_offset	[Int or str] if str, one of Before or After
@@ -374,7 +373,7 @@ def line_parser(active_lines):
     a = csv.get_dialect('test')
     csvreader = csv.reader(active_lines, dialect='test')
     csvreader = csv.reader(active_lines, delimiter=':', quotechar='"')
-    TextTrigger(['Prescribed dose'])
+    Trigger(['Prescribed dose'])
     # Test: Cleaned Line contains 'Prescribed dose'
     # Action -> Split  Prescribed dose [cGy]: 4140.0 into 2 lines:
     # [['Prescribed dose', '4140.0'],
@@ -466,16 +465,16 @@ def scan_section(context, section_name, break_triggers: List[SectionBreak]):
 
 def section_manager(context):
     dvh_info_break = [
-        SectionBreak(TextTrigger(['Plan:', 'Plan sum:']),name='dvh_info')
+        SectionBreak(Trigger(['Plan:', 'Plan sum:']),name='dvh_info')
         ]
 
     plan_info_break = [
-        SectionBreak(TextTrigger(['% for dose (%):']), offset='After',
+        SectionBreak(Trigger(['% for dose (%):']), offset='After',
                      name='End of Plan Info')
         ]
 
     plan_data_break = [
-        SectionBreak(TextTrigger(['Structure:']), offset='Before',
+        SectionBreak(Trigger(['Structure:']), offset='Before',
                      name='End of Plan Info')
         ]
 

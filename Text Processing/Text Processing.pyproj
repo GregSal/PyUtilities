@@ -33,9 +33,7 @@
     <Compile Include="temp.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="test_triggers.py">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="test_trigger.py" />
     <Compile Include="Text_Processing.py" />
   </ItemGroup>
   <ItemGroup>

@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 import re
 
-from read_dvh_file import TextTrigger, ReTrigger
+from read_dvh_file import Trigger, Trigger
 
 
 #%%
@@ -27,16 +27,16 @@ class TestSimpleTriggers(unittest.TestCase):
             }
 
     def test_simple_trigger(self):
-        plan_trigger = TextTrigger(['Plan:', 'Plan sum:'])
+        plan_trigger = Trigger(['Plan:', 'Plan sum:'])
         line = 'Plan sum: Plan Sum'
         is_break, sentinel = plan_trigger.apply(self.context, line)
         self.assertTrue(is_break)
         self.assertEqual(sentinel, 'Plan sum:')
 
     def test_not_trigger(self):
-        plan_trigger = TextTrigger(['Plan:', 'Plan sum:'])
-        info_trigger = TextTrigger(['% for dose (%):'])
-        s_trigger = TextTrigger(['Structure:'], name='End of Plan Info')
+        plan_trigger = Trigger(['Plan:', 'Plan sum:'])
+        info_trigger = Trigger(['% for dose (%):'])
+        s_trigger = Trigger(['Structure:'], name='End of Plan Info')
         line = 'Comment              : DVHs for a plan sum'
         is_break, sentinel = plan_trigger.apply(self.context, line)
         self.assertFalse(is_break)
@@ -81,7 +81,7 @@ class TestReTriggers(unittest.TestCase):
 
 
     def test_re_dose_trigger(self):
-        dose_trigger = ReTrigger(self.re_pattern, name='Prescribed Dose')
+        dose_trigger = Trigger(self.re_pattern, name='Prescribed Dose')
         line = 'Prescribed dose [cGy]: 5000.0'
         results = {
             'unit': 'cGy',
@@ -95,7 +95,7 @@ class TestReTriggers(unittest.TestCase):
 
 
     def test_re_no_dose_trigger(self):
-        dose_trigger = ReTrigger(self.re_pattern, name='Prescribed Dose')
+        dose_trigger = Trigger(self.re_pattern, name='Prescribed Dose')
         line = 'Prescribed dose [cGy]: not defined'
         results = {
             'unit': 'cGy',
@@ -109,7 +109,7 @@ class TestReTriggers(unittest.TestCase):
 
 
     def test_not_trigger(self):
-        dose_trigger = ReTrigger(self.re_pattern, name='Prescribed Dose')
+        dose_trigger = Trigger(self.re_pattern, name='Prescribed Dose')
         line = 'Comment              : DVHs for a plan sum'
         is_break, sentinel = dose_trigger.apply(self.context, line)
         self.assertFalse(is_break)
