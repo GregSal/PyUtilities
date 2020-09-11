@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 import re
 
-from read_dvh_file import Trigger, Trigger
+from Text_Processing import Trigger
 
 
 #%%
