@@ -27,6 +27,13 @@ class TestSimpleTriggers(unittest.TestCase):
             }
 
     def test_simple_trigger(self):
+        s_trigger = Trigger(['Structure:'], name='End of Plan Info')
+        line = 'Structure: PRV5 SpinalCanal'
+        is_break, sentinel = s_trigger.apply(self.context, line)
+        self.assertTrue(is_break)
+        self.assertEqual(sentinel, 'Structure:')
+
+    def test_multi_string_trigger(self):
         plan_trigger = Trigger(['Plan:', 'Plan sum:'])
         line = 'Plan sum: Plan Sum'
         is_break, sentinel = plan_trigger.apply(self.context, line)
@@ -36,11 +43,17 @@ class TestSimpleTriggers(unittest.TestCase):
     def test_not_trigger(self):
         plan_trigger = Trigger(['Plan:', 'Plan sum:'])
         info_trigger = Trigger(['% for dose (%):'])
-        s_trigger = Trigger(['Structure:'], name='End of Plan Info')
         line = 'Comment              : DVHs for a plan sum'
         is_break, sentinel = plan_trigger.apply(self.context, line)
         self.assertFalse(is_break)
         self.assertIsNone(sentinel)
+
+    def test_info_trigger(self):
+        info_trigger = Trigger(['% for dose (%):'])
+        line = '% for dose (%): 100.0'
+        is_break, sentinel = info_trigger.apply(self.context, line)
+        self.assertTrue(is_break)
+        self.assertEqual(sentinel, '% for dose (%):')
 
 class TestReTriggers(unittest.TestCase):
 

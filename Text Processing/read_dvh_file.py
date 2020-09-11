@@ -6,7 +6,7 @@
 from pathlib import Path
 from pprint import pprint
 from collections import deque
-from typing import List, Dict, Any
+from typing import List, Tuple, Dict, Any
 import csv
 import re
 from file_utilities import clean_ascii_text
@@ -108,122 +108,140 @@ class Trigger():
      If Regex the re.match object will be added to the Context dict.
      If Callable, a non-None return value will be a pass
      The return value will be added to the Context dict.
-     Triggers can be chained for "AND" operations.
      If n skip n lines then trigger
      If Repeating sub-sections, can be number of repetitions
      '''
-    def __init__(self, sentinel: List[str], name='TextTrigger'):
+
+    def __init__(self, sentinel, name='TextTrigger', location='IN'):
         '''Define Text strings that signal a trigger event.
-        sentinel
+        sentinel: {str|re.Pattern|Tuple[str],Tuple[re.Pattern}
+        location: 'IN', 'START', 'END', 'FULL'
+        if sentinel is a string type:
+            location == 'IN' -> sentinel in line,
+            location == 'START' -> line.startswith(sentinel), in line,
+            location == 'END' -> line.endswith(sentinel),
+            location == 'FULL' -> sentinel == line.
+        if sentinel is a Regular Expression type:
+            location == 'IN' -> sentinel.search(line),
+            location == 'START' -> sentinel.match(line),
+            location == 'FULL' -> sentinel.fullmatch(line),
+            location == 'END' -> raise NotImplementedError.
+
         '''
         self.sentinel = sentinel
-        self.name = name
-
-    def apply(self, context: Dict[str, any], line: str)->(bool, str):
-        logger.debug('in apply trigger')
-        for sentinel_string in self.sentinel:
-            if sentinel_string in line:
-                logger.debug(f'Triggered on {sentinel_string}')
-                return True,  sentinel_string
-        return False, None
-
-
-class Trigger():
-    '''
-     Trigger Types:
-       Regex
-
-     If Regex the re.match object will be ??? added to the Context dict.
-
-     ???Triggers can be chained for "AND" operations.
-     If n skip n lines then trigger
-     If Repeating sub-sections, can be number of repetitions
-     '''
-    def __init__(self, sentinel: re.Pattern, name='ReTrigger'):
-        '''Define a regular expression that signal a trigger event.
-        sentinel
-        '''
-        self.sentinel = sentinel
-        self.name = name
-
-    def apply(self, context: Dict[str, any], line: str)->(bool, str):
-        logger.debug('in apply trigger')
-        sentinel_match = self.sentinel.search(line)
-        if sentinel_match is not None:
-            logger.debug(f'Triggered on {self.name}')
-            return True,  sentinel_match
-        return False, None
-
-class Trigger():
-    '''
-     Trigger Types:
-     None
-     List[str]
-     Regex
-     Callable
-     n
-     If None continue  to end of file  / Stream
-     If list of strings, a match with any string in the list will be a pass
-     The matched string will be added to the Context dict.
-     If Regex the re.match object will be added to the Context dict.
-     If Callable, a non-None return value will be a pass
-     The return value will be added to the Context dict.
-     Triggers can be chained for "AND" operations.
-     If n skip n lines then trigger
-     If Repeating sub-sections, can be number of repetitions
-     '''
-    def __init__(self, sentinel, name='TextTrigger'):
-        '''Define Text strings that signal a trigger event.
-        sentinel  : List[str], : re.Pattern
-        '''
-        self.sentinel = sentinel
+        self.location = location
         self.name = name
         self.sentinel_type = None
+        self.test_method = None
+        self.test_type = None
         self.test = None
-        self.sentinel_type_test()
+        self.set_sentinel_type_test()
 
-    def sentinel_type_test(self):
-        if isinstance(self.sentinel, re.Pattern):
-            self.sentinel_type = 'RE'
-            self.test = self.re_test
-        elif true_iterable(self.sentinel):
-            if all(isinstance(snt, str) for snt in self.sentinel):
-                self.sentinel_type = 'List[str]'
-                self.test = self.list_str_test
-        elif isinstance(self.sentinel, str):
-            self.sentinel_type = 'string'
-            self.test = self.str_test
-        else:
-            self.sentinel_type = None
-            self.test = None
-
-    def list_str_test(self, line: str)->(bool, str):
-        for sentinel_string in self.sentinel:
-            if sentinel_string in line:
-                logger.debug(f'Triggered on {sentinel_string}')
-                return True, sentinel_string
-        return False, None
-
-    def str_test(self, line: str)->(bool, str):
-        if sentinel_string in line:
+    # Define the return values for a given sentinel type
+    def str_test(self, line: str, sentinel_string: str)->(bool, str):
+        test_result = self.test_method(sentinel_string, line)
+        if test_result:
             logger.debug(f'Triggered on {sentinel_string}')
             return True, sentinel_string
         return False, None
 
-    def re_test(self, line: str)->(bool, re.Match):
-        sentinel_match = self.sentinel.search(line)
+    def re_test(self, line: str, pattern: re.Pattern)->(bool, re.Match):
+        sentinel_match = self.test_method(pattern, line)
         if sentinel_match is not None:
-            logger.debug(f'Triggered on {self.name}')
+            logger.debug(f'Triggered on {sentinel_match.string}')
             return True,  sentinel_match
         return False, None
 
+    # Optional applications of multiple patterns / strings in one trigger
+    def multi_test(self, context, line: str)->(bool, str):
+        for sentinel_item in self.sentinel:
+            test_result, test_value = self.test_type(line, sentinel_item)
+            if test_result:
+                return test_result, test_value
+        return False, None
+
+    def single_test(self, context, line: str) -> (bool, str):
+        return self.test_type(line, self.sentinel)
+
+    # Set the required test function
+    def set_sentinel_test_location(self):
+        '''Set test based on sentinel type and location.
+        if sentinel is a string type:
+            location == 'IN' -> sentinel in line,
+            location == 'START' -> line.startswith(sentinel), in line,
+            location == 'END' -> line.endswith(sentinel),
+            location == 'FULL' -> sentinel == line.
+        if sentinel is a Regular Expression type:
+            location == 'IN' -> sentinel.search(line),
+            location == 'START' -> sentinel.match(line),
+            location == 'FULL' -> sentinel.fullmatch(line),
+            location == 'END' -> raise NotImplementedError.
+        '''
+        if self.sentinel_type == 'String':
+            if self.location == 'IN':
+                self.test_method = lambda sentinel, line: sentinel in line
+            elif self.location == 'START':
+                self.test_method = lambda sentinel, line: line.startswith(sentinel)
+            elif self.location == 'END':
+                self.test_method = lambda sentinel, line: line.endswith(sentinel)
+            elif self.location == 'FULL':
+                self.test_method = lambda sentinel, line: sentinel == line
+        elif self.sentinel_type == 'RE':
+            if self.location == 'IN':
+                self.test_method = lambda sentinel, line: sentinel.search(line)
+            elif self.location == 'START':
+                self.test_method = lambda sentinel, line: sentinel.match(line)
+            elif self.location == 'FULL':
+                self.test_method = lambda sentinel, line: sentinel.fullmatch(line)
+            elif self.location == 'END':
+                raise NotImplementedError('The location "END" is not'
+                                          'compatible with a regular '
+                                          'expression test.')
+        else:
+            self.test_method = None
+
+    def set_sentinel_type_test(self):
+        if self.sentinel is None:
+            self.sentinel_type = 'None'
+            self.test_type = None
+            self.test = None
+        elif true_iterable(self.sentinel):
+            if all(isinstance(snt, str) for snt in self.sentinel):
+                self.sentinel_type = 'String'
+                self.test_type = self.str_test
+                self.test = self.multi_test
+            elif all(isinstance(snt, re.Pattern) for snt in self.sentinel):
+                self.sentinel_type = 'RE'
+                self.test_type = self.re_test
+                self.test = self.multi_test
+            else:
+                raise NotImplementedError(
+                    'Only String and Regular Expression tests are currently '
+                    'supported.'
+                    )
+        elif isinstance(self.sentinel, str):
+            self.sentinel_type = 'String'
+            self.test_type = self.str_test
+            self.test = self.single_test
+        elif isinstance(self.sentinel, re.Pattern):
+            self.sentinel_type = 'RE'
+            self.test_type = self.re_test
+            self.test = self.single_test
+        else:
+            raise NotImplementedError(
+                'Only String and Regular Expression tests are currently '
+                'supported.'
+                )
+        self.set_sentinel_test_location()
+
+    # Apply the defined test and return the results
     def apply(self, context: Dict[str, any], line: str):
         logger.debug('in apply trigger')
-        if self.test:
-            is_pass, sentinel_output = self.test(line)
-        else:
+        if self.test is None:
             is_pass = False
             sentinel_output = None
+        else:
+            is_pass, sentinel_output = self.test(context, line)
         return is_pass, sentinel_output
 
 
@@ -304,6 +322,69 @@ class SectionBreak():
             self.count_down = self.offset  # Begin Active Count Down
             is_break = False
         return is_break, context
+
+#%% Line Parsing
+def make_prescribed_dose_trigger():
+        prescribed_dose_pattern = (
+            r'^'                # Beginning of string
+            r'Prescribed dose'  # Row Label
+            r'\s*'              # Skip whitespace
+            r'[[]'              # Unit start delimiter
+            r'(?P<unit>'        # Beginning of unit group
+            r'[A-Za-z]+'        # Unit text
+            r')'                # end of unit string group
+            r'[]]'              # Unit end delimiter
+            r'\s*'              # Skip whitespace
+            r':'                # Dose delimiter
+            r'\s*'              # Skip whitespace
+            r'(?P<dose>'        # Beginning of dose group
+            r'[0-9.]+'          # Dose value
+            r'|not defined'     # Undefined dose alternate
+            r')'                # end of value string group
+            r'\s*'              # drop trailing whitespace
+            r'$'                # end of string
+            )
+        re_pattern = re.compile(prescribed_dose_pattern)
+        dose_trigger = Trigger(re_pattern, name='Prescribed Dose')
+        return dose_trigger
+
+def parse_prescribed_dose(sentinel):
+    '''Split "Prescribed dose [cGy]" into 2 lines:
+        Prescribed dose
+        Prescribed dose Unit
+
+        Next rule
+        Don't split date portion
+
+        Next rule
+        By -> new row
+            Plan Status: Treatment Approved Thursday, January 02, 2020 12:55:56 by gsal
+            Plan Status: Planning Approved
+
+        '''
+    parse_template = [
+        ['Prescribed dose', '{dose}'],
+        ['Prescribed dose Unit', '{unit}']
+        ]
+    match_results = sentinel.groupdict()
+    if match_results['dose'] == 'not defined':
+        parsed_lines = [
+            ['Prescribed dose', None]
+            ]
+    else:
+        parsed_lines = [
+            [string_item.format(**match_results) for string_item in line_tmpl]
+            for line_tmpl in parse_template
+            ]
+    return parsed_lines
+
+def prescribed_dose_rule(context, line):
+    dose_trigger = make_prescribed_dose_trigger()
+    is_match, sentinel = dose_trigger.apply(context, line)
+    if is_match:
+        parsed_lines = parse_prescribed_dose(sentinel)
+        return parsed_lines
+    return None
 
 
 #%% Functions
