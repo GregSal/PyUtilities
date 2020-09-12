@@ -25,27 +25,61 @@ Line 12
 
 #%%  Prescribed dose parse tests
 class TestBufferedIterator(unittest.TestCase):
+    def setUp(self):
+        self.test_lines = TEST_LINES.splitlines()
+        self.test_gen = BufferedIterator(self.test_lines)
+        self.test_iter = (line for line in self.test_gen)
+
     def test_backup(self):
-        test_lines = BufferedIterator(TEST_LINES)
         # Advance 3 lines
         yielded_lines = list()
         for i in range(3):
-            yielded_lines.append(test_lines.__next__())
+            yielded_lines.append(self.test_iter.__next__())
         #Backup 2 lines
-        test_lines.step_back = 2
-        next_line = test_lines.__next__()
+        self.test_gen.step_back = 2
+        next_line = self.test_iter.__next__()
         self.assertEqual(next_line, yielded_lines[-2])
 
     def test_backup_error(self):
-        test_lines = BufferedIterator(TEST_LINES)
         # Advance 1 line
         yielded_lines = list()
         for i in range(1):
-            yielded_lines.append(test_lines.__next__())
+            yielded_lines.append(self.test_iter.__next__())
         #Try to Backup 2 lines
         with self.assertRaises(ValueError):
-            test_lines.step_back = 2
+            self.test_gen.step_back = 2
 
+    def test_backup_method(self):
+        # Advance 3 lines
+        yielded_lines = list()
+        for i in range(3):
+            yielded_lines.append(self.test_iter.__next__())
+        #Backup 2 lines
+        self.test_gen.backup(2)
+        next_line = self.test_iter.__next__()
+        self.assertEqual(next_line, yielded_lines[-2])
+
+    def test_peak(self):
+        # Advance 3 lines
+        yielded_lines = list()
+        for i in range(3):
+            yielded_lines.append(self.test_iter.__next__())
+        #Look 2 lines ahead
+        future_line = self.test_gen.peak(2)
+        # Advance 2 more lines
+        for i in range(2):
+            yielded_lines.append(self.test_iter.__next__())
+        self.assertEqual(future_line, yielded_lines[-1])
+
+    def test_skip(self):
+        # Advance 3 lines
+        yielded_lines = list()
+        for i in range(3):
+            yielded_lines.append(self.test_iter.__next__())
+        #Look skip 3 lines ahead
+        self.test_gen.skip(3)
+        next_line = self.test_iter.__next__()
+        self.assertEqual(next_line, self.test_lines[3+3+1])
 
 
 

@@ -76,6 +76,9 @@ class BufferedIterator():
             raise ValueError(msg)
         self._step_back =  num_lines
 
+    def backup(self, step: int):
+        self.step_back = step
+
     def __iter__(self):
         '''Step through a line sequence allowing for retracing steps.
         '''
@@ -92,7 +95,6 @@ class BufferedIterator():
             logger.debug(f'\n\nIn LineIterator.__iter__, yielding '
                          f'line: {line}')
             yield line
-
 
     def rewind(self):
         for step in range(self._step_back):
