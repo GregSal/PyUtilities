@@ -172,26 +172,6 @@ def line_parser(active_lines):
         )
     find_dose_pattern = re.compile(prescribed_dose_pattern)
 
-
-def prescribed_dose_parse():
-    pass
-
-def plan_status_parse():
-    pass
-
-def merge_rows():
-    pass
-
-def drop_blanks():
-    pass
-
-def date_processing():
-    pass
-
-def number_processing():
-    pass
-
-
 def scan_section(context, section_name, break_triggers: List[tp.SectionBreak]):
 # Apply Section Cleaning -> clean_lines
 # Check for End of Section Break -> break_triggers
@@ -260,7 +240,7 @@ def section_manager(context):
 
 def file_reader(test_file):
     with open(test_file, newline='') as csvfile:
-        raw_lines = tp.LineIterator(csvfile)
+        raw_lines = tp.BufferedIterator(csvfile)
         context = {
             'File Name': test_file.name,
             'File Path': test_file.parent,
@@ -269,6 +249,28 @@ def file_reader(test_file):
             }
         context, section_lines = section_manager(context)
     return context, section_lines
+
+def process_lines(section_lines):
+    parsed_lines = tp.BufferedIterator(section_lines)
+    pass
+
+
+
+def merge_rows(parsed_lines):
+    for parsed_line in parsed_lines:
+        if len(parsed_line) > 0:
+            yield line
+
+def drop_blanks(parsed_lines):
+    for parsed_line in parsed_lines:
+        if len(parsed_line) > 0:
+            yield line
+
+
+def date_processing():
+    pass
+def number_processing():
+    pass
 
 
 #%% Main Iteration

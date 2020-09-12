@@ -5,7 +5,7 @@
 #%% Imports
 from collections import deque
 from typing import Dict
-from typing import Dict
+import warnings
 import re
 from file_utilities import clean_ascii_text
 from data_utilities import true_iterable
@@ -17,6 +17,8 @@ logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
 
 
 #%% Exceptions
+class TextReadWarnings(UserWarning): pass
+
 class TextReadException(Exception): pass
 
 
@@ -41,10 +43,16 @@ class EOF(TextReadException):
     def get_context(self):
         return self.context
 
+class BufferOverflowWarning(TextReadWarnings):
+   '''Raised when BufferedIterator rewind and advance will cause unyielded
+   lines to be dropped.
+   '''
+   pass
+
 
 #%% Classes
-class LineIterator():
-    '''Iterate through line sequence.
+class BufferedIterator():
+    '''Iterate through sequence allowing for backup and look ahead.
     '''
     def __init__(self, source, max_lines=5):
         self.source = source
@@ -77,10 +85,12 @@ class LineIterator():
             while len(self.repeat_lines) > 0:
                 old_line = self.repeat_lines.pop()
                 self.previous_lines.append(old_line)
-                logger.debug(f'\n\nIn LineIterator.__iter__, yielding old_line: {old_line}')
+                logger.debug(f'\n\nIn LineIterator.__iter__, '
+                             f'yielding old_line: {old_line}')
                 yield old_line
             self.previous_lines.append(line)
-            logger.debug(f'\n\nIn LineIterator.__iter__, yielding line: {line}')
+            logger.debug(f'\n\nIn LineIterator.__iter__, yielding '
+                         f'line: {line}')
             yield line
 
 
@@ -327,6 +337,38 @@ def clean_lines(file):
     for raw_line in file:
         logger.debug(f'In clean_lines, yielding raw_line: {raw_line}')
         yield clean_ascii_text(raw_line)
+
+
+def drop_blanks(lines):
+    for line in lines:
+        if len(line) > 0:
+            yield line
+
+
+def merge_rows(parsed_lines, join_char=' '):
+    '''If only one item in the parsed line , join it to the end of the second
+        item in the previous line.
+        If the line is empty skip it.
+        If the line has more than 2 items, join items 2 to n.
+    '''
+    #FIXME Replace this method by creating a look ahead method for LineIterator
+    merged_lines = list()
+    for parsed_line in parsed_lines:
+        if len(parsed_line) == 0:
+            continue
+        elif len(parsed_line) == 2:
+            merged_lines.append(parsed_line)
+        elif len(parsed_line) > 2:
+            merged = [parsed_line[0]]
+            merged.append(join_char.join(parsed_line[1:]))
+            merged_lines.append(merged)
+        elif len(parsed_line) == 1:
+            last_line = merged_lines[-1]
+            merged = [last_line[0]]
+            merged.append(join_char.join([last_line[1], parsed_line[0]]))
+            merged_lines.append(merged)
+    for line in merged_lines:
+            yield line
 
 
 def trim_lines(parsed_lines):
