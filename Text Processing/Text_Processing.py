@@ -1,16 +1,16 @@
 '''Initial testing of DVH read
 '''
 # pylint: disable=anomalous-backslash-in-string
-
+# pylint: disable=logging-fstring-interpolation
 #%% Imports
 from collections import deque
-from typing import Dict
-import warnings
+from typing import Dict, Sequence, TypeVar
 import re
 from file_utilities import clean_ascii_text
 from data_utilities import true_iterable
 import logging_tools as lg
 
+T = TypeVar('T')
 
 #%% Logging
 logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
@@ -33,75 +33,155 @@ class StopSection(TextReadException):
         return self.context
 
 
-class EOF(TextReadException):
-    '''A Section has ended through reaching the end of the source.
+class BufferedIteratorWarnings(UserWarning):
+    '''Base Warning class for BufferedIterator.'''
+
+
+class BufferedIteratorException(Exception):
+    '''Base Exception class for BufferedIterator.'''
+
+class BufferedIteratorValueError(BufferedIteratorException, ValueError):
+    '''Base Exception class for BufferedIterator.'''
+
+class BufferedIteratorEOF(BufferedIteratorException, StopIteration):
+    '''Raised when the source supplied to BufferedIterator is exhausted.
     '''
-    def __init__(self, *args, context=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.context = context
 
-    def get_context(self):
-        return self.context
-
-class BufferOverflowWarning(TextReadWarnings):
-   '''Raised when BufferedIterator rewind and advance will cause unyielded
-   lines to be dropped.
-   '''
-   pass
-
+class BufferOverflowWarning(BufferedIteratorWarnings):
+    '''Raised when BufferedIterator peak will cause unyielded
+        lines to be dropped.
+    '''
 
 #%% Classes
 class BufferedIterator():
     '''Iterate through sequence allowing for backup and look ahead.
     '''
-    def __init__(self, source, max_lines=5):
-        self.source = source
-        self.previous_lines = deque(maxlen=max_lines)
+    def __init__(self, source: Sequence[T], buffer_size=5):
+        self.buffer_size = buffer_size
+        self.source_gen = (item for item in source)
+        self.previous_items = deque(maxlen=buffer_size)
+        self.future_items = deque(maxlen=buffer_size)
         self._step_back = 0
-        self.repeat_lines = deque(maxlen=max_lines)
         return
 
+    def get_next_item(self) -> T:
+        if len(self.future_items) > 0:
+            # Get the next item from the queued items
+            next_item = self.future_items.popleft()
+            logger.debug(f'Getting item: {next_item}\t from future_items')
+        else:
+            # Get the next item from the source iterator
+            try:
+                next_item = self.source_gen.__next__()
+            except (StopIteration, RuntimeError) as eof:
+                raise BufferedIteratorEOF from eof
+            logger.debug(f'Getting item: {next_item}\t from source')
+        return next_item
+
+    def __iter__(self) -> T:
+        '''Step through a line sequence allowing for retracing steps.
+        '''
+        eof = False
+        while not eof:
+            try:
+                next_line = self.get_next_item()
+            except BufferedIteratorEOF:
+                eof = True
+            else:
+                self.previous_items.append(next_line)
+                yield next_line
+
+
     @property
-    def step_back(self):
+    def step_back(self) -> int:
+        '''The number of steps backwards to move the iterator pointer.'''
         return self._step_back
 
     @step_back.setter
-    def step_back(self, num_lines):
-        if num_lines < 0:
-            raise ValueError("Can't step back negative lines")
-        if len(self.previous_lines) < num_lines:
-            msg = (f"Can't step back {num_lines} lines.\n\t"
-                   f"only have {len(self.previous_lines)} previous lines "
-                    "available.")
-            raise ValueError(msg)
-        self._step_back =  num_lines
-
-    def backup(self, step: int):
-        self.step_back = step
-
-    def __iter__(self):
-        '''Step through a line sequence allowing for retracing steps.
+    def step_back(self, steps: int):
+        '''Move the iterator pointer back the given number of steps.
         '''
-        for line in self.source:
-            if self._step_back:
-                self.rewind()
-            while len(self.repeat_lines) > 0:
-                old_line = self.repeat_lines.pop()
-                self.previous_lines.append(old_line)
-                logger.debug(f'\n\nIn LineIterator.__iter__, '
-                             f'yielding old_line: {old_line}')
-                yield old_line
-            self.previous_lines.append(line)
-            logger.debug(f'\n\nIn LineIterator.__iter__, yielding '
-                         f'line: {line}')
-            yield line
+        if steps < 0:
+            raise BufferedIteratorValueError("Can't step back negative amount")
+        if len(self.previous_items) < steps:
+            msg = (f"Can't step back {steps} items.\n\t"
+                   f"only have {len(self.previous_items)} previous items "
+                    "available.")
+            raise BufferedIteratorValueError(msg)
+        self._step_back = steps
+        self.rewind()
+
+    def backup(self, steps: int):
+        '''Move the iterator pointer back the given number of steps.
+        '''
+        self.step_back = steps
+        self.rewind()
 
     def rewind(self):
-        for step in range(self._step_back):
+        for step in range(self._step_back): # pylint: disable=unused-variable
             self._step_back -= 1
-            if len(self.previous_lines) > 0:
-                self.repeat_lines.append(self.previous_lines.pop())
+            if len(self.previous_items) > 0:
+                self.future_items.appendleft(self.previous_items.pop())
         self._step_back = 0
+
+    def skip(self, steps: int):
+        '''Move the iterator pointer forward the given number of steps
+           dropping the items in between.  The items dropped cannot be
+           retrieved with backup or look_back.
+        '''
+        if steps < 0:
+            raise BufferedIteratorValueError("Can't skip negative amount")
+        for step in range(steps): # pylint: disable=unused-variable
+            self.get_next_item()
+
+    def advance(self, steps: int):
+        '''Move the iterator pointer forward the given number of steps
+           storing the items in between as if they had been returned.  The
+           items passed over can be retrieved with backup or look_back.
+        '''
+        if steps < 0:
+            raise BufferedIteratorValueError("Can't advance a negative amount")
+        if steps > self.buffer_size:
+            raise BufferOverflowWarning(
+                f'Advance {steps} exceeds the buffer_size. Will not be able '
+                'to retrieve all skipped items.')
+        for step in range(steps):  # pylint: disable=unused-variable
+            try:
+                next_item = self.get_next_item()
+            except BufferedIteratorEOF as eof:
+                raise BufferOverflowWarning(
+                    f'advance({steps}) exceeds the remaining items available '
+                    'in source.  Advancing to the end of source.') from eof
+            else:
+                self.previous_items.append(next_item)
+
+    def look_back(self, steps: int)->T:
+        '''Return the sequence value the given number of steps back.
+        '''
+        if steps < 0:
+            raise BufferedIteratorValueError("Can't look back a negative amount")
+        if len(self.previous_items) < steps:
+            msg = (f"Can't look back {steps} items.\n\t"
+                   f"only have {len(self.previous_items)} previous items "
+                    "available.")
+            raise BufferedIteratorValueError(msg)
+        return self.previous_items[-steps]
+
+
+    def look_ahead(self, steps: int)->T:
+        '''Return the sequence value the given number of steps Ahead.
+        '''
+        if steps < 0:
+            raise BufferedIteratorValueError("Can't look ahead a negative amount")
+        read_ahead = steps - len(self.future_items)
+        if read_ahead > 0:
+            if read_ahead > self.buffer_size:
+                raise BufferedIteratorValueError(
+                    f'look_ahead({steps}) exceeds the buffer_size. Will not be able '
+                    'to retrieve all skipped items.')
+            self.advance(read_ahead)
+            self.backup(read_ahead)
+        return self.future_items[steps-1]
 
 
 class Trigger():
@@ -148,14 +228,14 @@ class Trigger():
         self.set_sentinel_type_test()
 
     # Define the return values for a given sentinel type
-    def str_test(self, line: str, sentinel_string: str)->(bool, str):
+    def str_test(self, line: str, sentinel_string: str) -> (bool, str):
         test_result = self.test_method(sentinel_string, line)
         if test_result:
             logger.debug(f'Triggered on {sentinel_string}')
             return True, sentinel_string
         return False, None
 
-    def re_test(self, line: str, pattern: re.Pattern)->(bool, re.Match):
+    def re_test(self, line: str, pattern: re.Pattern) -> (bool, re.Match):
         sentinel_match = self.test_method(pattern, line)
         if sentinel_match is not None:
             logger.debug(f'Triggered on {sentinel_match.string}')
@@ -163,7 +243,8 @@ class Trigger():
         return False, None
 
     # Optional applications of multiple patterns / strings in one trigger
-    def multi_test(self, context, line: str)->(bool, str):
+    def multi_test(self, context, line: str) -> (bool, str):
+        # pylint: disable=unused-argument
         for sentinel_item in self.sentinel:
             test_result, test_value = self.test_type(line, sentinel_item)
             if test_result:
@@ -171,6 +252,7 @@ class Trigger():
         return False, None
 
     def single_test(self, context, line: str) -> (bool, str):
+        # pylint: disable=unused-argument
         return self.test_type(line, self.sentinel)
 
     # Set the required test function
@@ -225,10 +307,8 @@ class Trigger():
                 self.test_type = self.re_test
                 self.test = self.multi_test
             else:
-                raise NotImplementedError(
-                    'Only String and Regular Expression tests are currently '
-                    'supported.'
-                    )
+                raise NotImplementedError('Only String and Regular Expression tests are currently '
+                    'supported.')
         elif isinstance(self.sentinel, str):
             self.sentinel_type = 'String'
             self.test_type = self.str_test
@@ -238,10 +318,8 @@ class Trigger():
             self.test_type = self.re_test
             self.test = self.single_test
         else:
-            raise NotImplementedError(
-                'Only String and Regular Expression tests are currently '
-                'supported.'
-                )
+            raise NotImplementedError('Only String and Regular Expression tests are currently '
+                'supported.')
         self.set_sentinel_test_location()
 
     # Apply the defined test and return the results
@@ -271,12 +349,12 @@ class SectionBreak():
         self.active_sentinel = None
 
     @staticmethod
-    def get_offset(offset):
+    def get_offset(offset)->int:
         '''Calculate the appropriate step_back value to store.
         Before is a step back of -1
         After is a step back of 0.
         '''
-        offset_value = None
+        offset_value = 0
         try:
             offset_value = int(offset)
         except ValueError as err:
@@ -286,8 +364,9 @@ class SectionBreak():
                 elif 'After' in offset:
                     offset_value = 0
             else:
-                raise err('Offset must be an integer or one of'
-                          '"Before" or "After";\t Got {repr(offset)}')
+                msg = ('Offset must be an integer or one of'
+                       '"Before" or "After";\t Got {repr(offset)}')
+                raise ValueError(msg) from err
         return offset_value
 
     def check(self, context: Dict[str, any], line: str):
@@ -370,7 +449,7 @@ def merge_rows(parsed_lines, join_char=' '):
             merged.append(join_char.join([last_line[1], parsed_line[0]]))
             merged_lines.append(merged)
     for line in merged_lines:
-            yield line
+        yield line
 
 
 def trim_lines(parsed_lines):
@@ -380,9 +459,8 @@ def trim_lines(parsed_lines):
         yield trimed_lines
 
 
-def drop_units(text: str)->float:
-    number_value_pattern = (
-        '^'                # beginning of string
+def drop_units(text: str) -> float:
+    number_value_pattern = ('^'                # beginning of string
         '\s*'              # Skip leading whitespace
         '(?P<value>'       # beginning of value integer group
         '[-+]?'            # initial sign
