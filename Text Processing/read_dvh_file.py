@@ -11,6 +11,9 @@ from typing import List
 import csv
 import re
 import logging_tools as lg
+from buffered_iterator import BufferedIterator
+from buffered_iterator import BufferedIteratorValueError
+from buffered_iterator import BufferOverflowWarning
 import Text_Processing as tp
 
 
@@ -110,7 +113,6 @@ def approved_status_rule(context, line):
             ]
         return parsed_lines
     return None
-
 
 
 #%% Section definitions

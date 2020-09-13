@@ -1,11 +1,13 @@
 import unittest
 from pathlib import Path
 
-from Text_Processing import BufferedIterator
+from buffered_iterator import BufferedIterator
+from buffered_iterator import BufferedIteratorValueError
+from buffered_iterator import BufferOverflowWarning
+
 
 #%% Test Text
 TEST_LINES = '''Line 0
-First Line
 Second Line
 Third Line
 Fourth Line
@@ -19,7 +21,9 @@ Line 11
 Line 12
 '''
 # from pprint import pprint
-# pprint(test_lines.splitlines())
+# pprint(TEST_LINES.splitlines())
+#for i,l in enumerate(TEST_LINES.splitlines()):
+#    print(f'{i}\t{l}')
 
 
 
@@ -79,7 +83,7 @@ class TestBufferedIterator(unittest.TestCase):
         previous_line = self.test_gen.look_back(2)
         self.assertEqual(previous_line, yielded_lines[-2])
         next_line = self.test_iter.__next__()
-        self.assertEqual(next_line, self.test_lines[3 + 1])
+        self.assertEqual(next_line, self.test_lines[3])
 
     def test_look_ahead(self):
         # Step through 1st 3 lines
@@ -102,7 +106,7 @@ class TestBufferedIterator(unittest.TestCase):
         #Skip 3 lines ahead
         self.test_gen.skip(3)
         next_line = self.test_iter.__next__()
-        self.assertEqual(next_line, self.test_lines[3+3+1])
+        self.assertEqual(next_line, self.test_lines[3+3])
         #Backup 2 lines
         self.test_gen.backup(2)
         next_line = self.test_iter.__next__()
@@ -118,7 +122,7 @@ class TestBufferedIterator(unittest.TestCase):
         #Advance 3 lines ahead
         self.test_gen.advance(3)
         next_line = self.test_iter.__next__()
-        self.assertEqual(next_line, self.test_lines[3+3+1])
+        self.assertEqual(next_line, self.test_lines[3+3])
         #Backup 3+2 lines
         self.test_gen.backup(3+2)
         next_line = self.test_iter.__next__()
@@ -130,9 +134,34 @@ class TestBufferedIterator(unittest.TestCase):
         for i in range(self.buffer_size):
             yielded_lines.append(self.test_iter.__next__())
         #Backup the entire buffer
-        self.test_gen.backup(2)
+        self.test_gen.backup(self.buffer_size)
         next_line = self.test_iter.__next__()
-        self.assertEqual(next_line, yielded_lines[1-self.buffer_size])
+        self.assertEqual(next_line, yielded_lines[-self.buffer_size])
+
+    def test_source_overun(self):
+        # Advance to fill the buffer
+        yielded_lines = list()
+        num_items = len(self.test_lines)
+        with self.assertRaises(StopIteration):
+            for i in range(num_items+1):
+                yielded_lines.append(self.test_iter.__next__())
+
+    def test_advance_overun(self):
+        # Advance to fill the buffer
+        yielded_lines = list()
+        num_items = len(self.test_lines)
+        for i in range(num_items):
+            yielded_lines.append(self.test_iter.__next__())
+        with self.assertRaises(BufferOverflowWarning):
+            self.test_gen.advance(1)
+
+    def test_look_back_overun(self):
+        # Advance to fill the buffer
+        yielded_lines = list()
+        for i in range(1):
+            yielded_lines.append(self.test_iter.__next__())
+        with self.assertRaises(BufferedIteratorValueError):
+            previous_line = self.test_gen.look_back(2)
 
 
 if __name__ == '__main__':
