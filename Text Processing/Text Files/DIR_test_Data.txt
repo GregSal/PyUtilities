@@ -1,0 +1,202 @@
+ Volume in drive C is Windows
+ Volume Serial Number is DAD9-8F26
+
+ Directory of C:\Users\Greg\OneDrive - Queen's University\Python\DirParse\Test Dir Structure
+
+2017-06-11  08:04 PM    <DIR>          .
+2017-06-11  08:04 PM    <DIR>          ..
+2017-06-11  08:04 PM    <DIR>          Dir1
+2017-06-11  08:04 PM    <DIR>          Dir2
+2016-02-25  10:59 PM                 3 TestFile1.txt
+2016-02-15  07:46 PM                 7 TestFile2.rtf
+2016-02-15  07:47 PM                 0 TestFile3.docx
+2016-04-21  02:06 PM              3491 xcopy.txt
+               4 File(s)           3501 bytes
+
+ Directory of C:\Users\Greg\OneDrive - Queen's University\Python\DirParse\Test Dir Structure\Dir1
+
+2017-06-11  08:04 PM    <DIR>          .
+2017-06-11  08:04 PM    <DIR>          ..
+2016-02-15  07:48 PM                 0 File in Dir One.txt
+2017-06-11  08:04 PM    <DIR>          SubFolder1
+2017-06-11  08:04 PM    <DIR>          SubFolder2
+               1 File(s)              0 bytes
+
+ Directory of C:\Users\Greg\OneDrive - Queen's University\Python\DirParse\Test Dir Structure\Dir1\SubFolder1
+
+2017-06-11  08:04 PM    <DIR>          .
+2017-06-11  08:04 PM    <DIR>          ..
+2016-03-19  10:26 AM                 7 File in SubFolder One.rtf
+               1 File(s)              7 bytes
+
+ Directory of C:\Users\Greg\OneDrive - Queen's University\Python\DirParse\Test Dir Structure\Dir1\SubFolder2
+
+2017-06-11  08:04 PM    <DIR>          .
+2017-06-11  08:04 PM    <DIR>          ..
+2016-02-15  07:49 PM              4544 Another File in Sub Folder 2.jnt
+2016-02-15  07:49 PM              4544 File in Sub Folder 2.jnt
+               2 File(s)           9088 bytes
+
+ Directory of C:\Users\Greg\OneDrive - Queen's University\Python\DirParse\Test Dir Structure\Dir2
+
+2017-06-11  08:04 PM    <DIR>          .
+2017-06-11  08:04 PM    <DIR>          ..
+2016-02-15  07:50 PM                 7 File in Dir 2.rtf
+2017-06-11  08:04 PM    <DIR>          Sub Folder in Dir2
+               1 File(s)              7 bytes
+
+ Directory of C:\Users\Greg\OneDrive - Queen's University\Python\DirParse\Test Dir Structure\Dir2\Sub Folder in Dir2
+
+2017-06-11  08:04 PM    <DIR>          .
+2017-06-11  08:04 PM    <DIR>          ..
+2017-06-11  08:04 PM    <DIR>          Sub SubFolder
+               0 File(s)              0 bytes
+
+ Directory of C:\Users\Greg\OneDrive - Queen's University\Python\DirParse\Test Dir Structure\Dir2\Sub Folder in Dir2\Sub SubFolder
+
+2017-06-11  08:04 PM    <DIR>          .
+2017-06-11  08:04 PM    <DIR>          ..
+2016-03-18  10:53 PM                 0 New Text Document.txt
+2017-06-11  08:04 PM    <DIR>          Sub Sub SubFolder
+               1 File(s)              0 bytes
+
+ Directory of C:\Users\Greg\OneDrive - Queen's University\Python\DirParse\Test Dir Structure\Dir2\Sub Folder in Dir2\Sub SubFolder\Sub Sub SubFolder
+
+2017-06-11  08:04 PM    <DIR>          .
+2017-06-11  08:04 PM    <DIR>          ..
+2016-02-15  07:51 PM             59904 Sub Sub Sub File.pub
+               1 File(s)          59904 bytes
+
+     Total Files Listed:
+              11 File(s)          72507 bytes
+              23 Dir(s)    421293297664 bytes free
+ Volume in drive C is OSDisk
+ Volume Serial Number is D268-53CD
+
+ Directory of C:\Users\gsalomon\Old OneDrive for Business
+
+14/06/2018  11:44    <DIR>          .
+14/06/2018  11:44    <DIR>          ..
+14/06/2018  10:58    <DIR>          Latex
+14/06/2018  10:58    <DIR>          OneNote Notebooks
+14/06/2018  10:59    <DIR>          Programming Other
+14/06/2018  11:34    <DIR>          Python
+14/06/2018  11:34    <DIR>          Queen's Computing Courses
+14/06/2018  11:35    <DIR>          Resco Utilities
+14/06/2018  11:44    <DIR>          Teaching
+14/06/2018  11:44    <DIR>          Temp eMC data Analysis
+14/06/2018  11:44    <DIR>          Temp Home
+14/06/2018  11:46    <DIR>          Work
+               0 File(s)              0 bytes
+
+ Directory of C:\Users\gsalomon\Old OneDrive for Business\Latex
+
+14/06/2018  10:58    <DIR>          .
+14/06/2018  10:58    <DIR>          ..
+19/06/2014  13:32           1756543 Latex_2E.pdf
+19/06/2014  11:45           1175331 Latex_Guide.pdf
+19/06/2014  13:32            878660 Latex_veryshortguide.pdf
+               3 File(s)        3810534 bytes
+
+ Directory of C:\Users\gsalomon\Old OneDrive for Business\OneNote Notebooks
+
+14/06/2018  10:58    <DIR>          .
+14/06/2018  10:58    <DIR>          ..
+28/03/2018  21:07               170 Continuing Education.url
+14/06/2018  10:58    <DIR>          Corrupt notebooks
+               1 File(s)            170 bytes
+
+ Directory of C:\Users\gsalomon\Old OneDrive for Business\OneNote Notebooks\Corrupt notebooks
+
+14/06/2018  10:58    <DIR>          .
+14/06/2018  10:58    <DIR>          ..
+23/04/2018  10:01               170 Teaching corrupt.url
+14/06/2018  10:58    <DIR>          Teaching Old
+19/04/2018  15:12    <DIR>          Teaching2
+               1 File(s)            170 bytes
+
+ Directory of C:\Users\gsalomon\Old OneDrive for Business\Programming Other
+
+14/06/2018  10:59    <DIR>          .
+14/06/2018  10:59    <DIR>          ..
+23/09/2017  08:55           3358171 Ada_Programming.pdf
+14/06/2018  10:59    <DIR>          C++
+23/04/2009  07:10               192 computer programming for teens.txt
+28/07/2011  11:45               236 Debugging The Nine Indispensable Rules for Finding Even the Most Elusive Software and Hardware Problems - Books24x7.url
+23/08/2017  19:30           6826481 Experiments with MatLab.pdf
+03/02/2017  12:15           1177037 MakeExcelAuditProof.pdf
+14/06/2018  10:59    <DIR>          MatLab
+14/06/2018  10:59    <DIR>          Modelling Physics with Microsoft Excel
+14/06/2018  10:59    <DIR>          Programming Contest
+14/06/2018  10:59    <DIR>          Scratch Projects
+14/06/2018  10:59    <DIR>          Snap
+14/06/2018  10:59    <DIR>          Snap BYOB
+03/10/2017  12:29          17182347 sqlitestudio-3.1.1.zip
+               6 File(s)       28544464 bytes
+
+ Directory of C:\Users\gsalomon\Old OneDrive for Business\Programming Other\Snap BYOB
+
+14/06/2018  10:59    <DIR>          .
+14/06/2018  10:59    <DIR>          ..
+14/07/2011  13:42          11765050 2011-07-11-CS&IT-BYOB-Workshop.zip
+24/10/2010  14:41          24203703 BYOB 3.0.8 Setup.exe
+               2 File(s)       35968753 bytes
+
+ Directory of C:\Users\gsalomon\Old OneDrive for Business\Python\cookiecutter-data-science\data
+
+14/06/2018  10:59    <DIR>          .
+14/06/2018  10:59    <DIR>          ..
+14/06/2018  10:59    <DIR>          external
+14/06/2018  10:59    <DIR>          interim
+14/06/2018  10:59    <DIR>          processed
+14/06/2018  10:59    <DIR>          raw
+               0 File(s)              0 bytes
+
+ Directory of C:\Users\gsalomon\Old OneDrive for Business\Python\cookiecutter-data-science\data\external
+
+14/06/2018  10:59    <DIR>          .
+14/06/2018  10:59    <DIR>          ..
+05/04/2018  22:38                 0 .gitkeep
+               1 File(s)              0 bytes
+
+ Directory of C:\Users\gsalomon\Old OneDrive for Business\Python\cookiecutter-data-science\data\interim
+
+14/06/2018  10:59    <DIR>          .
+14/06/2018  10:59    <DIR>          ..
+05/04/2018  22:38                 0 .gitkeep
+               1 File(s)              0 bytes
+
+
+ Directory of C:\Users\Greg\OneDrive - Queen's University\Python\Projects\DirParse
+
+2018-06-27  09:54 PM    <DIR>          .
+2018-06-27  09:54 PM    <DIR>          ..
+2017-06-17  09:02 AM             2,581 .gitattributes
+2017-08-18  11:09 PM             4,016 .gitignore
+2017-12-26  06:05 PM    <DIR>          build
+2017-08-04  08:59 PM    <DIR>          data
+2017-06-11  09:46 PM               395 Dir command.txt
+2018-06-26  11:18 PM           237,007 DirParse.pyproj
+2018-06-27  07:29 PM               227 DirParse.pyproj.user
+2017-12-26  07:49 PM             1,085 DirParse.sln
+2017-08-16  06:50 PM               227 DIR_Parse.pyproj.user
+2018-01-20  08:47 PM             2,609 dir_scan.lnk
+2018-06-20  09:48 PM             8,166 dir_scan.py
+2018-02-03  12:50 PM               931 dir_scan.spec
+2018-02-03  12:38 PM            23,059 dir_scan_gui.py
+2018-06-23  05:07 PM            28,297 dir_scan_parameters.py
+2018-06-27  07:57 PM            13,788 dir_scan_parser.py
+2018-02-03  02:16 PM    <DIR>          dist
+2018-06-27  09:54 PM                 0 files.txt
+2018-06-26  09:23 PM             3,897 file_line_re.py
+2017-12-26  11:08 AM             1,705 file_type_definitions.py
+2017-06-14  08:01 PM            35,049 GUI layout.pptx
+2017-06-10  03:50 PM             5,837 Icon test.png
+2017-12-02  09:18 AM    <DIR>          Old Code
+2018-06-27  07:55 AM    <DIR>          Testing code and Data
+2017-08-25  07:57 PM            31,804 UpgradeLog.htm
+2017-12-10  09:49 PM            14,195 x_pylintrc
+2018-06-23  04:41 PM                38 __init__.py
+2018-06-27  09:17 PM    <DIR>          __pycache__
+              21 File(s)        414,913 bytes
+               8 Dir(s)  487,597,576,192 bytes free

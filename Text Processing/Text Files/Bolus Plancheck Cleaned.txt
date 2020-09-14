@@ -1,0 +1,134 @@
+PlanCheck;Broder 0379223 BOOS Bolus QA
+Patient Name;---
+Patient Id; 0000
+Date Of Birth;----
+Sex;X
+Primary Oncologist;xxx
+Plan Status;Unapproved
+Checking Date;xxx
+Checked By;xxx
+Is Plan Modified?;-
+Valid;All MU/Gy values are valid
+Course;Physics QA
+Intent;QA
+Plan Id;BOOS Bolus QA
+Plan Name;BOOS FB
+Plan Intent;Curative
+Technique;
+PRESCRIPTION
+Patient Identifiers; 
+Patient Name;
+PatientId; 
+Date Of Birth;
+Sex;
+Primary Oncologist;
+Prescription; 
+Intent;QA
+Prescribed Dose;1000.0 cGy
+Fractions;4
+Start Delay;16
+Fractions Per Week;-
+Fractions Per Day;-
+Dose Per Fraction;250.0 cGy
+Normalization; 
+Normalization;90.0 %
+Normalization Method;Plan Normalization Value: 90.00
+Warning;
+Reference Point; 
+Primary Ref Point;-
+Primary Ref Point Dose;-
+Primary Ref Point Relative Dose;-
+Primary Ref Point Dose Per Fraction;-
+TargetVolume;DPV
+IMAGE
+ImageId;BOOS FB
+Image Comment;FREE BREATHING
+Image Modality;CT
+ImageSeriesId;BOOS FB 28281
+ImageSeriesComment;FREE BREATHING
+Contrast Exists;-
+Imaging Device;Philips Big Bore
+User Origin;User origin DICOM offset = (-1.02cm, -0.72cm, 0.40cm)
+Imaging Orientation;Head First-Supine
+Treatment Orientation;Head First-Supine
+Coordinate System;Standard
+StructureSetId;BOOS FB
+CALCULATIONS
+1. WARNING: The relative couch positions and isocenters differ more than 2 mm for the followi...
+LL Bolus (123.6 mm).
+2. WARNING: Delta couch shifts calculated from the user origin differ from the values defined...
+ following fields:
+BOOS Bolus QA / LL Bolus,
+BOOS Bolus QA / AP Bolus Offset
+3. WARNING: Plan does not have dose calculated.
+Calculation Medium;N/A
+Calculation Method;N/A
+WARNINGS
+1. WARNING: The relative couch positions and isocenters differ more than 2 mm for the followi...
+LL Bolus (123.6 mm).
+2. WARNING: Delta couch shifts calculated from the user origin differ from the values defined...
+ following fields:
+BOOS Bolus QA / LL Bolus,
+BOOS Bolus QA / AP Bolus Offset
+3. WARNING: Plan does not have dose calculated.
+FIELDS DATA
+FieldId;• LL Bolus •
+FieldName;• KV LL BOOS •
+Technique;STATIC
+Linac;• TR2 •
+Gantry;90.0 deg to - deg
+Collimator;0.0 deg
+Couch;0.0 deg
+Field Size
+X1: -1.4 cm
+X2: +11.4 cm
+Y1: -0.4 cm
+Y2: +6.1 cm
+Isocenter
+Iso X;12.36 cm
+Iso Y;0.00 cm
+Iso Z;0.00 cm
+SAD;100.0 cm
+Start SSD;100.0 cm
+Stop SSD;-
+Average SSD;-
+Actual SSD;-
+SFED ;-
+Virtual SAD X;-
+Virtual SAD Y;-
+BolusId;0.5 cm Bolus
+Source To Bolus Distance;-
+Bolus HU;0.0 HU
+END FIELD
+FieldId;• AP Bolus Offset •
+FieldName;•  •
+Technique;STATIC
+Linac;• TR2 •
+Gantry;0.0 deg to - deg
+Collimator;0.0 deg
+Couch;0.0 deg
+Field Size
+X1: +0.0 cm
+X2: +13.0 cm
+Y1: -0.4 cm
+Y2: +5.9 cm
+Isocenter
+Iso X;0.00 cm
+Iso Y;0.00 cm
+Iso Z;0.00 cm
+SAD;100.0 cm
+Start SSD;100.0 cm
+Stop SSD;-
+Average SSD;-
+Actual SSD;-
+SFED ;-
+Virtual SAD X;-
+Virtual SAD Y;-
+BolusId;0.5 cm Bolus
+Source To Bolus Distance;-
+Bolus HU;0.0 HU
+END FIELD
+POINTS LOCATIONS
+Point;X;Y;Z;
+FIELD POINTS
+Field;Point;Dose;SSD;Depth;Effective Depth

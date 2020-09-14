@@ -26,11 +26,7 @@
     <Compile Include="date_processer.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="ExceptionTest.py" />
     <Compile Include="read_dvh_file.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="temp.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="test_buffered_iterator.py" />
@@ -40,13 +36,20 @@
     <Compile Include="Text_Processing.py" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Exception Test Output.txt" />
+    <Content Include="Text Files\Bolus Plancheck Cleaned.txt" />
+    <Content Include="Text Files\DIR_test_Data.txt" />
     <Content Include="Text Files\ESOI.dvh" />
+    <Content Include="Text Files\FIF Calculation Log.txt" />
+    <Content Include="Text Files\IMSURE BREL BH Cleaned.csv" />
+    <Content Include="Text Files\IMSure Report ESOI CRT cleaned.csv" />
     <Content Include="Text Files\Old vs new.dvh" />
     <Content Include="Text Files\PlanCheck Plan Sum.dvh" />
+    <Content Include="Text Files\PlanCheck%3b PELB Cleaned.txt" />
+    <Content Include="Text Files\PlanCheck%3bPlan Sum Cleaned.txt" />
     <Content Include="Text Files\PlanSum Only.dvh" />
     <Content Include="Text Files\PlanSum vs Original.dvh" />
     <Content Include="Text Files\Test1.dvh" />
+    <Content Include="Text Files\trigger_test_text.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Text Files\" />

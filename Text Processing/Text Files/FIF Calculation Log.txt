@@ -1,0 +1,45 @@
+---------- Dose ----------
+Information: Calculated 16-Apr-2020 11:24:18
+Information: Service: AAA.FieldVolumeDose.10.0.28.9901x64
+Information: Servant: p3576@varfaspr19
+Information: Client workstation ZBUR0-VAR-Z283/6020
+Information: Client version 13.6.32.20182
+Information: Client time 2020-04-16T11:24:18-04:00 (ISO8601)
+Information: Anisotropic Analytical Algorithm (Version 10.0.28)
+Information: There is a new version of this algorithm available (13.6.23).
+Information: Using DCF protocol version 0.3
+Information: AAACalculationOptions.CalculationGridSizeInCM = 0.25
+Information: AAACalculationOptions.FieldNormalizationType = No field normalization
+Information: AAACalculationOptions.HeterogeneityCorrection = ON
+Information: AAACalculationOptions.StdArcCalculationSegments = 10
+Information: AAACalculationOptions.VMATFluenceResolution = High
+Information: Bolus '0.5 cm Bolus' used in dose calculation
+Information: Machine directory: \\VARFASPR13\DCF$\client\BeamData\AAA_10025_Golden_Beam
+Information: Treatment unit: TR2, energy: 15X
+Information: Accessory OPENFIELD matches code 00
+Information: Input Fluence Pixel Size 2.5x2.5 mm2.
+Information: IMRT field normalization
+Information: Dosimetric leaf gap = 0.200 cm
+Information: Leaf transmission factor = 0.020
+---------- LMC ----------
+Information: Calculated 16-Apr-2020 11:23:59
+Information: Calculated 16-Apr-2020 11:24:04
+Information: Leaf transmission factor = 0.020
+Information: Dosimetric leaf gap = 0.200 cm
+Information: Service: LMCV.LeafMotionsToActualFluence.10.0.28.9833
+Information: Servant: p2576@varfaspr19
+Information: Client workstation ZBUR0-VAR-Z283/6020
+Information: Client version 13.6.32.20182
+Information: Client time 2020-04-16T11:23:59-04:00 (ISO8601)
+Information: Varian Leaf Motion Calculator (Version 10.0.28)
+Information: There is a new version of this algorithm available (13.6.23).
+Information: Using DCF protocol version 0.3
+Information: Service: AAA.LMCMonitorUnits.10.0.28.9901x64
+Information: Servant: p4516@varfaspr20
+Information: Client time 2020-04-16T11:24:04-04:00 (ISO8601)
+Information: Anisotropic Analytical Algorithm (Version 10.0.28)
+Information: Machine directory: \\VARFASPR13\DCF$\client\BeamData\AAA_10025_Golden_Beam
+Information: Treatment unit: TR2, energy: 15X
+Information: Accessory OPENFIELD matches code 00
+Information: MU/Gy = 136.684644, CBSF = 0.996260
+Information: Calculation took 0.125000 seconds.

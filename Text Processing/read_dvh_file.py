@@ -115,6 +115,8 @@ def approved_status_rule(context, line):
     return None
 
 
+#%% Line Processing
+
 #%% Section definitions
 def break_iterator(source, context, break_triggers: List[tp.SectionBreak]):
     logger.debug('In break_iterator')

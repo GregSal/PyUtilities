@@ -4,10 +4,7 @@
 # pylint: disable=logging-fstring-interpolation
 #%% Imports
 from collections import deque
-from typing import Dict, Sequence, TypeVar
-import re
-from file_utilities import clean_ascii_text
-from data_utilities import true_iterable
+from typing import Sequence, TypeVar
 import logging_tools as lg
 
 T = TypeVar('T')
@@ -35,6 +32,7 @@ class BufferOverflowWarning(BufferedIteratorWarnings):
     '''Raised when BufferedIterator peak will cause unyielded
         lines to be dropped.
     '''
+
 
 #%% Classes
 class BufferedIterator():

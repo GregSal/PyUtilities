@@ -1,0 +1,94 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Tests of Unit Conversion"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import re\n",
+    "unit_symbols = ['%', 'CU', 'cGy', 'Gy', 'deg', 'cm', 'deg',\n",
+    "                'MU', 'min', 'cc', 'cm3', 'MU/Gy', 'MU/min',\n",
+    "                'cm3', 'cc']\n",
+    "# Match on one of the unit symbol strings\n",
+    "unit_pattern = '(?P<unit>' + '|'.join(unit_symbols) + ')'\n",
+    "# Match a float or int value with optional sign\n",
+    "number_pattern = '(?P<value>[-+]?\\d+[.]?\\d*)'\n",
+    "# Optional Space between value and unit\n",
+    "optional_space = '\\s*'\n",
+    "number_value_pattern = ''.join([\n",
+    "    number_pattern,\n",
+    "    optional_space,\n",
+    "    unit_pattern\n",
+    "    ])\n",
+    "data_pattern = re.compile(number_value_pattern)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "cGy\n",
+      "1000.0\n",
+      "{'unit': 'cGy', 'value': '1000.0'}\n"
+     ]
+    }
+   ],
+   "source": [
+    "data_string = 'Prescribed Dose;1000.0 cGy'\n",
+    "match = data_pattern.search(data_string)\n",
+    "\n",
+    "print(match.group('unit'))\n",
+    "print(match.group('value'))\n",
+    "\n",
+    "from pprint import pprint\n",
+    "found = match.groupdict()\n",
+    "pprint(found)\n",
+    "\n",
+    "data_string_template = '{value:6.2f} {unit}'\n",
+    "data_string_template.format(*match.groupdict())\n",
+    "#\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.7.6"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}

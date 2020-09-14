@@ -1,0 +1,356 @@
+PlanCheck;shsfh 000 PELB
+Patient Name;zfg, zgbvfg 
+Patient Id; 000
+Date Of Birth;Monday, December 25, 1900
+Sex;Female
+Primary Oncologist;fghdfgh
+Plan Status;Planning Approved
+Plan Approved On;Tuesday, August 1, 2020 15:15:16
+Approved By;shen
+Checking Date;Wednesday, August 112, 2020 09:09:09
+Checked By;Greg Salomons
+Is Plan Modified?;-
+Valid;All MU/Gy values are valid
+Course;C1
+Intent;ADJUVANT
+Plan Id;PELB
+Plan Name;PELB
+Plan Intent;Curative
+Technique;
+PRESCRIPTION
+Patient Identifiers;
+Patient Name;zfg, zgbvfg 
+PatientId; 000
+Date Of Birth;Monday, December 25, 1900
+Sex;Female
+Primary Oncologist;fghdfgh
+Prescription;
+Intent;ADJUVANT
+Prescribed Dose;4500.0 cGy
+Fractions;25
+Start Delay;-
+Fractions Per Week;-
+Fractions Per Day;-
+Dose Per Fraction;180.0 cGy
+Normalization;
+Normalization;104.3 %
+Normalization Method;Plan Normalization Value: 104.30
+Warning;
+Reference Point;
+Primary Ref Point;PELB
+Primary Ref Point Dose;4500.0 cGy
+Primary Ref Point Relative Dose;100.0 %
+Primary Ref Point Dose Per Fraction;180.0 cGy
+TargetVolume;DPV
+IMAGE
+ImageId;PELB
+Image Modality;CT
+ImageSeriesId;PELB
+Contrast Exists;-
+Imaging Device;Philips Big Bore
+User Origin;User origin DICOM offset = (1.30cm, 13.39cm, 0.40cm)
+Imaging Orientation;Head First-Supine
+Treatment Orientation;Head First-Supine
+Coordinate System;Standard
+StructureSetId;PELB
+CALCULATIONS
+No warnings or errors.
+PhotonAlg; AAA_10028_Golden_Beam
+CalculationGridSizeInCM;0.25
+FieldNormalizationType;100% to isocenter
+HeterogeneityCorrection;ON
+StdArcCalculationSegments;10
+VMATFluenceResolution;High
+Calculation Medium;Inhomogeneity corrected
+Calculation Method;
+WARNINGS
+No warnings or errors.
+Calculation Warnings for • GA0 •;
+Post Processing Warnings for • GA0 •;
+Calculation Warnings for • GA180 •;
+Post Processing Warnings for • GA180 •;
+Calculation Warnings for • GA90 •;
+Post Processing Warnings for • GA90 •;
+Calculation Warnings for • GA270 •;
+Post Processing Warnings for • GA270 •;
+FIELDS DATA
+FieldId;• GA0 •
+FieldName;• GA0 •
+Technique;STATIC
+Linac;• TR2 •
+Energy;15X
+Plan Type;Static
+Gantry;0.0 deg to - deg
+Collimator;0.0 deg
+Couch;0.0 deg
+Field Size
+X1: +15.7 cm
+X2: +13.7 cm
+Y1: +11.2 cm
+Y2: +16.5 cm
+Isocenter
+Iso X;0.00 cm
+Iso Y;0.00 cm
+Iso Z;0.00 cm
+SAD;100.0 cm
+Start SSD;88.1 cm
+Stop SSD;-
+Average SSD;-
+Actual SSD;88.1 cm
+SFED ;-
+Virtual SAD X;-
+Virtual SAD Y;-
+BolusId;1.0 cm Bolus RT
+Source To Bolus Distance;-
+Bolus HU;0.0 HU
+BolusId;1.0 cm Bolus LT
+Source To Bolus Distance;-
+Bolus HU;0.0 HU
+Field Norm Factor;100.0 %
+Norm Method;FIELD_ISOC_NORM
+Field Weight;0.200
+Dose Rate;600 MU/min
+MU;37 MU
+MU/Gy;102.34 MU/Gy
+Ref Dose;47.9 cGy
+Gating On;-
+Gating Off;-
+MLC Segments;1
+END FIELD
+FieldId;• GA180 •
+FieldName;• GA180 •
+Technique;STATIC
+Linac;• TR2 •
+Energy;15X
+Plan Type;Static
+Gantry;180.0 deg to - deg
+Collimator;0.0 deg
+Couch;0.0 deg
+Field Size
+X1: +12.9 cm
+X2: +14.3 cm
+Y1: +11.2 cm
+Y2: +16.5 cm
+Isocenter
+Iso X;0.00 cm
+Iso Y;0.00 cm
+Iso Z;0.00 cm
+SAD;100.0 cm
+Start SSD;89.5 cm
+Stop SSD;-
+Average SSD;-
+Actual SSD;89.5 cm
+SFED ;-
+Virtual SAD X;-
+Virtual SAD Y;-
+BolusId;1.0 cm Bolus RT
+Source To Bolus Distance;-
+Bolus HU;0.0 HU
+BolusId;1.0 cm Bolus LT
+Source To Bolus Distance;-
+Bolus HU;0.0 HU
+Field Norm Factor;100.0 %
+Norm Method;FIELD_ISOC_NORM
+Field Weight;0.300
+Dose Rate;600 MU/min
+MU;54 MU
+MU/Gy;100.37 MU/Gy
+Ref Dose;68.3 cGy
+Gating On;-
+Gating Off;-
+MLC Segments;1
+END FIELD
+FieldId;• GA90 •
+FieldName;• GA90 •
+Technique;STATIC
+Linac;• TR2 •
+Energy;15X
+Plan Type;Static
+Gantry;90.0 deg to - deg
+Collimator;0.0 deg
+Couch;0.0 deg
+Field Size
+X1: +13.7 cm
+X2: +15.4 cm
+Y1: +11.2 cm
+Y2: +16.5 cm
+Isocenter
+Iso X;0.00 cm
+Iso Y;0.00 cm
+Iso Z;0.00 cm
+SAD;100.0 cm
+Start SSD;83.3 cm
+Stop SSD;-
+Average SSD;-
+Actual SSD;83.3 cm
+SFED ;-
+Virtual SAD X;-
+Virtual SAD Y;-
+BolusId;1.0 cm Bolus RT
+Source To Bolus Distance;-
+Bolus HU;0.0 HU
+BolusId;1.0 cm Bolus LT
+Source To Bolus Distance;-
+Bolus HU;0.0 HU
+Field Norm Factor;100.0 %
+Norm Method;FIELD_ISOC_NORM
+Field Weight;0.260
+Dose Rate;600 MU/min
+MU;58 MU
+MU/Gy;123.17 MU/Gy
+Ref Dose;82.4 cGy
+Gating On;-
+Gating Off;-
+MLC Segments;1
+END FIELD
+FieldId;• GA270 •
+FieldName;• GA270 •
+Technique;STATIC
+Linac;• TR2 •
+Energy;15X
+Plan Type;Static
+Gantry;270.0 deg to - deg
+Collimator;0.0 deg
+Couch;0.0 deg
+Field Size
+X1: +13.8 cm
+X2: +13.7 cm
+Y1: +11.2 cm
+Y2: +16.5 cm
+Isocenter
+Iso X;0.00 cm
+Iso Y;0.00 cm
+Iso Z;0.00 cm
+SAD;100.0 cm
+Start SSD;81.0 cm
+Stop SSD;-
+Average SSD;-
+Actual SSD;81.0 cm
+SFED ;-
+Virtual SAD X;-
+Virtual SAD Y;-
+BolusId;1.0 cm Bolus RT
+Source To Bolus Distance;-
+Bolus HU;0.0 HU
+BolusId;1.0 cm Bolus LT
+Source To Bolus Distance;-
+Bolus HU;0.0 HU
+Field Norm Factor;100.0 %
+Norm Method;FIELD_ISOC_NORM
+Field Weight;0.240
+Dose Rate;600 MU/min
+MU;55 MU
+MU/Gy;128.18 MU/Gy
+Ref Dose;83.4 cGy
+Gating On;-
+Gating Off;-
+MLC Segments;1
+END FIELD
+FieldId;• KV AP PELB •
+FieldName;• KV AP PELB •
+Technique;STATIC
+Linac;• TR2 •
+Gantry;0.0 deg to - deg
+Collimator;0.0 deg
+Couch;0.0 deg
+Field Size
+X;15.0 cm
+Y;15.0 cm
+Isocenter
+Iso X;0.00 cm
+Iso Y;0.00 cm
+Iso Z;0.00 cm
+SAD;100.0 cm
+Start SSD;88.1 cm
+Stop SSD;-
+Average SSD;-
+Actual SSD;88.1 cm
+SFED ;-
+Virtual SAD X;-
+Virtual SAD Y;-
+END FIELD
+FieldId;• KV PA PELB •
+FieldName;• KV PA PELB •
+Technique;STATIC
+Linac;• TR2 •
+Gantry;180.0 deg to - deg
+Collimator;0.0 deg
+Couch;0.0 deg
+Field Size
+X;15.0 cm
+Y;15.0 cm
+Isocenter
+Iso X;0.00 cm
+Iso Y;0.00 cm
+Iso Z;0.00 cm
+SAD;100.0 cm
+Start SSD;89.5 cm
+Stop SSD;-
+Average SSD;-
+Actual SSD;89.5 cm
+SFED ;-
+Virtual SAD X;-
+Virtual SAD Y;-
+END FIELD
+FieldId;• KV RL PELB •
+FieldName;• KV RL PELB •
+Technique;STATIC
+Linac;• TR2 •
+Gantry;270.0 deg to - deg
+Collimator;0.0 deg
+Couch;0.0 deg
+Field Size
+X;15.0 cm
+Y;15.0 cm
+Isocenter
+Iso X;0.00 cm
+Iso Y;0.00 cm
+Iso Z;0.00 cm
+SAD;100.0 cm
+Start SSD;81.0 cm
+Stop SSD;-
+Average SSD;-
+Actual SSD;81.0 cm
+SFED ;-
+Virtual SAD X;-
+Virtual SAD Y;-
+END FIELD
+FieldId;• KV LL PELB •
+FieldName;• KV LL PELB •
+Technique;STATIC
+Linac;• TR2 •
+Gantry;90.0 deg to - deg
+Collimator;0.0 deg
+Couch;0.0 deg
+Field Size
+X;15.0 cm
+Y;15.0 cm
+Isocenter
+Iso X;0.00 cm
+Iso Y;0.00 cm
+Iso Z;0.00 cm
+SAD;100.0 cm
+Start SSD;83.3 cm
+Stop SSD;-
+Average SSD;-
+Actual SSD;83.3 cm
+SFED ;-
+Virtual SAD X;-
+Virtual SAD Y;-
+END FIELD
+POINTS LOCATIONS
+Point;X;Y;Z
+MUREF;-0.90 cm;0.85 cm;2.61 cm
+PELB;-;-;-
+FIELD POINTS
+Field;Point;Dose;SSD;Depth;Effective Depth
+Plan;MUREF;4435.4 cGy;;;
+Plan;PELB;4500.0 cGy;;;
+• GA0 •;MUREF;33.5 cGy;87.7 cm;13.2 cm;12.4 cm
+• GA0 •;PELB;36.0 cGy;-;-;-
+• GA180 •;MUREF;54.8 cGy;89.6 cm;9.6 cm;9.2 cm
+• GA180 •;PELB;54.0 cGy;-;-;-
+• GA90 •;MUREF;44.5 cGy;83.5 cm;17.4 cm;17.4 cm
+• GA90 •;PELB;46.8 cGy;-;-;-
+• GA270 •;MUREF;44.6 cGy;81.6 cm;17.6 cm;17.1 cm
+• GA270 •;PELB;43.2 cGy;-;-;-

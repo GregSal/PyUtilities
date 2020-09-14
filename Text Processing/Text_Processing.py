@@ -201,7 +201,7 @@ class SectionBreak():
         self.active_sentinel = None
 
     @staticmethod
-    def get_offset(offset)->int:
+    def get_offset(offset) -> int:
         '''Calculate the appropriate step_back value to store.
         Before is a step back of -1
         After is a step back of 0.
@@ -267,7 +267,7 @@ class SectionBreak():
 
 #%% String Iterators
 # These functions take a sequence of strings and return a string generator.
-def clean_lines(lines: Sequence[str])->Iterator[str]:
+def clean_lines(lines: Sequence[str]) -> Iterator[str]:
     '''Convert each string to ANSI text converting specified
     UTF-Characters to ANSI Equivalents
     '''
@@ -276,7 +276,7 @@ def clean_lines(lines: Sequence[str])->Iterator[str]:
         yield clean_ascii_text(raw_line)
 
 
-def drop_blanks(lines: Sequence[str])->Iterator[str]:
+def drop_blanks(lines: Sequence[str]) -> Iterator[str]:
     '''Return all non-empty strings.
     '''
     return (line for line in lines if len(line) > 0)
@@ -285,14 +285,14 @@ def drop_blanks(lines: Sequence[str])->Iterator[str]:
 #%%Functions
 # These functions act on a string or list of strings.
 # They are often applied to a generator using partial.
-def trim_items(parsed_line: List[str])->List[str]:
+def trim_items(parsed_line: List[str]) -> List[str]:
     '''Strip leading and training spaces from each item in the list of strings.
     '''
     trimed_line = [item.strip() for item in parsed_line]
-    yield trimed_line
+    return trimed_line
 
 
-def join_strings(text1: str, text2: str, join_char=' ')->str:
+def join_strings(text1: str, text2: str, join_char=' ') -> str:
     '''Join it to the end of text2 using join_char.'''
     if true_iterable(text1):
         if text2 is None:
@@ -304,21 +304,38 @@ def join_strings(text1: str, text2: str, join_char=' ')->str:
     return join_char.join(text_list)
 
 
+def str2float(text: str):
+    return_value = text
+    try:
+        return_value = float(text)
+    except ValueError:
+        pass
+    return return_value
+
+
 #%% Parsed Line Iterators
 # These functions take a sequence of lists of strings and return a generator.
-def trim_lines(parsed_lines: Sequence[List[str]])->Iterator[List[str]]:
+def convert_numbers(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
+    '''If an item on a line is a number, convert it to a float.
+    '''
+    for parsed_line in parsed_lines:
+        converted_line = [str2float(item) for item in parsed_line]
+        yield converted_line
+
+
+def trim_lines(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
     '''Strip leading and training spaces from each item in the list of strings.
     '''
     return (trim_lines(parsed_line) for parsed_line in parsed_lines)
 
 
-def drop_empty_lines(parsed_lines: Sequence[List[str]])->Iterator[List[str]]:
+def drop_empty_lines(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
     '''Strip leading and training spaces from each item in the list of strings.
     '''
     return (trim_lines(parsed_line) for parsed_line in parsed_lines)
 
 
-def merge_extra_items(parsed_lines: Sequence[List[str]])->Iterator[List[str]]:
+def merge_extra_items(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
     '''If a parsed line has more than 2 items, join items 2 to n. with " ". '''
     for parsed_line in parsed_lines:
         if len(parsed_line) > 2:
@@ -328,7 +345,7 @@ def merge_extra_items(parsed_lines: Sequence[List[str]])->Iterator[List[str]]:
 
 
 def merge_continued_rows(parsed_lines: Sequence[List[str]],
-                         max_lines=5)->Iterator[List[str]]:
+                         max_lines=5) -> Iterator[List[str]]:
     '''If a parsed line has 2 items, and the next parsed line has only 1 item;
         join the next parsed line item to the end of the second item in the
         current line with "\n".
@@ -348,7 +365,8 @@ def merge_continued_rows(parsed_lines: Sequence[List[str]],
 
 
 def drop_units(text: str) -> float:
-    number_value_pattern = ('^'                # beginning of string
+    number_value_pattern = (
+        '^'                # beginning of string
         '\s*'              # Skip leading whitespace
         '(?P<value>'       # beginning of value integer group
         '[-+]?'            # initial sign
@@ -369,4 +387,5 @@ def drop_units(text: str) -> float:
         value, unit = find_num[0]
         return value
     return text
-
+# Units to recognize:
+# %, CU, cGy, Gy, deg, cm, deg, MU, min, cc, cm3, MU/Gy, MU/min, cm3, cc

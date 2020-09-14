@@ -1,0 +1,59 @@
+IMSure CSV Export
+Export Version:,1
+================
+IMSure Version:,3.7.2
+Exported Date:,03.09.2020  14:20
+Facility:,Cancer Centre of South Eastern Ontario
+User:,Superuser
+Patient:,"____, ----"
+Patient ID:,0123456
+Plan Name:,BREL BH
+Calculated:,03.03.2023  13:13
+Plan File:,RP.0123456.BREL BH.dcm
+
+===== Plan Summary ====== 
+
+Field ID,MED BREL BH,LAT BREL BH,,,,,,,,,,,,,,,,,,,,
+Primary,,,,,,,,,,,,,,,,,,,,,,
+Machine,TR2,TR2,,,,,,,,,,,,,,,,,,,,
+Energy,6X,6X,,,,,,,,,,,,,,,,,,,,
+Commissioned,12/04/18,12/04/18,,,,,,,,,,,,,,,,,,,,
+Gantry,306.0 deg,126.0 deg,,,,,,,,,,,,,,,,,,,,
+Table,0.0 deg,0.0 deg,,,,,,,,,,,,,,,,,,,,
+Collimator,15.0 deg,345.0 deg,,,,,,,,,,,,,,,,,,,,
+SSD,89.3 cm,89.9 cm,,,,,,,,,,,,,,,,,,,,
+X1 Jaw (cm),0.0 cm,8.0 cm,,,,,,,,,,,,,,,,,,,,
+X2 Jaw (cm),8.0 cm,0.0 cm,,,,,,,,,,,,,,,,,,,,
+Y1 Jaw (cm),10.0 cm,10.0 cm,,,,,,,,,,,,,,,,,,,,
+Y2 Jaw (cm),7.5 cm,7.5 cm,,,,,,,,,,,,,,,,,,,,
+# Segments,8,8,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,
+Ref Pt,MUREF,MUREF,,,,,,,,,,,,,,,,,,,,
+Sp Corr.,0.88,0.88,,,,,,,,,,,,,,,,,,,,
+TPS MU, 148.4, 160.7,,,,,,,,,,,,,,,,,,,,
+IMSure MU,146.8,158.1,,,,,,,,,,,,,,,,,,,,
+Diff,1.1%,1.6%,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,
+Corr. Coeff.,--,--,,,,,,,,,,,,,,,,,,,,
+Max Diff (%),--,--,,,,,,,,,,,,,,,,,,,,
+
+===== Calculated Fluence Map Summary ====== 
+
+IMSure fluence maps not calculated.
+
+===== Calc Point Summary Report ====== 
+
+Calc Pt#,Name,X,Y,Z,TPS Dose,Total Dose,% Diff
+1,MUREF,9.8,0.0,-2.6,265.6 cGy,269.3 cGy,-1.4%
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+
+===== Individual Calc Point Report ====== 
+
+Calc Pt#:,1
+Field #,Field ID,PSSD,PDepth,Eff Depth,TPS Dose,Calc Dose,% Diff
+1,MED BREL BH,92.4 cm,6.5 cm,5.8 cm,133.6 cGy,135.0 cGy,-1.1%
+2,LAT BREL BH,94.3 cm,7.0 cm,6.4 cm,132.1 cGy,134.3 cGy,-1.7%

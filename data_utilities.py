@@ -87,7 +87,7 @@ merge_columns(data_table: pd.DataFrame, columns: List[str],
 from collections.abc import Iterable
 from typing import List, Dict, Tuple, Any, Union, Set, NamedTuple
 import pandas as pd
-
+import re
 
 Data = Union[pd.DataFrame, pd.Series]
 Value = Tuple[float, str]
@@ -101,6 +101,44 @@ class DataElement(NamedTuple):
     '''
     Value: float
     Unit: str
+
+    def __init___(self, *data):
+        if len(data) == 1:
+            try:
+                value = float(data[0])
+            except ValueError:
+                data = self.str2data(data[0])
+            else:
+                data = (value, '')
+
+        super().__init__(*data)
+
+
+    @classmethod
+    def set_units(cls):
+        cls.unit_symbols = ['%', 'CU', 'cGy', 'Gy', 'deg', 'cm', 'deg',
+                            'MU', 'min', 'cc', 'cm3', 'MU/Gy', 'MU/min',
+                            'cm3', 'cc']
+        # Match on one of the unit symbol strings
+        unit_pattern = '(?P<unit>' + '|'.join(cls.unit_symbols) + ')'
+        # Match a float or int value with optional sign
+        number_pattern = '(?P<value>[-+]?\d+[.]?\d*)'
+        # Optional Space between value and unit
+        optional_space = '\s*'
+        number_value_pattern = ''.join([
+            number_pattern,
+            optional_space,
+            unit_pattern
+            ])
+        cls.data_pattern = re.compile(number_value_pattern)
+
+
+    def str2data(self, data_string:str):
+        match = self.data_pattern.search(data_string)
+        if match:
+            value, unit = find_num[0]
+            return value, unit
+        return data_string
 
     def convert_units(self, target_units: str):
         '''Take value in starting_units and convert to target_units.
@@ -209,6 +247,8 @@ def value2num(value_string: str)->float:
             The unit as string
     '''
     return value_parse(value_string)[0]
+
+
 
 
 def sort_dict(dict_data: Dict[str, Any],# FIXME Use Generic typing for Dict Value
