@@ -5,8 +5,7 @@
 #%% Imports
 from pathlib import Path
 from pprint import pprint
-
-from typing import List
+from functools import partial
 from typing import List
 import csv
 import re
@@ -46,7 +45,7 @@ def make_prescribed_dose_trigger():
         dose_trigger = tp.Trigger(re_pattern, name='Prescribed Dose')
         return dose_trigger
 
-def parse_prescribed_dose(sentinel):
+def parse_prescribed_dose(sentinel)->List[List[str]]:
     '''Split "Prescribed dose [cGy]" into 2 lines:
         Prescribed dose
         Prescribed dose Unit
@@ -68,7 +67,7 @@ def parse_prescribed_dose(sentinel):
             ]
     return parsed_lines
 
-def prescribed_dose_rule(context, line):
+def prescribed_dose_rule(context, line)->List[List[str]]:
     dose_trigger = make_prescribed_dose_trigger()
     is_match, sentinel = dose_trigger.apply(context, line)
     if is_match:
@@ -76,20 +75,8 @@ def prescribed_dose_rule(context, line):
         return parsed_lines
     return None
 
-def date_rule(context, line):
-    '''If Treatment Approved, Split "Plan Status" into 3 lines:
-        Plan Status
-        Approved on
-        Approved by
-
-
-        Next rule
-        By -> new row
-            Plan Status: Treatment Approved Thursday, January 02, 2020 12:55:56 by gsal
-            Plan Status: Planning Approved
-            Plan Status: Unapproved
-
-        '''
+def date_rule(context, line)->List[List[str]]:
+    '''If Date,don't split beyond first :'''
     date_trigger = tp.Trigger('Date', name='Starts With Date', location='START')
     is_match, sentinel = date_trigger.apply(context, line)
     if is_match:
@@ -97,7 +84,13 @@ def date_rule(context, line):
         return parsed_lines
     return None
 
-def approved_status_rule(context, line):
+
+def approved_status_rule(context, line)->List[List[str]]:
+    '''If Treatment Approved, Split "Plan Status" into 3 lines:
+        Plan Status
+        Approved on
+        Approved by
+        '''
     approved_status_trigger = tp.Trigger('Treatment Approved', location='IN',
                                       name='Treatment Approved')
     is_match, sentinel = approved_status_trigger.apply(context, line)
@@ -114,6 +107,11 @@ def approved_status_rule(context, line):
         return parsed_lines
     return None
 
+
+def csv_parser(dialect_name: str, context, line):
+    csvreader = csv.reader([line], dialect=dialect_name)
+    parsed_lines = [parsed_line for parsed_line in csvreader]
+    return parsed_lines
 
 #%% Line Processing
 
@@ -132,49 +130,34 @@ def break_iterator(source, context, break_triggers: List[tp.SectionBreak]):
         yield line
     raise EOF(context=context)
 
-def line_parser(active_lines):
-    csv.register_dialect('test',
-                         delimiter=',',
-                         doublequote=True,
-                         quoting=csv.QUOTE_MINIMAL,
-                         quotechar='"',
-                         escapechar=None,
+
+def line_parser(context, source):
+    csv.register_dialect('dvh_info',
+                         delimiter=':',
                          lineterminator='\r\n',
-                         skipinitialspace=False,
+                         skipinitialspace=True,
                          strict=False)
-    a = csv.get_dialect('test')
-    csvreader = csv.reader(active_lines, dialect='test')
-    csvreader = csv.reader(active_lines, delimiter=':', quotechar='"')
-    tp.Trigger(['Prescribed dose'])
-    # Test: Cleaned Line contains 'Prescribed dose'
-    # Action -> Split  Prescribed dose [cGy]: 4140.0 into 2 lines:
-    # [['Prescribed dose', '4140.0'],
-    # ['Prescribed dose Unit', 'cGy']]
-    #
-    # Don't split date portion
-    # By -> new row
-    # Plan Status: Treatment Approved Thursday, January 02, 2020 12:55:56 by gsal
-    # Plan Status: Planning Approved
-    prescribed_dose_pattern = (
-        r'^'                # Beginning of string
-        r'Prescribed dose'  # Row Label
-        r'\s*'              # Skip whitespace
-        r'[[]'              # Unit start delimiter
-        r'(?P<unit>'        # Beginning of unit group
-        r'[A-Za-z]+'        # Unit text
-        r')'                # end of unit string group
-        r'[]]'              # Unit end delimiter
-        r'\s*'              # Skip whitespace
-        r':'                # Dose delimiter
-        r'\s*'              # Skip whitespace
-        r'(?P<dose>'        # Beginning of dose group
-        r'[0-9.]+'          # Dose value
-        r'|not defined'     # Undefined dose alternate
-        r')'                # end of value string group
-        r'\s*'              # drop trailing whitespace
-        r'$'                # end of string
-        )
-    find_dose_pattern = re.compile(prescribed_dose_pattern)
+    default_parser = partial(csv_parser, dialect_name='dvh_info')
+    rule_iter = (rule for rule in [
+            prescribed_dose_rule,
+            date_rule,
+            approved_status_rule,
+            default_parser])
+    logger.debug('In line_parser')
+    parsed_lines = None
+    for line in source:
+        logger.debug(f'In line_parser, received line: {line}')
+        try:
+            while parsed_lines is None:
+                rule = rule_iter.__next__()
+                parsed_lines = rule(context, line)
+        except StopIteration:
+            continue
+        else:
+            for parsed_line in parsed_lines:
+                yield parsed_line
+    raise EOF(context=context)
+
 
 def scan_section(context, section_name, break_triggers: List[tp.SectionBreak]):
 # Apply Section Cleaning -> clean_lines
@@ -189,15 +172,22 @@ def scan_section(context, section_name, break_triggers: List[tp.SectionBreak]):
     logger.debug(f'Starting New Section: {section_name}.')
     cleaned_lines = tp.clean_lines(context['Source'])
     active_lines = break_iterator(cleaned_lines, context, break_triggers)
-    csvreader = csv.reader(active_lines, delimiter=':', quotechar='"')
-    trimmed_lines = tp.trim_lines(csvreader)
+    parsed_lines = line_parser(context, active_lines)
+    processed_lines = tp.merge_continued_rows(
+        tp.merge_extra_items(
+            tp.drop_empty_lines(
+                tp.trim_lines(parsed_lines)
+                )
+            )
+        )
+
 
     # Section iterator
     section_lines = list()
     while True:
         row = None
         try:
-            row = trimmed_lines.__next__()
+            row = processed_lines.__next__()
         except tp.StopSection as stop_sign:
             #pprint(stop_sign)
             print()

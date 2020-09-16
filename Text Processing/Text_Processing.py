@@ -6,6 +6,7 @@
 from collections import deque
 from typing import Dict, Sequence, TypeVar, Pattern, Match, Iterator
 import re
+import inspect
 from file_utilities import clean_ascii_text
 from data_utilities import true_iterable
 import logging_tools as lg
@@ -389,3 +390,18 @@ def drop_units(text: str) -> float:
     return text
 # Units to recognize:
 # %, CU, cGy, Gy, deg, cm, deg, MU, min, cc, cm3, MU/Gy, MU/min, cm3, cc
+
+
+def line_parser(active_lines):
+    csv.register_dialect('test',
+                         delimiter=',',
+                         doublequote=True,
+                         quoting=csv.QUOTE_MINIMAL,
+                         quotechar='"',
+                         escapechar=None,
+                         lineterminator='\r\n',
+                         skipinitialspace=False,
+                         strict=False)
+    a = csv.get_dialect('test')
+    csvreader = csv.reader(active_lines, dialect='test')
+    csvreader = csv.reader(active_lines, delimiter=':', quotechar='"')
