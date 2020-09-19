@@ -17,33 +17,25 @@ import Text_Processing as tp
 
 
 #%% Logging
-logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
+logger = lg.config_logger(prefix='read_dvh.file', level='DEBUG')
 
 
 #%% Line Parsing
 def make_prescribed_dose_trigger():
         prescribed_dose_pattern = (
-            r'^'                # Beginning of string
-            r'Prescribed dose'  # Row Label
-            r'\s*'              # Skip whitespace
-            r'[[]'              # Unit start delimiter
-            r'(?P<unit>'        # Beginning of unit group
-            r'[A-Za-z]+'        # Unit text
-            r')'                # end of unit string group
-            r'[]]'              # Unit end delimiter
-            r'\s*'              # Skip whitespace
-            r':'                # Dose delimiter
-            r'\s*'              # Skip whitespace
-            r'(?P<dose>'        # Beginning of dose group
-            r'[0-9.]+'          # Dose value
-            r'|not defined'     # Undefined dose alternate
-            r')'                # end of value string group
-            r'\s*'              # drop trailing whitespace
-            r'$'                # end of string
+            r'^Prescribed dose\s*'            # Begins with Prescribed dose
+            r'[[]'                            # Unit start delimiter
+            r'(?P<unit>[A-Za-z]+)'            # unit group: text surrounded by []
+            r'[]]'                            # Unit end delimiter
+            r'\s*:\s*'                        # Dose delimiter with possible whitespace
+            r'(?P<dose>[0-9.]+|not defined)'  # dose group Number or "not defined"
+            r'[\s\r\n]*'                      # drop trailing whitespace
+            r'$'                              # end of string
             )
         re_pattern = re.compile(prescribed_dose_pattern)
         dose_trigger = tp.Trigger(re_pattern, name='Prescribed Dose')
         return dose_trigger
+
 
 def parse_prescribed_dose(sentinel)->List[List[str]]:
     '''Split "Prescribed dose [cGy]" into 2 lines:
@@ -57,8 +49,8 @@ def parse_prescribed_dose(sentinel)->List[List[str]]:
     match_results = sentinel.groupdict()
     if match_results['dose'] == 'not defined':
         parsed_lines = [
-            ['Prescribed dose', None],
-            ['Prescribed dose Unit', None]
+            ['Prescribed dose', ''],
+            ['Prescribed dose Unit', '']
             ]
     else:
         parsed_lines = [
@@ -66,6 +58,7 @@ def parse_prescribed_dose(sentinel)->List[List[str]]:
             for line_tmpl in parse_template
             ]
     return parsed_lines
+
 
 def prescribed_dose_rule(context, line)->List[List[str]]:
     dose_trigger = make_prescribed_dose_trigger()
@@ -80,7 +73,10 @@ def date_rule(context, line)->List[List[str]]:
     date_trigger = tp.Trigger('Date', name='Starts With Date', location='START')
     is_match, sentinel = date_trigger.apply(context, line)
     if is_match:
-        parsed_lines = [[sentinel, line.split(':',maxsplit=1)[1]]]
+        parsed_lines = [
+            [sentinel,
+             line.split(':',maxsplit=1)[1]]
+            ]
         return parsed_lines
     return None
 
@@ -95,20 +91,20 @@ def approved_status_rule(context, line)->List[List[str]]:
                                       name='Treatment Approved')
     is_match, sentinel = approved_status_trigger.apply(context, line)
     if is_match:
-        break1 = line.find(sentinel)
-        break2 = break1 + len(sentinel)
-        break3 = line.find('by')
-        break4 = break3 + 3
+        idx1 = line.find(sentinel)
+        idx2 = idx1 + len(sentinel)
+        idx3 = line.find('by')
+        idx4 = idx3 + 3
         parsed_lines = [
-            ['Plan Status', line[break1:break2]],
-            ['Approved on', line[break2:break3]],
-            ['Approved by', line[break4:]]
+            ['Plan Status', line[idx1:idx2]],
+            ['Approved on', line[idx2:idx3]],
+            ['Approved by', line[idx4:]]
             ]
         return parsed_lines
     return None
 
 
-def csv_parser(dialect_name: str, context, line):
+def csv_parser(context, line, dialect_name: str):
     csvreader = csv.reader([line], dialect=dialect_name)
     parsed_lines = [parsed_line for parsed_line in csvreader]
     return parsed_lines
@@ -138,26 +134,22 @@ def line_parser(context, source):
                          skipinitialspace=True,
                          strict=False)
     default_parser = partial(csv_parser, dialect_name='dvh_info')
-    rule_iter = (rule for rule in [
-            prescribed_dose_rule,
-            date_rule,
-            approved_status_rule,
-            default_parser])
+    rules = [
+        prescribed_dose_rule,
+        date_rule,
+        approved_status_rule,
+        default_parser
+        ]
     logger.debug('In line_parser')
-    parsed_lines = None
     for line in source:
         logger.debug(f'In line_parser, received line: {line}')
-        try:
-            while parsed_lines is None:
-                rule = rule_iter.__next__()
-                parsed_lines = rule(context, line)
-        except StopIteration:
-            continue
-        else:
+        for rule in rules:
+            parsed_lines = rule(context, line)
+            if parsed_lines is not None:
+                break
+        if parsed_lines is not None:
             for parsed_line in parsed_lines:
                 yield parsed_line
-    raise EOF(context=context)
-
 
 def scan_section(context, section_name, break_triggers: List[tp.SectionBreak]):
 # Apply Section Cleaning -> clean_lines
@@ -175,7 +167,7 @@ def scan_section(context, section_name, break_triggers: List[tp.SectionBreak]):
     parsed_lines = line_parser(context, active_lines)
     processed_lines = tp.merge_continued_rows(
         tp.merge_extra_items(
-            tp.drop_empty_lines(
+            tp.drop_blanks(
                 tp.trim_lines(parsed_lines)
                 )
             )

@@ -4,7 +4,7 @@
 # pylint: disable=logging-fstring-interpolation
 #%% Imports
 from collections import deque
-from typing import Dict, Sequence, TypeVar, Pattern, Match, Iterator
+from typing import Dict, List, Sequence, TypeVar, Pattern, Match, Iterator
 import re
 import inspect
 from file_utilities import clean_ascii_text
@@ -15,6 +15,7 @@ from buffered_iterator import  BufferedIteratorValueError
 from buffered_iterator import  BufferOverflowWarning
 T = TypeVar('T')
 
+#TODO create type definitions: Line, ParsedLine ...
 #%% Logging
 logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
 
@@ -272,13 +273,14 @@ def clean_lines(lines: Sequence[str]) -> Iterator[str]:
     '''Convert each string to ANSI text converting specified
     UTF-Characters to ANSI Equivalents
     '''
-    for raw_line in file:
+    for raw_line in lines:
         logger.debug(f'In clean_lines, yielding raw_line: {raw_line}')
         yield clean_ascii_text(raw_line)
 
 
 def drop_blanks(lines: Sequence[str]) -> Iterator[str]:
-    '''Return all non-empty strings.
+    # FIXME lines can also be parsed lines i.e. List[List[str]]
+    '''Return all non-empty strings. or non-empty lists
     '''
     return (line for line in lines if len(line) > 0)
 
@@ -327,13 +329,7 @@ def convert_numbers(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
 def trim_lines(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
     '''Strip leading and training spaces from each item in the list of strings.
     '''
-    return (trim_lines(parsed_line) for parsed_line in parsed_lines)
-
-
-def drop_empty_lines(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
-    '''Strip leading and training spaces from each item in the list of strings.
-    '''
-    return (trim_lines(parsed_line) for parsed_line in parsed_lines)
+    return (trim_items(parsed_line) for parsed_line in parsed_lines)
 
 
 def merge_extra_items(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
@@ -349,18 +345,18 @@ def merge_continued_rows(parsed_lines: Sequence[List[str]],
                          max_lines=5) -> Iterator[List[str]]:
     '''If a parsed line has 2 items, and the next parsed line has only 1 item;
         join the next parsed line item to the end of the second item in the
-        current line with "\n".
+        current line with " ".
     '''
     parsed_line_iter = BufferedIterator(parsed_lines, buffer_size=max_lines)
     for parsed_line in parsed_line_iter:
         if len(parsed_line) == 2:
-            next_line = parsed_lines.look_ahead()
-            while len(next_line == 1):
+            next_line = parsed_line_iter.look_ahead()
+            while len(next_line) == 1:
                 merged = join_strings(parsed_line[1], next_line[0],
-                                      join_char='\n')
+                                      join_char=' ')
                 parsed_line[1] = merged
-                parsed_lines.skip()
-                next_line = parsed_lines.look_ahead()
+                parsed_line_iter.skip()
+                next_line = parsed_line_iter.look_ahead()
         yield parsed_line
 
 
@@ -392,7 +388,7 @@ def drop_units(text: str) -> float:
 # %, CU, cGy, Gy, deg, cm, deg, MU, min, cc, cm3, MU/Gy, MU/min, cm3, cc
 
 
-def line_parser(active_lines):
+def define_parser(active_lines):
     csv.register_dialect('test',
                          delimiter=',',
                          doublequote=True,
@@ -402,6 +398,5 @@ def line_parser(active_lines):
                          lineterminator='\r\n',
                          skipinitialspace=False,
                          strict=False)
-    a = csv.get_dialect('test')
-    csvreader = csv.reader(active_lines, dialect='test')
-    csvreader = csv.reader(active_lines, delimiter=':', quotechar='"')
+    #a = csv.get_dialect('test')
+    #csvreader = csv.reader(active_lines, dialect='test')
