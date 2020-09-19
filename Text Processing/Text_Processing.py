@@ -11,8 +11,9 @@ from file_utilities import clean_ascii_text
 from data_utilities import true_iterable
 import logging_tools as lg
 from buffered_iterator import BufferedIterator
-from buffered_iterator import  BufferedIteratorValueError
-from buffered_iterator import  BufferOverflowWarning
+from buffered_iterator import BufferedIteratorValueError
+from buffered_iterator import BufferOverflowWarning
+
 T = TypeVar('T')
 
 #TODO create type definitions: Line, ParsedLine ...
@@ -349,16 +350,30 @@ def merge_continued_rows(parsed_lines: Sequence[List[str]],
     '''
     parsed_line_iter = BufferedIterator(parsed_lines, buffer_size=max_lines)
     for parsed_line in parsed_line_iter:
-        if len(parsed_line) == 2:
-            next_line = parsed_line_iter.look_ahead()
-            while len(next_line) == 1:
-                merged = join_strings(parsed_line[1], next_line[0],
-                                      join_char=' ')
-                parsed_line[1] = merged
-                parsed_line_iter.skip()
+        completed_line = False
+        completed_section = None  # Stores raised StopSection exceptions
+        if len(parsed_line) != 2:
+            completed_line = True
+        while not completed_line:
+            # Trap Section breaks so that the current line is returned before
+            # the section break is raised
+            try:
                 next_line = parsed_line_iter.look_ahead()
+            except (StopSection, BufferOverflowWarning) as eol:
+                completed_line = True
+                completed_section = eol
+            else:
+                if len(next_line) == 1:
+                    parsed_line[1] = join_strings(parsed_line[1], next_line[0],
+                                                  join_char=' ')
+                    parsed_line_iter.skip()
+                else:
+                    completed_line = True
         yield parsed_line
-
+        if completed_section:
+            # If StopSection was raised by look_ahead, re-raise it after
+            # yielding the current line.
+            raise completed_section
 
 
 def drop_units(text: str) -> float:
