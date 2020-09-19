@@ -81,6 +81,7 @@ class DateString(object):
         return re.compile(date_pattern + time_pattern + am_pm_pattern)
 
     def build_section_date_re():
+        # FIXME I Don't think this method is used for anything.
         date_section_pattern = (
             '^'                # beginning of string
             '\s?'              # possible space before the date begins
@@ -123,6 +124,7 @@ class DateString(object):
             )
         return re.compile(date_section_pattern + time_section_pattern +
                           am_pm_pattern)
+
     __date_re = build_date_re()
     __date_section_re = build_section_date_re()
 
@@ -163,7 +165,6 @@ class DateString(object):
             date_type = '?'
         return date_type
 
-
     def find_date_pattern(self, date_num_list: List[int],
                           num_type_list: List[str]) -> str:
         '''Iterate through date numbers to identify the date pattern if possible.
@@ -180,7 +181,6 @@ class DateString(object):
                 num_type = self.test_date_num(date_num, num_type_list)
                 num_type_list[i] = num_type
         return num_type_list
-
 
     def build_date_string(self, date_parameters: Dict[str, str]):
         '''Extract date and time strings.

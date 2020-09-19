@@ -68,6 +68,7 @@ def prescribed_dose_rule(context, line)->List[List[str]]:
         return parsed_lines
     return None
 
+
 def date_rule(context, line)->List[List[str]]:
     '''If Date,don't split beyond first :'''
     date_trigger = tp.Trigger('Date', name='Starts With Date', location='START')
@@ -109,9 +110,11 @@ def csv_parser(context, line, dialect_name: str):
     parsed_lines = [parsed_line for parsed_line in csvreader]
     return parsed_lines
 
+
 #%% Line Processing
 
 #%% Section definitions
+#TODO Create Section Class
 def break_iterator(source, context, break_triggers: List[tp.SectionBreak]):
     logger.debug('In break_iterator')
     for line in source:
@@ -151,31 +154,8 @@ def line_parser(context, source):
             for parsed_line in parsed_lines:
                 yield parsed_line
 
-def scan_section(context, section_name, break_triggers: List[tp.SectionBreak]):
-# Apply Section Cleaning -> clean_lines
-# Check for End of Section Break -> break_triggers
 
-# Call Line Parser, passing Context & Lines -> Dialect, Special Lines
-
-# Apply Line Processing Rules -> trim_lines
-
-# Apply Section Formatting ->
-    context['Current Section'] = section_name
-    logger.debug(f'Starting New Section: {section_name}.')
-    cleaned_lines = tp.clean_lines(context['Source'])
-    active_lines = break_iterator(cleaned_lines, context, break_triggers)
-    parsed_lines = line_parser(context, active_lines)
-    processed_lines = tp.merge_continued_rows(
-        tp.merge_extra_items(
-            tp.drop_blanks(
-                tp.trim_lines(parsed_lines)
-                )
-            )
-        )
-
-
-    # Section iterator
-    section_lines = list()
+def section_iter(processed_lines):
     while True:
         row = None
         try:
@@ -192,9 +172,38 @@ def scan_section(context, section_name, break_triggers: List[tp.SectionBreak]):
             break
         logger.debug(f'Found row: {row}.')
         if row is not None:
-            section_lines.append(row)
+            yield row
         logger.debug('next line')
-    return section_lines
+
+
+def scan_section(context, section_name, break_triggers: List[tp.SectionBreak]):
+# Apply Section Cleaning -> clean_lines
+# Check for End of Section Break -> break_triggers
+
+# Call Line Parser, passing Context & Lines -> Dialect, Special Lines
+
+# Apply Line Processing Rules -> trim_lines
+
+# Apply Section Formatting ->
+    context['Current Section'] = section_name
+    logger.debug(f'Starting New Section: {section_name}.')
+    cleaned_lines = tp.clean_lines(context['Source'])
+    active_lines = break_iterator(cleaned_lines, context, break_triggers)
+    parsed_lines = line_parser(context, active_lines)
+    processed_lines = tp.convert_numbers(
+        tp.merge_continued_rows(
+            tp.merge_extra_items(
+                tp.drop_blanks(
+                    tp.trim_lines(
+                        parsed_lines
+                        )
+                    )
+                )
+            )
+        )
+
+    section_output = tp.to_dict(section_iter(processed_lines))
+    return section_output
 
 
 def section_manager(context):

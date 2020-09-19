@@ -4,7 +4,7 @@
 # pylint: disable=logging-fstring-interpolation
 #%% Imports
 from collections import deque
-from typing import Dict, List, Sequence, TypeVar, Pattern, Match, Iterator
+from typing import Dict, List, Sequence, TypeVar, Pattern, Match, Iterator, Any,Callable
 import re
 import inspect
 from file_utilities import clean_ascii_text
@@ -23,6 +23,7 @@ logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
 
 #%% Exceptions
 class TextReadWarnings(UserWarning): pass
+
 
 class TextReadException(Exception): pass
 
@@ -280,7 +281,7 @@ def clean_lines(lines: Sequence[str]) -> Iterator[str]:
 
 
 def drop_blanks(lines: Sequence[str]) -> Iterator[str]:
-    # FIXME lines can also be parsed lines i.e. List[List[str]]
+    # TODO lines can also be parsed lines i.e. List[List[str]]
     '''Return all non-empty strings. or non-empty lists
     '''
     return (line for line in lines if len(line) > 0)
@@ -402,6 +403,36 @@ def drop_units(text: str) -> float:
 # Units to recognize:
 # %, CU, cGy, Gy, deg, cm, deg, MU, min, cc, cm3, MU/Gy, MU/min, cm3, cc
 
+
+#%% output converters
+# These functions take a sequence of lists and return a the desired output
+#    format.
+def to_dict(processed_lines: Sequence[List[str]],
+            default_value: Any = None,
+            multi_value: Callable = None,
+            dict_type: type = dict) -> Dict[str, Any]:
+    '''Build a dictionary from a sequence of length 2 lists.
+        default_value: Any -- Value to use if len(List) = 1
+        multi_value: Callable -- Method to apply if is len(List) > 2
+            If None, that List item is Dropped.
+        dict_output: type, the type of dictionary to build e.g. ordered_dict.
+        '''
+    dict_output = dict_type()
+    for dict_line in processed_lines:
+        if len(dict_line) == 0:
+            continue
+        elif len(dict_line) == 1:
+            dict_item = {dict_line[0]: default_value}
+        elif len(dict_line) == 2:
+            dict_item = {dict_line[0]: dict_line[1]}
+        elif multi_value:
+            dict_item = multi_value(dict_line)
+        else:
+            continue
+        dict_output.update(dict_item)
+    return dict_output
+
+#%% CSV parser
 
 def define_parser(active_lines):
     csv.register_dialect('test',
