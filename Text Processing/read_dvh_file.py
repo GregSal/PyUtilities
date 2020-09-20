@@ -17,7 +17,7 @@ import Text_Processing as tp
 
 
 #%% Logging
-logger = lg.config_logger(prefix='read_dvh.file', level='DEBUG')
+logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
 
 
 #%% Line Parsing

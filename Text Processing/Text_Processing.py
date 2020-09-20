@@ -3,13 +3,16 @@
 # pylint: disable=anomalous-backslash-in-string
 # pylint: disable=logging-fstring-interpolation
 #%% Imports
-from collections import deque
-from typing import Dict, List, Sequence, TypeVar, Pattern, Match, Iterator, Any,Callable
 import re
 import inspect
+from collections import deque
+from functools import partial
+from typing import Dict, List, Sequence, TypeVar, Pattern, Match, Iterator, Any,Callable
+
 from file_utilities import clean_ascii_text
 from data_utilities import true_iterable
 import logging_tools as lg
+
 from buffered_iterator import BufferedIterator
 from buffered_iterator import BufferedIteratorValueError
 from buffered_iterator import BufferOverflowWarning
@@ -269,6 +272,61 @@ class SectionBreak():
         return is_break, context
 
 
+class Rule():
+    def __init__(self, trigger: Trigger = None,
+                 pass_method: Callable = None,
+                 fail_method: Callable = None,
+                 default = 'None',
+                 name='Rule'):
+        '''Apply method based on trigger result.
+        pass_method, fail_method: Callable, takes 3 arguments:
+            test_object
+            sentinel
+            context
+        default_method: str, one of:
+            'None'  -> returns None
+            'Original' -> returns test_object
+            'Sentinel' -> returns sentinel
+        '''
+        self.name = name
+        self.trigger = trigger
+        default_method = partial(self.default_template,
+                                 default_return=default)
+        if pass_method:
+            self.pass_method = pass_method
+        else:
+            self.pass_method = default_method
+
+        if fail_method:
+            self.fail_method = fail_method
+        else:
+            self.fail_method = default_method
+
+
+    @staticmethod
+    def default_template(test_object, sentinel, context, default_return):
+        '''default_method to be set using partial.
+        '''
+        if 'Original' in default_return:
+            return test_object
+        elif 'Sentinel' in default_return:
+            return sentinel
+        elif 'None' in default_return:
+            return None
+
+    def apply(self, test_object, context):
+        is_match, sentinel = self.trigger.apply(context, test_object)
+        if is_match:
+            result = self.pass_method(test_object, sentinel, context)
+        else:
+            result = self.pass_method(test_object, sentinel, context)
+        return result
+
+class Section():
+    pass
+    # FIXME Build the Section class
+
+
 #%% String Iterators
 # These functions take a sequence of strings and return a string generator.
 def clean_lines(lines: Sequence[str]) -> Iterator[str]:
@@ -290,12 +348,6 @@ def drop_blanks(lines: Sequence[str]) -> Iterator[str]:
 #%%Functions
 # These functions act on a string or list of strings.
 # They are often applied to a generator using partial.
-def trim_items(parsed_line: List[str]) -> List[str]:
-    '''Strip leading and training spaces from each item in the list of strings.
-    '''
-    trimed_line = [item.strip() for item in parsed_line]
-    return trimed_line
-
 
 def join_strings(text1: str, text2: str, join_char=' ') -> str:
     '''Join it to the end of text2 using join_char.'''
@@ -318,31 +370,53 @@ def str2float(text: str):
     return return_value
 
 
-#%% Parsed Line Iterators
-# These functions take a sequence of lists of strings and return a generator.
-def convert_numbers(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
-    '''If an item on a line is a number, convert it to a float.
-    '''
-    for parsed_line in parsed_lines:
-        converted_line = [str2float(item) for item in parsed_line]
-        yield converted_line
-
-
-def trim_lines(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
+#%% Parsed Line processors
+# These functions take a list of strings and a processed list of strings.
+def trim_items(parsed_line: List[str]) -> List[str]:
     '''Strip leading and training spaces from each item in the list of strings.
     '''
-    return (trim_items(parsed_line) for parsed_line in parsed_lines)
+    trimed_line = [item.strip() for item in parsed_line]
+    return trimed_line
+
+def convert_numbers(parsed_line: List[str]) -> List[str]:
+    '''If an item on a line is a number, convert it to a float.
+    '''
+    converted_line = [str2float(item) for item in parsed_line]
+    return converted_line
 
 
-def merge_extra_items(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
+def merge_extra_items(parsed_line: List[str]) -> List[str]:
     '''If a parsed line has more than 2 items, join items 2 to n. with " ". '''
-    for parsed_line in parsed_lines:
-        if len(parsed_line) > 2:
-            merged = join_strings(parsed_line[1:])
-            parsed_line[1] = merged
-        yield parsed_line
+    if len(parsed_line) > 2:
+        merged = join_strings(parsed_line[1:])
+        parsed_line[1] = merged
+    return parsed_line
+
+#def convert_numbers(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
+#    '''If an item on a line is a number, convert it to a float.
+#    '''
+#    for parsed_line in parsed_lines:
+#        converted_line = [str2float(item) for item in parsed_line]
+#        yield converted_line
 
 
+#def trim_lines(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
+#    '''Strip leading and training spaces from each item in the list of strings.
+#    '''
+#    return (trim_items(parsed_line) for parsed_line in parsed_lines)
+
+
+#def merge_extra_items(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
+#    '''If a parsed line has more than 2 items, join items 2 to n. with " ". '''
+#    for parsed_line in parsed_lines:
+#        if len(parsed_line) > 2:
+#            merged = join_strings(parsed_line[1:])
+#            parsed_line[1] = merged
+#        yield parsed_line
+
+
+#%% Parsed Line Iterators
+# These functions take a sequence of lists of strings and return a generator.
 def merge_continued_rows(parsed_lines: Sequence[List[str]],
                          max_lines=5) -> Iterator[List[str]]:
     '''If a parsed line has 2 items, and the next parsed line has only 1 item;

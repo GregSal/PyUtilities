@@ -30,6 +30,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="test_buffered_iterator.py" />
+    <Compile Include="test_sections.py" />
     <Compile Include="test_rules.py" />
     <Compile Include="test_trigger.py" />
     <Compile Include="buffered_iterator.py" />
