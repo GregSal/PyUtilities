@@ -4,10 +4,10 @@
 # pylint: disable=logging-fstring-interpolation
 #%% Imports
 import re
-import inspect
+from inspect import isgeneratorfunction
 from collections import deque
 from functools import partial
-from typing import Dict, List, Sequence, TypeVar, Pattern, Match, Iterator, Any,Callable
+from typing import Dict, List, Sequence, TypeVar, Pattern, Match, Iterator, Any, Callable
 
 from file_utilities import clean_ascii_text
 from data_utilities import true_iterable
@@ -41,17 +41,31 @@ class StopSection(TextReadException):
     def get_context(self):
         return self.context
 
+#%% Tools
+def func_to_iter(source: Iterator, func: Callable)->Iterator:
+    if isgeneratorfunction(func):
+        return func(source)
+    return (func(item) for item in source)
+
+
+def cascading_iterators(source: Iterator, func_list: List[Callable])->Iterator:
+    next_source = source
+    for func in list:
+        next_source = func_to_iter(next_source, func)
+    return next_source
 
 #%% Classes
 class Trigger():
     '''
      Trigger Types:
      None
+     bool
      List[str]
      Regex
      Callable
      n
-     If None continue  to end of file  / Stream
+     If None, the test will never pass
+     If bool, the test will always return the boolean value
      If list of strings, a match with any string in the list will be a pass
      The matched string will be added to the Context dict.
      If Regex the re.match object will be added to the Context dict.
@@ -100,6 +114,12 @@ class Trigger():
             logger.debug(f'Triggered on {sentinel_match.string}')
             return True,  sentinel_match
         return False, None
+
+    def fixed_test(self, line: str, test_result: bool) -> (bool, bool):
+        '''Always return the boolean test_result regardless of line content.
+        '''
+        # pylint: disable=unused-argument
+        return self.sentinel, self.sentinel
 
     # Optional applications of multiple patterns / strings in one trigger
     def multi_test(self, context, line: str) -> (bool, str):
@@ -156,6 +176,10 @@ class Trigger():
             self.sentinel_type = 'None'
             self.test_type = None
             self.test = None
+        elif isinstance(self.sentinel, bool):
+            self.sentinel_type = 'Boolean'
+            self.test_type = self.fixed_test
+            self.test = self.single_test
         elif true_iterable(self.sentinel):
             if all(isinstance(snt, str) for snt in self.sentinel):
                 self.sentinel_type = 'String'
@@ -182,7 +206,7 @@ class Trigger():
         self.set_sentinel_test_location()
 
     # Apply the defined test and return the results
-    def apply(self, context: Dict[str, any], line: str):
+    def apply(self, context: Dict[str, Any], line: str):
         logger.debug('in apply trigger')
         if self.test is None:
             is_pass = False
@@ -273,6 +297,22 @@ class SectionBreak():
 
 
 class Rule():
+    @staticmethod
+    def always_trigger():
+        pass
+    #FIXME add true here
+
+    @staticmethod
+    def default_template(test_object, sentinel, context, default_return):
+        '''default_method to be set using partial.
+        '''
+        if 'Original' in default_return:
+            return test_object
+        elif 'Sentinel' in default_return:
+            return sentinel
+        elif 'None' in default_return:
+            return None
+
     def __init__(self, trigger: Trigger = None,
                  pass_method: Callable = None,
                  fail_method: Callable = None,
@@ -303,17 +343,6 @@ class Rule():
             self.fail_method = default_method
 
 
-    @staticmethod
-    def default_template(test_object, sentinel, context, default_return):
-        '''default_method to be set using partial.
-        '''
-        if 'Original' in default_return:
-            return test_object
-        elif 'Sentinel' in default_return:
-            return sentinel
-        elif 'None' in default_return:
-            return None
-
     def apply(self, test_object, context):
         is_match, sentinel = self.trigger.apply(context, test_object)
         if is_match:
@@ -322,9 +351,104 @@ class Rule():
             result = self.pass_method(test_object, sentinel, context)
         return result
 
+
 class Section():
-    pass
-    # FIXME Build the Section class
+    def __init__(self,
+                 section_name,
+                 preprocessing,
+                 break_rules: List[tp.SectionBreak],
+                 parsing_rules,
+                 processed_lines,
+                 output_method):
+        self.section_name = section_name
+        self.preprocessing = preprocessing
+        self.break_rules = break_rules
+        self.parsing_rules = parsing_rules
+        self.processed_lines = processed_lines
+        self.output_method = output_method
+
+    def scan_section(self, context):
+        # Apply Section Cleaning -> clean_lines
+        # Check for End of Section Break -> break_triggers
+        # Call Line Parser, passing Context & Lines -> Dialect, Special Lines
+        # Apply Line Processing Rules -> trim_lines
+        # Apply Section Formatting ->
+
+        context['Current Section'] = self.section_name
+        logger.debug(f'Starting New Section: {self.section_name}.')
+        cleaned_lines = cascading_iterators(context['Source'],
+                                            self.preprocessing)
+        active_lines = self.break_iterator(context, cleaned_lines)
+        parsed_lines = line_parser(context, active_lines)
+        processed_lines = cascading_iterators(parsed_lines,
+                                              self.processed_lines)
+
+        section_output = output_method(self.section_iter(processed_lines))
+        return section_output
+
+    def section_iter(self, source):
+        while True:
+            row = None
+            try:
+                row = source.__next__()
+            except StopSection as stop_sign:
+                logger.debug('end of the section')
+                break
+            except EOF as eof:
+                logger.debug('End of Source')
+                break
+            logger.debug(f'Found row: {row}.')
+            if row is not None:
+                yield row
+            logger.debug('next line')
+
+    def line_parser(self, context, source):
+        logger.debug('In line_parser')
+        for line in source:
+            logger.debug(f'In line_parser, received line: {line}')
+            for rule in self.parsing_rules:
+                parsed_lines = rule(context, line)
+                if parsed_lines is not None:
+                    break
+            if parsed_lines is not None:
+                for parsed_line in parsed_lines:
+                    yield parsed_line
+
+    def break_iterator(self, context, source):
+        logger.debug('In break_iterator')
+        for line in source:
+            logger.debug(f'In section_breaks, received line: {line}')
+            for break_rule in self.break_rules:
+                logger.debug(f'Checking Trigger: {break_rule.name}')
+                is_break, context = break_rule.check(context, line)
+                if is_break:
+                    logger.debug(f'Section Break Detected')
+                    raise tp.StopSection(context=context)
+            logger.debug('No Break Triggered')
+            yield line
+        raise EOF(context=context)
+
+
+#%% CSV parser
+def define_csv_parser(name='csv',
+                      delimiter=',',
+                      doublequote=True,
+                      quoting=csv.QUOTE_MINIMAL,
+                      quotechar='"', escapechar=None,
+                      lineterminator='\r\n',
+                      skipinitialspace=False,
+                      strict=False):
+    csv.register_dialect(name,
+                         delimiter=delimiter,
+                         doublequote=True,
+                         quoting=doublequote,
+                         quotechar=quotechar,
+                         escapechar=escapechar,
+                         lineterminator=lineterminator,
+                         skipinitialspace=skipinitialspace,
+                         strict=False)
+    csv_parser = partial(csv_parser, dialect_name=name)
+    return csv_parser
 
 
 #%% String Iterators
@@ -506,17 +630,3 @@ def to_dict(processed_lines: Sequence[List[str]],
         dict_output.update(dict_item)
     return dict_output
 
-#%% CSV parser
-
-def define_parser(active_lines):
-    csv.register_dialect('test',
-                         delimiter=',',
-                         doublequote=True,
-                         quoting=csv.QUOTE_MINIMAL,
-                         quotechar='"',
-                         escapechar=None,
-                         lineterminator='\r\n',
-                         skipinitialspace=False,
-                         strict=False)
-    #a = csv.get_dialect('test')
-    #csvreader = csv.reader(active_lines, dialect='test')

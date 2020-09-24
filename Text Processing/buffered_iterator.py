@@ -40,7 +40,7 @@ class BufferedIterator():
     '''
     def __init__(self, source: Sequence[T], buffer_size=5):
         self.buffer_size = buffer_size
-        self.source_gen = (item for item in source)
+        self.source_gen = iter(source)
         self.previous_items = deque(maxlen=buffer_size)
         self.future_items = deque(maxlen=buffer_size)
         self._step_back = 0

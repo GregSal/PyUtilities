@@ -64,28 +64,120 @@ test_result_dicts = [
      ]
 
 
-#%%  Prescribed dose parse tests
-class TestSectionS(unittest.TestCase):
+
+#%% Line Parsing Functions
+def date_parse(line, sentinel, context)->List[List[str]]:
+    '''If Date,don't split beyond first :'''
+    parsed_lines = [
+        [sentinel, line.split(':',maxsplit=1)[1]]
+        ]
+    return parsed_lines
+
+
+def approved_status_parse(line, sentinel, context)->List[List[str]]:
+    '''If Treatment Approved, Split "Plan Status" into 3 lines:
+        Plan Status
+        Approved on
+        Approved by
+        '''
+    idx1 = line.find(sentinel)
+    idx2 = idx1 + len(sentinel)
+    idx3 = line.find('by')
+    idx4 = idx3 + 3
+    parsed_lines = [
+        ['Plan Status', line[idx1:idx2]],
+        ['Approved on', line[idx2:idx3]],
+        ['Approved by', line[idx4:]]
+        ]
+    return parsed_lines
+
+
+def parse_prescribed_dose(line, sentinel, context)->List[List[str]]:
+    '''Split "Prescribed dose [cGy]" into 2 lines:
+        Prescribed dose
+        Prescribed dose Unit
+        '''
+    parse_template = [
+        ['Prescribed dose', '{dose}'],
+        ['Prescribed dose Unit', '{unit}']
+        ]
+    match_results = sentinel.groupdict()
+    if match_results['dose'] == 'not defined':
+        parsed_lines = [
+            ['Prescribed dose', ''],
+            ['Prescribed dose Unit', '']
+            ]
+    else:
+        parsed_lines = [
+            [string_item.format(**match_results) for string_item in line_tmpl]
+            for line_tmpl in parse_template
+            ]
+    return parsed_lines
+
+#%% Parsing Rules
+def make_prescribed_dose_ruler():
+        prescribed_dose_pattern = (
+            r'^Prescribed dose\s*'            # Begins with Prescribed dose
+            r'[[]'                            # Unit start delimiter
+            r'(?P<unit>[A-Za-z]+)'            # unit group: text surrounded by []
+            r'[]]'                            # Unit end delimiter
+            r'\s*:\s*'                        # Dose delimiter with possible whitespace
+            r'(?P<dose>[0-9.]+|not defined)'  # dose group Number or "not defined"
+            r'[\s\r\n]*'                      # drop trailing whitespace
+            r'$'                              # end of string
+            )
+        re_pattern = re.compile(prescribed_dose_pattern)
+        dose_trigger = tp.Trigger(re_pattern, name='Prescribed Dose')
+        prescribed_dose_rule = tp.Rule(dose_trigger,
+                                       pass_method=parse_prescribed_dose,
+                                       name='prescribed_dose_rule')
+        return prescribed_dose_rule
+
+
+def make_date_parse_ruler():
+    date_trigger = tp.Trigger('Date', name='Starts With Date',
+                              location='START')
+    date_parse_rule = Rule(date_trigger, pass_method=date_parse,
+                           name='date_rule')
+    return date_parse_rule
+
+
+def make_approval_ruler():
+    approval_trigger = tp.Trigger('Date', name='Starts With Date',
+                                  location='START')
+    approval_rule = Rule(approval_trigger, pass_method=approved_status_parse,
+                         name='approval_rule')
+    return approval_rule
+
+
+def make_default_csv_rule():
+    default_parser=tp.define_csv_parser('dvh_info', delimiter=':',
+                                        skipinitialspace=True)
+    default_trigger = tp.Trigger(True, name='Default')
+    default_csv_rule = Rule(default_trigger, pass_method=default_parser,
+                             name='default_csv_rule')
+    return default_csv_rule
+
+#%%  dvh_info section tests
+class TestSections(unittest.TestCase):
     def setUp(self):
         self.context = {
             'File Name': 'trigger_test_text.txt',
-            'File Path': base_path / 'trigger_test_text.txt',
+            'File Path': Path.cwd() / 'trigger_test_text.txt',
             'Line Count': 0
             }
 
         dvh_info_break = [tp.SectionBreak(tp.Trigger(['Plan:', 'Plan sum:']),
                                           name='dvh_info')]
-        csv.register_dialect('dvh_info',
-                             delimiter=':',
-                             lineterminator='\r\n',
-                             skipinitialspace=True,
-                             strict=False)
+        dvh_info_parsing_rules = [
+            make_date_parse_rule(),
+            make_default_csv_ruler()
+            ]
 
         dvh_info_section = Section(
             preprocessing=[clean_ascii_text],
             break_triggers=dvh_info_break,
-            parsing_rules=[date_rule],
-            default_parser=partial(csv_parser, dialect_name='dvh_info'),
+            parsing_rules=dvh_info_parsing_rules,
             processed_lines = [
                 tp.trim_items,
                 tp.drop_blanks,
