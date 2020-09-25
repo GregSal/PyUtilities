@@ -4,6 +4,7 @@
 # pylint: disable=logging-fstring-interpolation
 #%% Imports
 import re
+import csv
 from inspect import isgeneratorfunction
 from collections import deque
 from functools import partial
@@ -50,7 +51,7 @@ def func_to_iter(source: Iterator, func: Callable)->Iterator:
 
 def cascading_iterators(source: Iterator, func_list: List[Callable])->Iterator:
     next_source = source
-    for func in list:
+    for func in func_list:
         next_source = func_to_iter(next_source, func)
     return next_source
 
@@ -356,7 +357,7 @@ class Section():
     def __init__(self,
                  section_name,
                  preprocessing,
-                 break_rules: List[tp.SectionBreak],
+                 break_rules: List[SectionBreak],
                  parsing_rules,
                  processed_lines,
                  output_method):
@@ -379,11 +380,11 @@ class Section():
         cleaned_lines = cascading_iterators(context['Source'],
                                             self.preprocessing)
         active_lines = self.break_iterator(context, cleaned_lines)
-        parsed_lines = line_parser(context, active_lines)
+        parsed_lines = self.line_parser(context, active_lines)
         processed_lines = cascading_iterators(parsed_lines,
                                               self.processed_lines)
 
-        section_output = output_method(self.section_iter(processed_lines))
+        section_output = self.output_method(self.section_iter(processed_lines))
         return section_output
 
     def section_iter(self, source):
@@ -407,7 +408,7 @@ class Section():
         for line in source:
             logger.debug(f'In line_parser, received line: {line}')
             for rule in self.parsing_rules:
-                parsed_lines = rule(context, line)
+                parsed_lines = rule.apply(line, context)
                 if parsed_lines is not None:
                     break
             if parsed_lines is not None:
@@ -441,13 +442,13 @@ def define_csv_parser(name='csv',
     csv.register_dialect(name,
                          delimiter=delimiter,
                          doublequote=True,
-                         quoting=doublequote,
+                         quoting=csv.QUOTE_MINIMAL,
                          quotechar=quotechar,
                          escapechar=escapechar,
                          lineterminator=lineterminator,
                          skipinitialspace=skipinitialspace,
                          strict=False)
-    csv_parser = partial(csv_parser, dialect_name=name)
+    csv_parser = partial(csv.reader, dialect_name=name)
     return csv_parser
 
 

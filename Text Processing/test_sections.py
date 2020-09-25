@@ -3,6 +3,7 @@ from pathlib import Path
 import re
 from file_utilities import clean_ascii_text
 import Text_Processing as tp
+from typing import Dict, List, Sequence, TypeVar, Pattern, Match, Iterator, Any, Callable
 
 #%% Test Text
 from pprint import pprint
@@ -134,10 +135,10 @@ def make_prescribed_dose_ruler():
         return prescribed_dose_rule
 
 
-def make_date_parse_ruler():
+def make_date_parse_rule():
     date_trigger = tp.Trigger('Date', name='Starts With Date',
                               location='START')
-    date_parse_rule = Rule(date_trigger, pass_method=date_parse,
+    date_parse_rule = tp.Rule(date_trigger, pass_method=date_parse,
                            name='date_rule')
     return date_parse_rule
 
@@ -154,7 +155,7 @@ def make_default_csv_rule():
     default_parser=tp.define_csv_parser('dvh_info', delimiter=':',
                                         skipinitialspace=True)
     default_trigger = tp.Trigger(True, name='Default')
-    default_csv_rule = Rule(default_trigger, pass_method=default_parser,
+    default_csv_rule = tp.Rule(default_trigger, pass_method=default_parser,
                              name='default_csv_rule')
     return default_csv_rule
 
@@ -171,25 +172,27 @@ class TestSections(unittest.TestCase):
                                           name='dvh_info')]
         dvh_info_parsing_rules = [
             make_date_parse_rule(),
-            make_default_csv_ruler()
+            make_default_csv_rule()
             ]
 
-        dvh_info_section = Section(
+        self.dvh_info_section = tp.Section(
+            section_name='dvh_info',
             preprocessing=[clean_ascii_text],
-            break_triggers=dvh_info_break,
+            break_rules=dvh_info_break,
             parsing_rules=dvh_info_parsing_rules,
             processed_lines = [
                 tp.trim_items,
                 tp.drop_blanks,
                 tp.merge_continued_rows
                 ],
-            output_formatter = tp.to_dict
+            output_method = tp.to_dict
             )
 
 
     def test_dvh_info_section(self):
         source = (line for line in test_source_groups[0])
-        section_output = dvh_info_section(source)
+        self.context['Source'] = source
+        section_output = self.dvh_info_section.scan_section(self.context)
         self.assertDictEqual(section_output, test_result_dicts[0])
 
 
