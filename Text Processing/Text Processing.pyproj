@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>f0b75ef5-e1d5-4a3e-978c-9a8dcf445620</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>read_dvh_file.py</StartupFile>
+    <StartupFile>test_functions.py</StartupFile>
     <SearchPath>..\..\PyUtilities</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -30,6 +30,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="test_buffered_iterator.py" />
+    <Compile Include="test_functions.py" />
     <Compile Include="test_sections.py" />
     <Compile Include="test_rules.py" />
     <Compile Include="test_trigger.py" />

@@ -6,6 +6,7 @@
 from pathlib import Path
 from pprint import pprint
 from functools import partial
+from itertools import chain
 from typing import List
 import csv
 import re
@@ -20,7 +21,50 @@ import Text_Processing as tp
 logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
 
 
+#%% Line Parsing Functions
+def date_parse(line, sentinel, context) -> List[List[str]]:
+    '''If Date,don't split beyond first :'''
+    parsed_line = [sentinel, line.split(':', maxsplit=1)[1]]
+    return [parsed_line]
+
+
+def approved_status_parse(line, sentinel, context) -> List[List[str]]:
+    '''If Treatment Approved, Split "Plan Status" into 3 lines:
+        Plan Status
+        Approved on
+        Approved by
+        '''
+    idx1 = line.find(sentinel)
+    idx2 = idx1 + len(sentinel)
+    idx3 = line.find('by')
+    idx4 = idx3 + 3
+    parsed_lines = [
+        ['Plan Status', line[idx1:idx2]],
+        ['Approved on', line[idx2:idx3]],
+        ['Approved by', line[idx4:]]
+        ]
+    return parsed_lines
+
+
+def parse_prescribed_dose(line, sentinel, context) -> List[List[str]]:
+    '''Split "Prescribed dose [cGy]" into 2 lines:
+        Prescribed dose
+        Prescribed dose unit
+        '''
+    match_results = sentinel.groupdict()
+    if match_results['dose'] == 'not defined':
+        match_results['dose'] = ''
+        match_results['unit'] = ''
+
+    parsed_lines = [
+        ['Prescribed dose', match_results['dose']],
+        ['Prescribed dose unit', match_results['unit']]
+        ]
+    return parsed_lines
+
+
 #%% Line Parsing
+
 def make_prescribed_dose_trigger():
         prescribed_dose_pattern = (
             r'^Prescribed dose\s*'            # Begins with Prescribed dose
