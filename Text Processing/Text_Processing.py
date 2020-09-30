@@ -663,7 +663,8 @@ class Rule():
     #FIXME add true here
 
     @staticmethod
-    def default_template(test_object, sentinel, context, default_return):
+    def default_template(test_object, sentinel, *args,
+                         default_return=None, **kwargs):
         '''default_method to be set using partial.
         '''
         if 'Original' in default_return:
@@ -704,12 +705,12 @@ class Rule():
             self.fail_method = default_method
 
 
-    def apply(self, test_object, context):
-        is_match, sentinel = self.trigger.apply(context, test_object)
+    def apply(self, test_object, *args, **kwargs):
+        is_match, sentinel = self.trigger.apply(test_object, *args, **kwargs)
         if is_match:
-            result = self.pass_method(test_object, sentinel, context)
+            result = self.pass_method(test_object, sentinel, *args, **kwargs)
         else:
-            result = self.fail_method(test_object, sentinel, context)
+            result = self.fail_method(test_object, sentinel, *args, **kwargs)
         return result
 
 

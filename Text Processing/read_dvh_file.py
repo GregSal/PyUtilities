@@ -22,95 +22,93 @@ logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
 
 
 #%% Line Parsing Functions
-def date_parse(line, sentinel, context) -> List[List[str]]:
-    '''If Date,don't split beyond first :'''
-    parsed_line = [sentinel, line.split(':', maxsplit=1)[1]]
+def date_parse(line: str, *args, **kwargs) -> tp.ParseResults:
+    '''If Date,don't split beyond first :.'''
+    parsed_line = line.split(':', maxsplit=1)
     return [parsed_line]
 
 
-def approved_status_parse(line, sentinel, context) -> List[List[str]]:
+def approved_status_parse(line, *args, **kwargs) -> tp.ParseResults:
     '''If Treatment Approved, Split "Plan Status" into 3 lines:
-        Plan Status
-        Approved on
-        Approved by
-        '''
+
+    Return three rows for a line containing "Treatment Approved"
+        Prescribed dose [unit]: dose
+    Gives:
+        [['Plan Status', 'Treatment Approved'],
+         ['Approved on', date],
+         ['Approved by', person]
+    '''
     idx1 = line.find(sentinel)
     idx2 = idx1 + len(sentinel)
-    idx3 = line.find('by')
-    idx4 = idx3 + 3
+    idx3 = line.find(' by')
+    idx4 = idx3 + 4
     parsed_lines = [
         ['Plan Status', line[idx1:idx2]],
-        ['Approved on', line[idx2:idx3]],
+        ['Approved on', line[idx2+1:idx3]],
         ['Approved by', line[idx4:]]
         ]
     return parsed_lines
 
 
-def parse_prescribed_dose(line, sentinel, context) -> List[List[str]]:
-    '''Split "Prescribed dose [cGy]" into 2 lines:
-        Prescribed dose
-        Prescribed dose unit
+#%% Prescribed Dose Rule
+def make_prescribed_dose_rule()->List[List[str]]:
+
+    def parse_prescribed_dose(line, sentinel,
+                              *args, **kwargs) -> tp.ParseResults:
+        '''Split "Prescribed dose [cGy]" into 2 lines.
+
+        Return two rows for a line containing:
+            Prescribed dose [unit]: dose
+        Gives:
+            [['Prescribed dose', 'dose'],
+            ['Prescribed dose unit', 'unit']],
+        The line:
+            Prescribed dose [unit]: not defined
+        Results in:
+            [['Prescribed dose', '5000.0'],
+             ['Prescribed dose unit', 'cGy']]
         '''
-    match_results = sentinel.groupdict()
-    if match_results['dose'] == 'not defined':
-        match_results['dose'] = ''
-        match_results['unit'] = ''
+        match_results = sentinel.groupdict()
+        if match_results['dose'] == 'not defined':
+            match_results['dose'] = ''
+            match_results['unit'] = ''
 
-    parsed_lines = [
-        ['Prescribed dose', match_results['dose']],
-        ['Prescribed dose unit', match_results['unit']]
-        ]
-    return parsed_lines
+        parsed_lines = [
+            ['Prescribed dose', match_results['dose']],
+            ['Prescribed dose unit', match_results['unit']]
+            ]
+        return parsed_lines
 
 
-#%% Line Parsing
+    def make_prescribed_dose_trigger()->tp.Trigger:
+        '''Create a trigger that checks for Prescribed Dose Line.
 
-def make_prescribed_dose_trigger():
+        Use regular expresion to match:
+            Prescribed dose [(unit)]: (dose)
+
+        Returns:
+            dose_trigger: A trigger that uses a regular expresion to check for
+            a Prescribed Dose Line.
+        '''
         prescribed_dose_pattern = (
-            r'^Prescribed dose\s*'            # Begins with Prescribed dose
-            r'[[]'                            # Unit start delimiter
-            r'(?P<unit>[A-Za-z]+)'            # unit group: text surrounded by []
-            r'[]]'                            # Unit end delimiter
-            r'\s*:\s*'                        # Dose delimiter with possible whitespace
-            r'(?P<dose>[0-9.]+|not defined)'  # dose group Number or "not defined"
-            r'[\s\r\n]*'                      # drop trailing whitespace
-            r'$'                              # end of string
+            r'^Prescribed dose\s*'  # Begins with Prescribed dose
+            r'\['                   # Unit start delimiter
+            r'(?P<unit>[A-Za-z]+)'  # unit group: text surrounded by []
+            r'\]'                   # Unit end delimiter
+            r'\s*:\s*'              # Dose delimiter with possible whitespace
+            r'(?P<dose>[0-9.]+'     # dose group Number
+            r'|not defined)'        #"not defined" alternative
+            r'[\s\r\n]*'            # drop trailing whitespace
+            r'$'                    # end of string
             )
         re_pattern = re.compile(prescribed_dose_pattern)
         dose_trigger = tp.Trigger(re_pattern, name='Prescribed Dose')
         return dose_trigger
 
-
-def parse_prescribed_dose(sentinel)->List[List[str]]:
-    '''Split "Prescribed dose [cGy]" into 2 lines:
-        Prescribed dose
-        Prescribed dose Unit
-        '''
-    parse_template = [
-        ['Prescribed dose', '{dose}'],
-        ['Prescribed dose Unit', '{unit}']
-        ]
-    match_results = sentinel.groupdict()
-    if match_results['dose'] == 'not defined':
-        parsed_lines = [
-            ['Prescribed dose', ''],
-            ['Prescribed dose Unit', '']
-            ]
-    else:
-        parsed_lines = [
-            [string_item.format(**match_results) for string_item in line_tmpl]
-            for line_tmpl in parse_template
-            ]
-    return parsed_lines
-
-
-def prescribed_dose_rule(context, line)->List[List[str]]:
-    dose_trigger = make_prescribed_dose_trigger()
-    is_match, sentinel = dose_trigger.apply(context, line)
-    if is_match:
-        parsed_lines = parse_prescribed_dose(sentinel)
-        return parsed_lines
-    return None
+    dose_rule = tp.Rule(make_prescribed_dose_trigger(),
+                     parse_prescribed_dose,
+                     name='prescribed_dose_rule')
+    return dose_rule
 
 
 def date_rule(context, line)->List[List[str]]:

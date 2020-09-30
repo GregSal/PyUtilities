@@ -1,8 +1,9 @@
 import unittest
 from itertools import chain
+from typing import List
 from file_utilities import clean_ascii_text
 import Text_Processing as tp
-from typing import List
+import read_dvh_file
 
 
 class Test_cascading_iterators(unittest.TestCase):
@@ -59,12 +60,6 @@ class TestParsers(unittest.TestCase):
         self.assertListEqual(test_output, expected_output)
 
     def test_date_parse_function(self):
-
-        def date_parse(line, *args, **kwargs) -> tp.ParseResults:
-            '''If Date,don't split beyond first :'''
-            parsed_line = line.split(':', maxsplit=1)
-            return [parsed_line]
-
         test_text = [
             'Date: Friday, January 17, 2020 09:45:07',
             'Exported by: gsal'
@@ -74,29 +69,11 @@ class TestParsers(unittest.TestCase):
             ['Exported by', 'gsal']
             ]
 
-        test_iter = (date_parse(line) for line in test_text)
+        test_iter = (read_dvh_file.date_parse(line) for line in test_text)
         test_output = [row for row in chain.from_iterable(test_iter)]
         self.assertListEqual(test_output, expected_output)
 
     def test_approved_status_parse_function(self):
-
-        def approved_status_parse(line, sentinel, context=None) -> List[List[str]]:
-            '''If Treatment Approved, Split "Plan Status" into 3 lines:
-                Plan Status
-                Approved on
-                Approved by
-                '''
-            idx1 = line.find(sentinel)
-            idx2 = idx1 + len(sentinel)
-            idx3 = line.find(' by')
-            idx4 = idx3 + 4
-            parsed_lines = [
-                ['Plan Status', line[idx1:idx2]],
-                ['Approved on', line[idx2+1:idx3]],
-                ['Approved by', line[idx4:]]
-                ]
-            return parsed_lines
-
         test_text = [
             'Plan: PARR',
             ('Plan Status: Treatment Approved Thursday, '
@@ -116,6 +93,51 @@ class TestParsers(unittest.TestCase):
             is_pass, sentinel = trigger.apply(line)
             if is_pass:
                 test_output.extend(approved_status_parse(line, sentinel))
+        self.assertListEqual(test_output, expected_output)
+
+
+
+class TestParseRules(unittest.TestCase):
+    def test_parse_prescribed_dose_rule(self):
+        test_text = [
+            'Prescribed dose [cGy]: not defined',
+            '% for dose (%): not defined',
+            'Prescribed dose [cGy]: 5000.0',
+            '% for dose (%): 100.0'
+            ]
+        expected_output = [
+            ['Prescribed dose', ''],
+            ['Prescribed dose unit', ''],
+            ['Prescribed dose', '5000.0'],
+            ['Prescribed dose unit', 'cGy'],
+            ]
+
+        dose_rule = read_dvh_file.make_prescribed_dose_rule()
+        test_output = list()
+        for line in test_text:
+            result = dose_rule.apply(line)
+            if result:
+                test_output.extend(result)
+        self.assertListEqual(test_output, expected_output)
+
+    def test_date_parse_rule(self):
+
+        def date_parse(line, *args, **kwargs) -> tp.ParseResults:
+            '''If Date,don't split beyond first :'''
+            parsed_line = line.split(':', maxsplit=1)
+            return [parsed_line]
+
+        test_text = [
+            'Date: Friday, January 17, 2020 09:45:07',
+            'Exported by: gsal'
+            ]
+        expected_output = [
+            ['Date', ' Friday, January 17, 2020 09:45:07'],
+            ['Exported by', 'gsal']
+            ]
+
+        test_iter = (date_parse(line) for line in test_text)
+        test_output = [row for row in chain.from_iterable(test_iter)]
         self.assertListEqual(test_output, expected_output)
 
     @unittest.skip('Not Working')
