@@ -12,7 +12,7 @@ import csv
 import re
 import logging_tools as lg
 from buffered_iterator import BufferedIterator
-from buffered_iterator import BufferedIteratorValueError
+from buffered_iterator import BufferedIteratorEOF
 from buffered_iterator import BufferOverflowWarning
 import Text_Processing as tp
 
@@ -22,37 +22,59 @@ logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
 
 
 #%% Line Parsing Functions
-def date_parse(line: str, *args, **kwargs) -> tp.ParseResults:
-    '''If Date,don't split beyond first :.'''
-    parsed_line = line.split(':', maxsplit=1)
-    return [parsed_line]
+# Date Rule
+def make_date_parse_rule() -> tp.Rule:
+    def date_parse(line: str, *args, **kwargs) -> tp.ParseResults:
+        '''If Date,don't split beyond first :.'''
+        parsed_line = line.split(':', maxsplit=1)
+        return [parsed_line]
+
+    date_trigger = tp.Trigger('Date', location='START',
+                              name='Starts With Date')
+    date_rule = tp.Rule(date_trigger, date_parse,
+                        name='date_rule')
+    return date_rule
 
 
-def approved_status_parse(line, *args, **kwargs) -> tp.ParseResults:
+# Approved Status
+def make_approved_status_rule() -> tp.Rule:
     '''If Treatment Approved, Split "Plan Status" into 3 lines:
+        Plan Status
+        Approved on
+        Approved by
+        '''
+    def approved_status_parse(line, sentinel, *args, **kwargs) -> tp.ParseResults:
+        '''If Treatment Approved, Split "Plan Status" into 3 lines:
 
-    Return three rows for a line containing "Treatment Approved"
-        Prescribed dose [unit]: dose
-    Gives:
-        [['Plan Status', 'Treatment Approved'],
-         ['Approved on', date],
-         ['Approved by', person]
-    '''
-    idx1 = line.find(sentinel)
-    idx2 = idx1 + len(sentinel)
-    idx3 = line.find(' by')
-    idx4 = idx3 + 4
-    parsed_lines = [
-        ['Plan Status', line[idx1:idx2]],
-        ['Approved on', line[idx2+1:idx3]],
-        ['Approved by', line[idx4:]]
-        ]
-    return parsed_lines
+        Return three rows for a line containing "Treatment Approved"
+            Prescribed dose [unit]: dose
+        Gives:
+            [['Plan Status', 'Treatment Approved'],
+             ['Approved on', date],
+             ['Approved by', person]
+        '''
+        idx1 = line.find(sentinel)
+        idx2 = idx1 + len(sentinel)
+        idx3 = line.find(' by')
+        idx4 = idx3 + 4
+        parsed_lines = [
+            ['Plan Status', line[idx1:idx2]],
+            ['Approved on', line[idx2+1:idx3]],
+            ['Approved by', line[idx4:]]
+            ]
+        return parsed_lines
+
+    approved_status_trigger = tp.Trigger('Treatment Approved',
+                                         location='IN',
+                                         name='Treatment Approved')
+    approved_status_rule = tp.Rule(approved_status_trigger,
+                                   approved_status_parse,
+                                   name='approved_status_rule')
+    return approved_status_rule
 
 
-#%% Prescribed Dose Rule
-def make_prescribed_dose_rule()->List[List[str]]:
-
+# Prescribed Dose Rule
+def make_prescribed_dose_rule() -> tp.Rule:
     def parse_prescribed_dose(line, sentinel,
                               *args, **kwargs) -> tp.ParseResults:
         '''Split "Prescribed dose [cGy]" into 2 lines.
@@ -111,48 +133,6 @@ def make_prescribed_dose_rule()->List[List[str]]:
     return dose_rule
 
 
-def date_rule(context, line)->List[List[str]]:
-    '''If Date,don't split beyond first :'''
-    date_trigger = tp.Trigger('Date', name='Starts With Date', location='START')
-    is_match, sentinel = date_trigger.apply(context, line)
-    if is_match:
-        parsed_lines = [
-            [sentinel,
-             line.split(':',maxsplit=1)[1]]
-            ]
-        return parsed_lines
-    return None
-
-
-def approved_status_rule(context, line)->List[List[str]]:
-    '''If Treatment Approved, Split "Plan Status" into 3 lines:
-        Plan Status
-        Approved on
-        Approved by
-        '''
-    approved_status_trigger = tp.Trigger('Treatment Approved', location='IN',
-                                      name='Treatment Approved')
-    is_match, sentinel = approved_status_trigger.apply(context, line)
-    if is_match:
-        idx1 = line.find(sentinel)
-        idx2 = idx1 + len(sentinel)
-        idx3 = line.find('by')
-        idx4 = idx3 + 3
-        parsed_lines = [
-            ['Plan Status', line[idx1:idx2]],
-            ['Approved on', line[idx2:idx3]],
-            ['Approved by', line[idx4:]]
-            ]
-        return parsed_lines
-    return None
-
-
-def csv_parser(context, line, dialect_name: str):
-    csvreader = csv.reader([line], dialect=dialect_name)
-    parsed_lines = [parsed_line for parsed_line in csvreader]
-    return parsed_lines
-
-
 #%% Line Processing
 
 #%% Section definitions
@@ -169,32 +149,7 @@ def break_iterator(source, context, break_triggers: List[tp.SectionBreak]):
                 raise tp.StopSection(context=context)
         logger.debug('No Break Triggered')
         yield line
-    raise EOF(context=context)
-
-
-def line_parser(context, source):
-    csv.register_dialect('dvh_info',
-                         delimiter=':',
-                         lineterminator='\r\n',
-                         skipinitialspace=True,
-                         strict=False)
-    default_parser = partial(csv_parser, dialect_name='dvh_info')
-    rules = [
-        prescribed_dose_rule,
-        date_rule,
-        approved_status_rule,
-        default_parser
-        ]
-    logger.debug('In line_parser')
-    for line in source:
-        logger.debug(f'In line_parser, received line: {line}')
-        for rule in rules:
-            parsed_lines = rule(context, line)
-            if parsed_lines is not None:
-                break
-        if parsed_lines is not None:
-            for parsed_line in parsed_lines:
-                yield parsed_line
+    raise BufferedIteratorEOF(context=context)
 
 
 def section_iter(processed_lines):
@@ -277,7 +232,7 @@ def section_manager(context):
 
 def file_reader(test_file):
     with open(test_file, newline='') as csvfile:
-        raw_lines = tp.BufferedIterator(csvfile)
+        raw_lines = BufferedIterator(csvfile)
         context = {
             'File Name': test_file.name,
             'File Path': test_file.parent,
@@ -288,7 +243,7 @@ def file_reader(test_file):
     return context, section_lines
 
 def process_lines(section_lines):
-    parsed_lines = tp.BufferedIterator(section_lines)
+    parsed_lines = BufferedIterator(section_lines)
     pass
 
 
@@ -296,12 +251,12 @@ def process_lines(section_lines):
 def merge_rows(parsed_lines):
     for parsed_line in parsed_lines:
         if len(parsed_line) > 0:
-            yield line
+            yield parsed_line
 
 def drop_blanks(parsed_lines):
     for parsed_line in parsed_lines:
         if len(parsed_line) > 0:
-            yield line
+            yield parsed_line
 
 
 def date_processing():

@@ -29,14 +29,14 @@ class TestSimpleTriggers(unittest.TestCase):
     def test_simple_trigger(self):
         s_trigger = Trigger(['Structure:'], name='End of Plan Info')
         line = 'Structure: PRV5 SpinalCanal'
-        is_break, sentinel = s_trigger.apply(self.context, line)
+        is_break, sentinel = s_trigger.apply(line, self.context)
         self.assertTrue(is_break)
         self.assertEqual(sentinel, 'Structure:')
 
     def test_multi_string_trigger(self):
         plan_trigger = Trigger(['Plan:', 'Plan sum:'])
         line = 'Plan sum: Plan Sum'
-        is_break, sentinel = plan_trigger.apply(self.context, line)
+        is_break, sentinel = plan_trigger.apply(line, self.context)
         self.assertTrue(is_break)
         self.assertEqual(sentinel, 'Plan sum:')
 
@@ -44,14 +44,14 @@ class TestSimpleTriggers(unittest.TestCase):
         plan_trigger = Trigger(['Plan:', 'Plan sum:'])
         info_trigger = Trigger(['% for dose (%):'])
         line = 'Comment              : DVHs for a plan sum'
-        is_break, sentinel = plan_trigger.apply(self.context, line)
+        is_break, sentinel = plan_trigger.apply(line, self.context)
         self.assertFalse(is_break)
         self.assertIsNone(sentinel)
 
     def test_info_trigger(self):
         info_trigger = Trigger(['% for dose (%):'])
         line = '% for dose (%): 100.0'
-        is_break, sentinel = info_trigger.apply(self.context, line)
+        is_break, sentinel = info_trigger.apply(line, self.context)
         self.assertTrue(is_break)
         self.assertEqual(sentinel, '% for dose (%):')
 
@@ -100,7 +100,7 @@ class TestReTriggers(unittest.TestCase):
             'unit': 'cGy',
             'dose': '5000.0'
             }
-        is_break, sentinel = dose_trigger.apply(self.context, line)
+        is_break, sentinel = dose_trigger.apply(line, self.context)
         self.assertTrue(is_break)
         self.assertIsNotNone(sentinel)
         self.assertIsInstance(sentinel, re.Match)
@@ -114,7 +114,7 @@ class TestReTriggers(unittest.TestCase):
             'unit': 'cGy',
             'dose': 'not defined'
             }
-        is_break, sentinel = dose_trigger.apply(self.context, line)
+        is_break, sentinel = dose_trigger.apply(line, self.context)
         self.assertTrue(is_break)
         self.assertIsNotNone(sentinel)
         self.assertIsInstance(sentinel, re.Match)
@@ -124,7 +124,7 @@ class TestReTriggers(unittest.TestCase):
     def test_not_trigger(self):
         dose_trigger = Trigger(self.re_pattern, name='Prescribed Dose')
         line = 'Comment              : DVHs for a plan sum'
-        is_break, sentinel = dose_trigger.apply(self.context, line)
+        is_break, sentinel = dose_trigger.apply(line, self.context)
         self.assertFalse(is_break)
         self.assertIsNone(sentinel)
 

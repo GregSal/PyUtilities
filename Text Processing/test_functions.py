@@ -32,24 +32,34 @@ class TestParsers(unittest.TestCase):
 
     def test_list_csv_parser(self):
         test_text = [
-            'Export Version:,1',
-            '================',
-            '',
-            'IMSure Version:,3.7.2',
-            'Exported Date:,03.09.2020  14:20',
-            'User:,Superuser',
-            'Patient:,"____, ----"',
-            'Patient ID:,0123456',
+            'Patient Name:     ____, ____',
+            'Patient ID:1234567',
+            'Comment:DVHs for multiple plans and plan sums',
+            'Date:Friday, January 17, 2020 09:45:07',
+            'Exported by:gsal',
+            'Type:Cumulative Dose Volume Histogram',
+            'Description:The cumulative DVH displays the percentage',
+            'or volume (absolute) of structures that receive a dose',
+            'equal to or greater than a given dose.',
+            'Plan sum: Plan Sum',
+            'Course: PLAN SUM',
+            'Prescribed dose [cGy]: not defined',
+            '% for dose (%): not defined'
             ]
         expected_output = [
-            ['Export Version:', '1'],
-            ['================'],
-            [],
-            ['IMSure Version:', '3.7.2'],
-            ['Exported Date:', '03.09.2020  14:20'],
-            ['User:', 'Superuser'],
-            ['Patient:', '____, ----'],
-            ['Patient ID:', '0123456']
+            ['Patient Name', '____, ____'],
+            ['Patient ID', '1234567'],
+            ['Comment', 'DVHs for multiple plans and plan sums'],
+            ['Date', 'Friday, January 17, 2020 09', '45', '07'],
+            ['Exported by', 'gsal'],
+            ['Type', 'Cumulative Dose Volume Histogram'],
+            ['Description', 'The cumulative DVH displays the percentage'],
+            ['or volume (absolute) of structures that receive a dose'],
+            ['equal to or greater than a given dose.'],
+            ['Plan sum', 'Plan Sum'],
+            ['Course', 'PLAN SUM'],
+            ['Prescribed dose [cGy]', 'not defined'],
+            ['% for dose (%)', 'not defined'],
             ]
         stl = ''
         ctx = {}
@@ -58,43 +68,6 @@ class TestParsers(unittest.TestCase):
         test_iter = (test_parser(line, stl, ctx) for line in test_text)
         test_output = [row for row in chain.from_iterable(test_iter)]
         self.assertListEqual(test_output, expected_output)
-
-    def test_date_parse_function(self):
-        test_text = [
-            'Date: Friday, January 17, 2020 09:45:07',
-            'Exported by: gsal'
-            ]
-        expected_output = [
-            ['Date', ' Friday, January 17, 2020 09:45:07'],
-            ['Exported by', 'gsal']
-            ]
-
-        test_iter = (read_dvh_file.date_parse(line) for line in test_text)
-        test_output = [row for row in chain.from_iterable(test_iter)]
-        self.assertListEqual(test_output, expected_output)
-
-    def test_approved_status_parse_function(self):
-        test_text = [
-            'Plan: PARR',
-            ('Plan Status: Treatment Approved Thursday, '
-             'January 02, 2020 12:55:56 by gsal'),
-            'Plan: PARR2-50Gy',
-            'Plan Status: Unapproved'
-            ]
-        expected_output = [
-            ['Plan Status', 'Treatment Approved'],
-            ['Approved on', 'Thursday, January 02, 2020 12:55:56'],
-            ['Approved by', 'gsal']
-            ]
-
-        trigger = tp.Trigger('Treatment Approved')
-        test_output = list()
-        for line in test_text:
-            is_pass, sentinel = trigger.apply(line)
-            if is_pass:
-                test_output.extend(approved_status_parse(line, sentinel))
-        self.assertListEqual(test_output, expected_output)
-
 
 
 class TestParseRules(unittest.TestCase):
@@ -121,43 +94,46 @@ class TestParseRules(unittest.TestCase):
         self.assertListEqual(test_output, expected_output)
 
     def test_date_parse_rule(self):
-
-        def date_parse(line, *args, **kwargs) -> tp.ParseResults:
-            '''If Date,don't split beyond first :'''
-            parsed_line = line.split(':', maxsplit=1)
-            return [parsed_line]
-
         test_text = [
             'Date: Friday, January 17, 2020 09:45:07',
             'Exported by: gsal'
             ]
         expected_output = [
-            ['Date', ' Friday, January 17, 2020 09:45:07'],
-            ['Exported by', 'gsal']
+            ['Date', ' Friday, January 17, 2020 09:45:07']
             ]
 
-        test_iter = (date_parse(line) for line in test_text)
-        test_output = [row for row in chain.from_iterable(test_iter)]
+        date_rule = read_dvh_file.make_date_parse_rule()
+        test_output = list()
+        for line in test_text:
+            result = date_rule.apply(line)
+            if result:
+                test_output.extend(result)
         self.assertListEqual(test_output, expected_output)
 
-    @unittest.skip('Not Working')
-    def test_cascading_iterators(self):
-        processed_lines = [
-            tp.trim_items,
-            tp.drop_blanks,
-            tp.merge_continued_rows
+    def test_approved_status_rule(self):
+        test_text = [
+            'Plan: PARR',
+            ('Plan Status: Treatment Approved Thursday, '
+             'January 02, 2020 12:55:56 by gsal'),
+            'Plan: PARR2-50Gy',
+            'Plan Status: Unapproved'
             ]
-        source = (line for line in test_source_groups[0])
-        line_processor = tp.cascading_iterators(source, processed_lines)
-        test_output = [row for row in line_processor]
-        self.assertListEqual(test_output, test_result_dicts[0])
+        expected_output = [
+            ['Plan Status', 'Treatment Approved'],
+            ['Approved on', 'Thursday, January 02, 2020 12:55:56'],
+            ['Approved by', 'gsal']
+            ]
 
-    @unittest.skip('Not Working')
-    def test_dvh_info_section(self):
-        source = (line for line in test_source_groups[1].splitlines())
-        self.context['Source'] = source
-        section_output = self.dvh_info_section.scan_section(self.context)
-        self.assertDictEqual(section_output, test_result_dicts[1])
+        approved_status_rule = read_dvh_file.make_approved_status_rule()
+        test_output = list()
+        for line in test_text:
+            result = approved_status_rule.apply(line)
+            if result:
+                test_output.extend(result)
+        self.assertListEqual(test_output, expected_output)
+
+
+# TODO make LineParse Class tests
 
 
 if __name__ == '__main__':

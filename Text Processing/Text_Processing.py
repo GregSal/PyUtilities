@@ -412,8 +412,6 @@ def drop_blanks(lines: Sequence[str]) -> Iterator[str]:
     return (line for line in lines if len(line) > 0)
 
 
-
-
 #%% Classes
 class Trigger():
     '''
@@ -658,9 +656,8 @@ class SectionBreak():
 
 class Rule():
     @staticmethod
-    def always_trigger():
-        pass
-    #FIXME add true here
+    def always_trigger(test_object, *args, **kwargs):
+        return True, test_object
 
     @staticmethod
     def default_template(test_object, sentinel, *args,
@@ -715,10 +712,14 @@ class Rule():
 
 
 class LineParser():
-    def __init__(self, parsing_rules: List[Rule]):
+    def __init__(self, parsing_rules: List[Rule],
+                 default_parser: Callable = None):
         self.parsing_rules = parsing_rules
+        default_rule = Rule(Rule.always_trigger, default_parser,
+                            name='Default')
+        self.parsing_rules.append(default_rule)
 
-    def parser(self, context, source):
+    def parser(self, source, context):
         logger.debug('In line_parser')
         for line in source:
             logger.debug(f'In line_parser, received line: {line}')
