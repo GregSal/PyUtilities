@@ -30,14 +30,40 @@ class TestParsers(unittest.TestCase):
         test_output = test_parser(test_text)
         self.assertListEqual(test_output, expected_output)
 
+    def test_default_csv_parser(self):
+        test_text = [
+            'Export Version:,1',
+            '================',
+            '',
+            'IMSure Version:,3.7.2',
+            'Exported Date:,03.09.2020  14:20',
+            'User:,Superuser',
+            'Patient:,"____, ----"',
+            'Patient ID:,0123456',
+            ]
+        expected_output = [
+            ['Export Version:', '1'],
+            ['================'],
+            [],
+            ['IMSure Version:', '3.7.2'],
+            ['Exported Date:', '03.09.2020  14:20'],
+            ['User:', 'Superuser'],
+            ['Patient:', '____, ----'],
+            ['Patient ID:', '0123456']
+            ]
+        test_parser = tp.define_csv_parser(name='Default')
+        test_iter = (test_parser(line) for line in test_text)
+        test_output = [row for row in chain.from_iterable(test_iter)]
+        self.assertListEqual(test_output, expected_output)
+
     def test_list_csv_parser(self):
         test_text = [
             'Patient Name:     ____, ____',
-            'Patient ID:1234567',
-            'Comment:DVHs for multiple plans and plan sums',
-            'Date:Friday, January 17, 2020 09:45:07',
-            'Exported by:gsal',
-            'Type:Cumulative Dose Volume Histogram',
+            'Patient ID:   1234567',
+            'Comment: DVHs for multiple plans and plan sums',
+            'Date: Friday, January 17, 2020 09:45:07',
+            'Exported by:    gsal',
+            'Type: Cumulative Dose Volume Histogram',
             'Description:The cumulative DVH displays the percentage',
             'or volume (absolute) of structures that receive a dose',
             'equal to or greater than a given dose.',
@@ -133,7 +159,72 @@ class TestParseRules(unittest.TestCase):
         self.assertListEqual(test_output, expected_output)
 
 
-# TODO make LineParse Class tests
+class TestLineParser(unittest.TestCase):
+    def test_dvh_line_parser(self):
+        test_text = [
+            'Patient Name: ____, ____',
+            'Patient ID:   1234567',
+            'Comment:      DVHs for multiple plans and plan sums',
+            'Date:Friday, January 17, 2020 09:45:07',
+            'Exported by:  gsal',
+            'Type:         Cumulative Dose Volume Histogram',
+            'Description:  The cumulative DVH displays the percentage',
+            'or volume (absolute) of structures that receive a dose',
+            '        equal to or greater than a given dose.',
+            '',
+            'Plan sum: Plan Sum',
+            'Course: PLAN SUM',
+            'Prescribed dose [cGy]: not defined',
+            '% for dose (%): not defined',
+            '',
+            'Plan: PARR',
+            'Course: C1',
+            ('Plan Status: Treatment Approved Thursday, '
+            'January 02, 2020 12:55:56 by gsal'),
+            'Prescribed dose [cGy]: 5000.0',
+            '% for dose (%): 100.0'
+            ]
+        expected_output = [
+            ['Patient Name', '____, ____'],
+            ['Patient ID', '1234567'],
+            ['Comment', 'DVHs for multiple plans and plan sums'],
+            ['Date', 'Friday, January 17, 2020 09:45:07'],
+            ['Exported by', 'gsal'],
+            ['Type', 'Cumulative Dose Volume Histogram'],
+            ['Description', 'The cumulative DVH displays the percentage'],
+            ['or volume (absolute) of structures that receive a dose'],
+            ['equal to or greater than a given dose.'],
+            [],
+            ['Plan sum', 'Plan Sum'],
+            ['Course', 'PLAN SUM'],
+            ['Prescribed dose', ''],
+            ['Prescribed dose unit', ''],
+            ['% for dose (%)', 'not defined'],
+            [],
+            ['Plan', 'PARR'],
+            ['Course', 'C1'],
+            ['Plan Status', 'Treatment Approved'],
+            ['Approved on', 'Thursday, January 02, 2020 12:55:56'],
+            ['Approved by', 'gsal'],
+            ['Prescribed dose', '5000.0'],
+            ['Prescribed dose unit', 'cGy'],
+            ['% for dose (%)', '100.0']
+            ]
+
+        parsing_rules = [
+            read_dvh_file.make_prescribed_dose_rule(),
+            read_dvh_file.make_date_parse_rule(),
+            read_dvh_file.make_approved_status_rule()
+            ]
+        default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
+                                              skipinitialspace=True)
+
+        test_parser = tp.LineParser(parsing_rules, default_parser)
+        test_output = [parsed_line
+                       for parsed_line in test_parser.parse(test_text)]
+        self.assertListEqual(test_output, expected_output)
+
+
 
 
 if __name__ == '__main__':

@@ -12,7 +12,7 @@
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
-    <InterpreterId>Global|ContinuumAnalytics|Anaconda37-64</InterpreterId>
+    <InterpreterId>CondaEnv|CondaEnv|standard</InterpreterId>
     <IsWindowsApplication>True</IsWindowsApplication>
     <TestFramework>unittest</TestFramework>
   </PropertyGroup>
@@ -42,7 +42,7 @@
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="Global|ContinuumAnalytics|Anaconda37-64" />
+    <InterpreterReference Include="CondaEnv|CondaEnv|standard" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Testing\" />
@@ -51,7 +51,6 @@
     <Folder Include="Testing\Test Data\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include=".gitignore" />
     <Content Include="Testing\misc_testing\__pycache__\data_utilities_tests.cpython-37.pyc" />
     <Content Include="Testing\misc_testing\__pycache__\Spreadsheet_tool_tests.cpython-37.pyc" />
     <Content Include="Testing\misc_testing\__pycache__\test_range.cpython-36-PYTEST.pyc" />

@@ -29,11 +29,18 @@ from buffered_iterator import BufferOverflowWarning
 from buffered_iterator import BufferedIteratorEOF
 T = TypeVar('T')
 
-Strings = Union[str, List[str]]
+ParsedString = List[str]
+Strings = Union[str, ParsedString]
 OptStrings = Union[Strings, None]
 OptStr = Union[str, None]
 AlphaNumeric = Union[float, str]
-ParseResults = Union[List[List[str]], None]
+
+ParseResults = Union[List[ParsedString], None]
+
+StringSource = Union[Iterator[str], Sequence[str]]
+ParsedStringSource = Union[Iterator[ParsedString], Sequence[ParsedString]]
+Source = Union[StringSource, ParsedStringSource]
+
 
 # TODO create type definitions: Line, ParsedLine ...
 #%% Logging
@@ -110,13 +117,13 @@ def str2float(text: str) -> AlphaNumeric:
 def func_to_iter(source: Iterator, func: Callable) -> Iterator:
     '''Create a iterator that applies func to each item in source.
 
-    If func is a generator fuction, return the iterator creates by calling
+    If func is a generator function, return the iterator creates by calling
     func with source.  otherwise use a generator expression to return an
     iterator that returns the result of calling func on each item in source.
     No type checking is performed.
 
     Args:
-        source: An iterator that returns the apropriate data types for func.
+        source: An iterator that returns the appropriate data types for func.
         func: A function or generator that takes one argument with type
             compatible to that produced by source.   If func is a generator
             function its argument must be an iterator with type
@@ -132,22 +139,22 @@ def func_to_iter(source: Iterator, func: Callable) -> Iterator:
 
 
 def cascading_iterators(source: Iterator, func_list: List[Callable])->Iterator:
-    '''Creates a sequence of nested iterator, taking as input the ouput from
-    the previous ietrator.
+    '''Creates a sequence of nested iterator, taking as input the output from
+    the previous iterator.
 
     Calls func_to_iter to create each nested iterator.
 
     Args:
-        source: An iterator that returns the apropriate data types for the
+        source: An iterator that returns the appropriate data types for the
             first function in func.
         func_list: A list of functions or generators that takes one argument.
-            The functions do not nessesarily all take the same data type, but
-            the input type for each function muct be compatible with the output
+            The functions do not necessarily all take the same data type, but
+            the input type for each function must be compatible with the output
             type of the previous function in the sequence. The first function
             in the sequence must be compatible with that produced by source.
 
     Returns:
-        An iterator that returns the result of successivly calling each
+        An iterator that returns the result of successively calling each
         function in func_list on the output of the previous function.
         For example:
             def ml(x): return x*10
@@ -240,35 +247,32 @@ def define_csv_parser(name='csv', **dialect_parameters) -> Callable:
 
 #%% Parsed Line Iterators
 # These functions take a sequence of lists of strings and return a generator.
-def merge_continued_rows(parsed_lines: Sequence[List[str]],
-                         max_lines=5) -> Iterator[List[str]]:
-    '''If a parsed line has 2 items, and the next parsed line has only 1 item;
-        join the next parsed line item to the end of the second item in the
-        current line with " ".
+def merge_continued_rows(parsed_lines: ParsedStringSource,
+                         max_lines=5) -> ParsedStringSource:
+    '''Join lines where the second item continues on the next line.
 
-    If func is a generator fuction, return the iterator creates by calling
-    func with source.  otherwise use a generator expression to return an
-    iterator that returns the result of calling func on each item in source.
-    No type checking is performed.
+        If a parsed line has 2 items, and the next parsed line has only 1 item;
+        join the next parsed line item to the end of the second item in the
+        current line with " ". Treats a raised StopSection as an indicator that
+        the line does not continue.
 
     Args:
-        source: An iterator that returns the apropriate data types for func.
-        func: A function or generator that takes one argument with type
-            compatible to that produced by source.   If func is a generator
-            function its argument must be an iterator with type
-            compatible to that produced by source.
+        parsed_lines: A sequence or iterator resulting from applying parsing
+            rules to multiple lines.
+        max_lines:  The mamimum number of lines that the second item can
+            continue over.
 
-    Returns:
-        An iterator that returns the result of calling func on each item in
-        source. For example:
-
-    Raises:
-        '''
-
+    Yields:
+        An iterator that returns each ParsedLine, if the next line has 2 items,
+            or, the result of joining the next parsed line item to the end of
+            the second item in the current line with ". For example:
+    '''
     parsed_line_iter = BufferedIterator(parsed_lines, buffer_size=max_lines)
     for parsed_line in parsed_line_iter:
         completed_line = False
         completed_section = None  # Stores raised StopSection exceptions
+        # If the first line doesn't not have exactly 2 parts don't join
+        # subsequent lines to it.
         if len(parsed_line) != 2:
             completed_line = True
         while not completed_line:
@@ -310,19 +314,19 @@ def drop_units(text: str) -> float:
         '\s*'              # drop trailing whitespace
         '$'                # end of string
         )
+    # Units to recognize:
+    # %, CU, cGy, Gy, deg, cm, deg, MU, min, cc, cm3, MU/Gy, MU/min, cm3, cc
     #find_num = re.compile(number_value_pattern)
     find_num = re.findall(number_value_pattern, text)
     if find_num:
         value, unit = find_num[0]
         return value
     return text
-# Units to recognize:
-# %, CU, cGy, Gy, deg, cm, deg, MU, min, cc, cm3, MU/Gy, MU/min, cm3, cc
 
 #%% output converters
 # These functions take a sequence of lists and return a the desired output
 #    format.
-def to_dict(processed_lines: Sequence[List[str]],
+def to_dict(processed_lines: ParsedStringSource,
             default_value: Any = None,
             multi_value: Callable = None,
             dict_type: type = dict) -> Dict[str, Any]:
@@ -358,14 +362,14 @@ def trim_items(parsed_line: List[str]) -> List[str]:
         trimed_line = parsed_line
     return trimed_line
 
-def convert_numbers(parsed_line: List[str]) -> List[str]:
+def convert_numbers(parsed_line: ParsedString) -> ParsedString:
     '''If an item on a line is a number, convert it to a float.
     '''
     converted_line = [str2float(item) for item in parsed_line]
     return converted_line
 
 
-def merge_extra_items(parsed_line: List[str]) -> List[str]:
+def merge_extra_items(parsed_line: ParsedString) -> ParsedString:
     '''If a parsed line has more than 2 items, join items 2 to n. with " ". '''
     if len(parsed_line) > 2:
         merged = join_strings(parsed_line[1:])
@@ -396,7 +400,7 @@ def merge_extra_items(parsed_line: List[str]) -> List[str]:
 
 #%% String Iterators
 # These functions take a sequence of strings and return a string generator.
-def clean_lines(lines: Sequence[str]) -> Iterator[str]:
+def clean_lines(lines: StringSource) -> StringSource:
     '''Convert each string to ANSI text converting specified
     UTF-Characters to ANSI Equivalents
     '''
@@ -405,8 +409,7 @@ def clean_lines(lines: Sequence[str]) -> Iterator[str]:
         yield clean_ascii_text(raw_line)
 
 
-def drop_blanks(lines: Sequence[str]) -> Iterator[str]:
-    # TODO lines can also be parsed lines i.e. List[List[str]]
+def drop_blanks(lines: Source) -> Source:
     '''Return all non-empty strings. or non-empty lists
     '''
     return (line for line in lines if len(line) > 0)
@@ -656,10 +659,6 @@ class SectionBreak():
 
 class Rule():
     @staticmethod
-    def always_trigger(test_object, *args, **kwargs):
-        return True, test_object
-
-    @staticmethod
     def default_template(test_object, sentinel, *args,
                          default_return=None, **kwargs):
         '''default_method to be set using partial.
@@ -715,17 +714,16 @@ class LineParser():
     def __init__(self, parsing_rules: List[Rule],
                  default_parser: Callable = None):
         self.parsing_rules = parsing_rules
-        default_rule = Rule(Rule.always_trigger, default_parser,
-                            name='Default')
+        default_rule = Rule(Trigger(True), default_parser, name='Default')
         self.parsing_rules.append(default_rule)
 
-    def parser(self, source, context):
+    def parse(self, source, *args, **kwargs):
         logger.debug('In line_parser')
         for line in source:
             logger.debug(f'In line_parser, received line: {line}')
 
             for rule in self.parsing_rules:
-                parsed_lines = rule.apply(line, context)
+                parsed_lines = rule.apply(line, *args, **kwargs)
                 if parsed_lines is not None:
                     break
 
