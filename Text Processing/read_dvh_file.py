@@ -135,74 +135,8 @@ def make_prescribed_dose_rule() -> tp.Rule:
 
 #%% Line Processing
 
+
 #%% Section definitions
-#TODO Create Section Class
-def break_iterator(source, context, break_triggers: List[tp.SectionBreak]):
-    logger.debug('In break_iterator')
-    for line in source:
-        logger.debug(f'In section_breaks, received line: {line}')
-        for break_trigger in break_triggers:
-            logger.debug(f'Checking Trigger: {break_trigger.name}')
-            is_break, context = break_trigger.check(context, line)
-            if is_break:
-                logger.debug(f'Section Break Detected')
-                raise tp.StopSection(context=context)
-        logger.debug('No Break Triggered')
-        yield line
-    raise BufferedIteratorEOF(context=context)
-
-
-def section_iter(processed_lines):
-    while True:
-        row = None
-        try:
-            row = processed_lines.__next__()
-        except tp.StopSection as stop_sign:
-            #pprint(stop_sign)
-            print()
-            logger.debug('end of the section')
-            break
-        except tp.EOF as eof:
-            #pprint(eof)
-            print()
-            logger.debug('End of Source')
-            break
-        logger.debug(f'Found row: {row}.')
-        if row is not None:
-            yield row
-        logger.debug('next line')
-
-
-def scan_section(context, section_name, break_triggers: List[tp.SectionBreak]):
-# Apply Section Cleaning -> clean_lines
-# Check for End of Section Break -> break_triggers
-
-# Call Line Parser, passing Context & Lines -> Dialect, Special Lines
-
-# Apply Line Processing Rules -> trim_lines
-
-# Apply Section Formatting ->
-    context['Current Section'] = section_name
-    logger.debug(f'Starting New Section: {section_name}.')
-    cleaned_lines = tp.clean_lines(context['Source'])
-    active_lines = break_iterator(cleaned_lines, context, break_triggers)
-    parsed_lines = line_parser(context, active_lines)
-    processed_lines = tp.convert_numbers(
-        tp.merge_continued_rows(
-            tp.merge_extra_items(
-                tp.drop_blanks(
-                    tp.trim_lines(
-                        parsed_lines
-                        )
-                    )
-                )
-            )
-        )
-
-    section_output = tp.to_dict(section_iter(processed_lines))
-    return section_output
-
-
 def section_manager(context):
     dvh_info_break = [
         tp.SectionBreak(tp.Trigger(['Plan:', 'Plan sum:']),name='dvh_info')

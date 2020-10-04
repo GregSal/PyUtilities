@@ -16,7 +16,7 @@ examples.
 import re
 import csv
 from inspect import isgeneratorfunction
-from functools import partial
+from functools import partial, partialmethod
 from typing import Dict, List, Sequence, TypeVar, Iterator, Any, Callable, Union
 
 from file_utilities import clean_ascii_text
@@ -54,8 +54,8 @@ class TextReadWarnings(UserWarning): pass
 class TextReadException(Exception): pass
 
 
-class StopSection(TextReadException):
-    '''A Section has ended through activation of a trigger.'''
+class TextReadBreaks(GeneratorExit):
+    '''Base class for indicating that a Section has changed.'''
 
     def __init__(self, *args, context=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -64,6 +64,20 @@ class StopSection(TextReadException):
     def get_context(self):
         '''Return the context that existed when StopSection was raised.'''
         return self.context
+
+
+class StartSection(TextReadBreaks):
+    '''A Section has started through activation of a trigger.'''
+    pass
+
+
+class StopSection(TextReadBreaks):
+    '''A Section has ended through activation of a trigger.'''
+    pass
+
+
+class IteratorEOF(TextReadBreaks):
+    '''A Section has ended through end of source.'''
 
 
 #%% String Functions
@@ -577,86 +591,6 @@ class Trigger():
         return is_pass, sentinel_output
 
 
-class SectionBreak():
-    def __init__(self, trigger: Trigger,
-                 offset='Before', name='SectionBreak'):
-        '''
-        starting_offset	[Int or str] if str, one of Before or After
-        if -1 or 'Before', Save the line that activates the Trigger for next section.
-        if 0 or 'After', Include the line that activates the Trigger in the section.
-        '''
-        self.name = name
-        self.trigger = trigger
-        self.offset = self.get_offset(offset)
-
-        self.count_down = None
-        self.active_sentinel = None
-
-    @staticmethod
-    def get_offset(offset) -> int:
-        '''Calculate the appropriate step_back value to store.
-        Before is a step back of -1
-        After is a step back of 0.
-        '''
-        offset_value = 0
-        try:
-            offset_value = int(offset)
-        except ValueError as err:
-            if isinstance(offset, str):
-                if 'Before' in offset:
-                    offset_value = -1
-                elif 'After' in offset:
-                    offset_value = 0
-            else:
-                msg = ('Offset must be an integer or one of'
-                       '"Before" or "After";\t Got {repr(offset)}')
-                raise ValueError(msg) from err
-        return offset_value
-
-    def check(self, context: Dict[str, any], line: str):
-        '''Check for a Break condition
-        If an Active count down situation exists, continue the count down.
-        Otherwise, apply the trigger test.
-        If the Trigger signals a break, set the appropriate line location for
-        the break based on the offset value.
-        '''
-        logger.debug('in section_break.check')
-        if self.count_down is None:  # No Active Count Down
-            is_break, sentinel = self.trigger.apply(context, line)
-            if is_break:
-                is_break, context = self.set_line_location(context,
-                                                           is_break, sentinel)
-        elif self.count_down == 0:  # End of Count Down Reached
-            logger.debug(f'Line count down in {self.name} completed.')
-            self.count_down = None  # Remove Active Count Down
-            is_break = True
-            context['Source'].step_back = 1  # Save current line for next section
-            context['sentinel'] = self.active_sentinel
-        elif self.count_down > 0:  #  Active Count Down Exists
-            logger.debug(f'Line count down in {self.name} Continuing;\t'
-                         f'Count down now at {self.count_down}')
-            self.count_down -= 1   #  Continue Count Down
-            is_break = False
-            sentinel = self.active_sentinel
-        return is_break, context
-
-    def set_line_location(self, context, is_break, sentinel):
-        '''Set the appropriate line location for a break based on the offset
-        value.
-        '''
-        logger.debug(f'Break triggered by {sentinel}')
-        self.active_sentinel = sentinel
-        if self.offset < 0: # Save current line for next section
-            logger.debug(f'Stepping back {-self.offset} lines')
-            context['sentinel'] = sentinel
-            context['Source'].step_back = -self.offset
-        else: # Use more lines before activating break
-            logger.debug(f'Using {self.offset} more lines.')
-            self.count_down = self.offset  # Begin Active Count Down
-            is_break = False
-        return is_break, context
-
-
 class Rule():
     @staticmethod
     def default_template(test_object, sentinel, *args,
@@ -732,6 +666,123 @@ class LineParser():
                     yield parsed_line
 
 
+class SectionBreak():
+    def __init__(self, trigger: Trigger,
+                 offset='Before', name='SectionBreak'):
+        '''
+        starting_offset	[Int or str] if str, one of Before or After
+        if -1 or 'Before', Save the line that activates the Trigger for next section.
+        if 0 or 'After', Include the line that activates the Trigger in the section.
+        '''
+        self.name = name
+        self.trigger = trigger
+        self.offset = self.get_offset(offset)
+
+        self.count_down = None
+        self.active_sentinel = None
+
+    @staticmethod
+    def get_offset(offset) -> int:
+        '''Calculate the appropriate step_back value to store.
+        Before is a step back of -1
+        After is a step back of 0.
+        '''
+        offset_value = 0
+        try:
+            offset_value = int(offset)
+        except ValueError as err:
+            if isinstance(offset, str):
+                if 'Before' in offset:
+                    offset_value = -1
+                elif 'After' in offset:
+                    offset_value = 0
+            else:
+                msg = ('Offset must be an integer or one of'
+                       '"Before" or "After";\t Got {repr(offset)}')
+                raise ValueError(msg) from err
+        return offset_value
+
+    def check(self, line: str, context: Dict[str, any]):
+        '''Check for a Break condition
+        If an Active count down situation exists, continue the count down.
+        Otherwise, apply the trigger test.
+        If the Trigger signals a break, set the appropriate line location for
+        the break based on the offset value.
+        '''
+        logger.debug('in section_break.check')
+        if self.count_down is None:  # No Active Count Down
+            is_break, sentinel = self.trigger.apply(line, context)
+            if is_break:
+                is_break, context = self.set_line_location(is_break, sentinel,
+                                                           context)
+        elif self.count_down == 0:  # End of Count Down Reached
+            logger.debug(f'Line count down in {self.name} completed.')
+            self.count_down = None  # Remove Active Count Down
+            is_break = True
+            context['Source'].step_back = 1  # Save current line for next section
+            context['sentinel'] = self.active_sentinel
+        elif self.count_down > 0:  #  Active Count Down Exists
+            logger.debug(f'Line count down in {self.name} Continuing;\t'
+                         f'Count down now at {self.count_down}')
+            self.count_down -= 1   #  Continue Count Down
+            is_break = False
+            sentinel = self.active_sentinel
+        return is_break, context
+
+    def set_line_location(self, is_break, sentinel, context):
+        '''Set the appropriate line location for a break based on the offset
+        value.
+        '''
+        logger.debug(f'Break triggered by {sentinel}')
+        self.active_sentinel = sentinel
+        if self.offset < 0: # Save current line for next section
+            logger.debug(f'Stepping back {-self.offset} lines')
+            context['sentinel'] = sentinel
+            context['Source'].step_back = -self.offset
+        else: # Use more lines before activating break
+            logger.debug(f'Using {self.offset} more lines.')
+            self.count_down = self.offset  # Begin Active Count Down
+            is_break = False
+        return is_break, context
+
+
+class SectionBoundaries():
+    def __init__(self,
+                 start_section: List[SectionBreak] = None,
+                 end_section: List[SectionBreak] = None):
+        if isinstance(start_section, SectionBreak):
+            self.start_section = [start_section]
+        else:
+            self.start_section = start_section
+        if isinstance(end_section, SectionBreak):
+            self.end_section = [end_section]
+        else:
+            self.end_section = end_section
+
+    def check(self, source, context, location='End'):
+        logger.debug('In SectionBoundaries.check')
+        if 'Start' in location:
+            break_triggers = self.start_section
+            trigger_exception = StartSection
+        else:
+            break_triggers = self.end_section
+            trigger_exception = StopSection
+
+        for line in source:
+            logger.debug(f'In section_breaks, received line: {line}')
+            for break_trigger in break_triggers:
+                logger.debug(f'Checking Trigger: {break_trigger.name}')
+                is_break, context = break_trigger.check(line, context)
+                if is_break:
+                    logger.debug('Section Break Detected')
+                    raise trigger_exception(context=context)
+            logger.debug('No Break Triggered')
+            yield line
+        raise IteratorEOF(context=context)
+    check_start = partialmethod(check, location='Start')
+    check_end = partialmethod(check, location='End')
+
+
 class Section():
     def __init__(self,
                  section_name,
@@ -781,19 +832,4 @@ class Section():
             if row is not None:
                 yield row
             logger.debug('next line')
-
-    def break_iterator(self, context, source):
-        logger.debug('In break_iterator')
-        for line in source:
-            logger.debug(f'In section_breaks, received line: {line}')
-            for break_rule in self.break_rules:
-                logger.debug(f'Checking Trigger: {break_rule.name}')
-                is_break, context = break_rule.check(context, line)
-                if is_break:
-                    logger.debug('Section Break Detected')
-                    raise StopSection(context=context)
-            logger.debug('No Break Triggered')
-            yield line
-        raise StopSection(context=context)
-
 
