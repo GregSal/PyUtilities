@@ -7,7 +7,7 @@ from pathlib import Path
 from pprint import pprint
 from functools import partial
 from itertools import chain
-from typing import List
+from typing import List, Callable
 import csv
 import re
 import logging_tools as lg
@@ -132,7 +132,10 @@ def make_prescribed_dose_rule() -> tp.Rule:
                      name='prescribed_dose_rule')
     return dose_rule
 
-
+def make_default_csv_parser() -> Callable:
+    default_csv = tp.define_csv_parser('dvh_info', delimiter=':',
+                                       skipinitialspace=True)
+    return default_csv
 #%% Line Processing
 
 
@@ -152,16 +155,16 @@ def section_manager(context):
                      name='End of Plan Info')
         ]
 
-    section_lines = scan_section(context, section_name = 'DVH Info',
-                                 break_triggers = dvh_info_break)
-    pprint(section_lines)
-    section_lines = scan_section(context, section_name = 'Plan Info',
-                                 break_triggers = plan_info_break)
-    pprint(section_lines)
-    section_lines = scan_section(context, section_name = 'Plan Info',
-                                 break_triggers = plan_data_break)
-    pprint(section_lines)
-    return context, section_lines
+    #section_lines = scan_section(context, section_name = 'DVH Info',
+    #                             break_triggers = dvh_info_break)
+    #pprint(section_lines)
+    #section_lines = scan_section(context, section_name = 'Plan Info',
+    #                             break_triggers = plan_info_break)
+    #pprint(section_lines)
+    #section_lines = scan_section(context, section_name = 'Plan Info',
+    #                             break_triggers = plan_data_break)
+    #pprint(section_lines)
+    #return context, section_lines
 
 
 def file_reader(test_file):

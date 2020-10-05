@@ -28,6 +28,8 @@ from buffered_iterator import BufferedIteratorValueError
 from buffered_iterator import BufferOverflowWarning
 from buffered_iterator import BufferedIteratorEOF
 T = TypeVar('T')
+# TODO create more type definitions: Line, ...
+# TODO more explicit generic type definitions
 
 ParsedString = List[str]
 Strings = Union[str, ParsedString]
@@ -42,9 +44,8 @@ ParsedStringSource = Union[Iterator[ParsedString], Sequence[ParsedString]]
 Source = Union[StringSource, ParsedStringSource]
 
 
-# TODO create type definitions: Line, ParsedLine ...
 #%% Logging
-logger = lg.config_logger(prefix='read_dvh.file', level='DEBUG')
+logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
 
 
 #%% Exceptions
@@ -88,7 +89,7 @@ def join_strings(text1: Strings, text2: OptStr = None, join_char=' ') -> str:
     '''Join text2 to the end of text1 using join_char.
 
     If text1 is a list of strings they will be joined together and text2, if
-    present, will be joind to the end of the resulting string.
+    present, will be joined to the end of the resulting string.
 
     Args:
         text1: first string or list of strings to be joined.
@@ -96,7 +97,7 @@ def join_strings(text1: Strings, text2: OptStr = None, join_char=' ') -> str:
         join_char: Optional character to place between strings.
             Default is no character.
     Returns:
-        The string reulting from joining text1 and text2.
+        The string resulting from joining text1 and text2.
     '''
     if true_iterable(text1):
         if text2 is None:
@@ -273,7 +274,7 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
     Args:
         parsed_lines: A sequence or iterator resulting from applying parsing
             rules to multiple lines.
-        max_lines:  The mamimum number of lines that the second item can
+        max_lines:  The maximum number of lines that the second item can
             continue over.
 
     Yields:
@@ -309,6 +310,12 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
             # If StopSection was raised by look_ahead, re-raise it after
             # yielding the current line.
             raise completed_section
+
+
+def drop_blanks(lines: Source) -> Source:
+    '''Return all non-empty strings. or non-empty lists
+    '''
+    return (line for line in lines if len(line) > 0)
 
 
 def drop_units(text: str) -> float:
@@ -367,7 +374,7 @@ def to_dict(processed_lines: ParsedStringSource,
 
 #%% Parsed Line processors
 # These functions take a list of strings and a processed list of strings.
-def trim_items(parsed_line: List[str]) -> List[str]:
+def trim_items(parsed_line: ParsedString) -> ParsedString:
     '''Strip leading and training spaces from each item in the list of strings.
     '''
     try:
@@ -375,6 +382,7 @@ def trim_items(parsed_line: List[str]) -> List[str]:
     except AttributeError:
         trimed_line = parsed_line
     return trimed_line
+
 
 def convert_numbers(parsed_line: ParsedString) -> ParsedString:
     '''If an item on a line is a number, convert it to a float.
@@ -389,44 +397,6 @@ def merge_extra_items(parsed_line: ParsedString) -> ParsedString:
         merged = join_strings(parsed_line[1:])
         parsed_line[1] = merged
     return parsed_line
-
-#def convert_numbers(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
-#    '''If an item on a line is a number, convert it to a float.
-#    '''
-#    for parsed_line in parsed_lines:
-#        converted_line = [str2float(item) for item in parsed_line]
-#        yield converted_line
-
-
-#def trim_lines(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
-#    '''Strip leading and training spaces from each item in the list of strings.
-#    '''
-#    return (trim_items(parsed_line) for parsed_line in parsed_lines)
-
-
-#def merge_extra_items(parsed_lines: Sequence[List[str]]) -> Iterator[List[str]]:
-#    '''If a parsed line has more than 2 items, join items 2 to n. with " ". '''
-#    for parsed_line in parsed_lines:
-#        if len(parsed_line) > 2:
-#            merged = join_strings(parsed_line[1:])
-#            parsed_line[1] = merged
-#        yield parsed_line
-
-#%% String Iterators
-# These functions take a sequence of strings and return a string generator.
-def clean_lines(lines: StringSource) -> StringSource:
-    '''Convert each string to ANSI text converting specified
-    UTF-Characters to ANSI Equivalents
-    '''
-    for raw_line in lines:
-        logger.debug(f'In clean_lines, yielding raw_line: {raw_line}')
-        yield clean_ascii_text(raw_line)
-
-
-def drop_blanks(lines: Source) -> Source:
-    '''Return all non-empty strings. or non-empty lists
-    '''
-    return (line for line in lines if len(line) > 0)
 
 
 #%% Classes
@@ -759,41 +729,39 @@ class SectionBoundaries():
         else:
             self.end_section = end_section
 
-    def check(self, source, context, location='End'):
-        logger.debug('In SectionBoundaries.check')
+    def check(self, line, context, location='End'):
+        logger.debug(f'In SectionBoundaries.check, received line: {line}')
         if 'Start' in location:
             break_triggers = self.start_section
             trigger_exception = StartSection
         else:
             break_triggers = self.end_section
             trigger_exception = StopSection
+        for break_trigger in break_triggers:
+            logger.debug(f'Checking Trigger: {break_trigger.name}')
+            is_break, context = break_trigger.check(line, context)
+            if is_break:
+                logger.debug('Section Break Detected')
+                raise trigger_exception(context=context)
+        logger.debug('No Break Triggered')
+        return line
 
-        for line in source:
-            logger.debug(f'In section_breaks, received line: {line}')
-            for break_trigger in break_triggers:
-                logger.debug(f'Checking Trigger: {break_trigger.name}')
-                is_break, context = break_trigger.check(line, context)
-                if is_break:
-                    logger.debug('Section Break Detected')
-                    raise trigger_exception(context=context)
-            logger.debug('No Break Triggered')
-            yield line
-        raise IteratorEOF(context=context)
-    check_start = partialmethod(check, location='Start')
-    check_end = partialmethod(check, location='End')
+    def check_start(self, context):
+        return partial(self.check, context=context, location='Start')
+
+    def check_end(self, context):
+        return partial(self.check, context=context, location='End')
 
 
 class Section():
     def __init__(self,
                  section_name,
                  preprocessing,
-                 break_rules: List[SectionBreak],
                  parsing_rules,
                  processed_lines,
                  output_method):
         self.section_name = section_name
         self.preprocessing = preprocessing
-        self.break_rules = break_rules
         self.parsing_rules = parsing_rules
         self.processed_lines = processed_lines
         self.output_method = output_method
@@ -807,12 +775,12 @@ class Section():
 
         context['Current Section'] = self.section_name
         logger.debug(f'Starting New Section: {self.section_name}.')
-        cleaned_lines = cascading_iterators(context['Source'],
-                                            self.preprocessing)
-        active_lines = self.break_iterator(context, cleaned_lines)
-        parsed_lines = self.line_parser(context, active_lines)
-        processed_lines = cascading_iterators(iter(parsed_lines),
-                                              self.processed_lines)
+        #cleaned_lines = cascading_iterators(context['Source'],
+        #                                    self.preprocessing)
+        #active_lines = self.break_iterator(context, cleaned_lines)
+        #parsed_lines = self.line_parser(context, active_lines)
+        #processed_lines = cascading_iterators(iter(parsed_lines),
+        #                                      self.processed_lines)
 
         section_output = self.output_method(self.section_iter(processed_lines))
         return section_output

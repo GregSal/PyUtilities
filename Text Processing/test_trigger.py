@@ -6,9 +6,6 @@ from Text_Processing import Trigger
 
 
 #%%
-
-
-
 class TestSimpleTriggers(unittest.TestCase):
 
     def file_lines(self, test_file):

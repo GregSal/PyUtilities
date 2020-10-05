@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Dict, List, Sequence, TypeVar, Pattern, Match, Iterator, Any,Callable
 import re
 from Text_Processing import Rule, Trigger
-from read_dvh_file import prescribed_dose_rule, date_rule, approved_status_rule
 
 #%% Test Text
 from pprint import pprint
@@ -17,10 +16,6 @@ Plan Status: Treatment Approved Thursday, January 02, 2020 12:55:56 by gsal
 % for dose(%): 100.0
 % for dose (%): not defined
 '''
-# pprint(test_lines.splitlines())
-
-
-
 
 #%%  Prescribed dose parse tests
 def parse_prescribed_dose(line, sentinel, context)->List[List[str]]:
