@@ -128,12 +128,46 @@ def str2float(text: str) -> AlphaNumeric:
     return return_value
 
 
+def convert_numbers(parsed_line: ParsedString) -> ParsedString:
+    '''If an item on a line is a number, convert it to a float.
+    '''
+    converted_line = [str2float(item) for item in parsed_line]
+    return converted_line
+
+
+def drop_units(text: str) -> float:
+    number_value_pattern = (
+        '^'                # beginning of string
+        '\s*'              # Skip leading whitespace
+        '(?P<value>'       # beginning of value integer group
+        '[-+]?'            # initial sign
+        '\d+'              # float value before decimal
+        '[.]?'             # decimal Place
+        '\d*'              # float value after decimal
+        ')'                # end of value string group
+        '\s*'              # skip whitespace
+        '(?P<unit>'        # beginning of value integer group
+        '[^\s]*'           # units do not contain spaces
+        ')'                # end of unit string group
+        '\s*'              # drop trailing whitespace
+        '$'                # end of string
+        )
+    # Units to recognize:
+    # %, CU, cGy, Gy, deg, cm, deg, MU, min, cc, cm3, MU/Gy, MU/min, cm3, cc
+    #find_num = re.compile(number_value_pattern)
+    find_num = re.findall(number_value_pattern, text)
+    if find_num:
+        value, unit = find_num[0]
+        return value
+    return text
+
+
 #%% Iteration Tools
 def func_to_iter(source: Iterator, func: Callable) -> Iterator:
     '''Create a iterator that applies func to each item in source.
 
     If func is a generator function, return the iterator creates by calling
-    func with source.  otherwise use a generator expression to return an
+    func with source.  Otherwise use a generator expression to return an
     iterator that returns the result of calling func on each item in source.
     No type checking is performed.
 
@@ -263,7 +297,7 @@ def define_csv_parser(name='csv', **dialect_parameters) -> Callable:
 #%% Parsed Line Iterators
 # These functions take a sequence of lists of strings and return a generator.
 def merge_continued_rows(parsed_lines: ParsedStringSource,
-                         max_lines=5) -> ParsedStringSource:
+                         max_lines=5, join_char=' ') -> ParsedStringSource:
     '''Join lines where the second item continues on the next line.
 
         If a parsed line has 2 items, and the next parsed line has only 1 item;
@@ -276,6 +310,8 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
             rules to multiple lines.
         max_lines:  The maximum number of lines that the second item can
             continue over.
+        join_char: Optional character to place between strings.
+            Default is ' ' (one space).
 
     Yields:
         An iterator that returns each ParsedLine, if the next line has 2 items,
@@ -301,7 +337,7 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
             else:
                 if len(next_line) == 1:
                     parsed_line[1] = join_strings(parsed_line[1], next_line[0],
-                                                  join_char=' ')
+                                                  join_char)
                     parsed_line_iter.skip()
                 else:
                     completed_line = True
@@ -315,34 +351,10 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
 def drop_blanks(lines: Source) -> Source:
     '''Return all non-empty strings. or non-empty lists
     '''
-    return (line for line in lines if len(line) > 0)
+    for line in lines:
+        if any(len(text) for text in line) > 0:
+            yield line
 
-
-def drop_units(text: str) -> float:
-    number_value_pattern = (
-        '^'                # beginning of string
-        '\s*'              # Skip leading whitespace
-        '(?P<value>'       # beginning of value integer group
-        '[-+]?'            # initial sign
-        '\d+'              # float value before decimal
-        '[.]?'             # decimal Place
-        '\d*'              # float value after decimal
-        ')'                # end of value string group
-        '\s*'              # skip whitespace
-        '(?P<unit>'        # beginning of value integer group
-        '[^\s]*'           # units do not contain spaces
-        ')'                # end of unit string group
-        '\s*'              # drop trailing whitespace
-        '$'                # end of string
-        )
-    # Units to recognize:
-    # %, CU, cGy, Gy, deg, cm, deg, MU, min, cc, cm3, MU/Gy, MU/min, cm3, cc
-    #find_num = re.compile(number_value_pattern)
-    find_num = re.findall(number_value_pattern, text)
-    if find_num:
-        value, unit = find_num[0]
-        return value
-    return text
 
 #%% output converters
 # These functions take a sequence of lists and return a the desired output
@@ -373,7 +385,7 @@ def to_dict(processed_lines: ParsedStringSource,
     return dict_output
 
 #%% Parsed Line processors
-# These functions take a list of strings and a processed list of strings.
+# These functions take a list of strings and return a processed list of strings.
 def trim_items(parsed_line: ParsedString) -> ParsedString:
     '''Strip leading and training spaces from each item in the list of strings.
     '''
@@ -382,13 +394,6 @@ def trim_items(parsed_line: ParsedString) -> ParsedString:
     except AttributeError:
         trimed_line = parsed_line
     return trimed_line
-
-
-def convert_numbers(parsed_line: ParsedString) -> ParsedString:
-    '''If an item on a line is a number, convert it to a float.
-    '''
-    converted_line = [str2float(item) for item in parsed_line]
-    return converted_line
 
 
 def merge_extra_items(parsed_line: ParsedString) -> ParsedString:

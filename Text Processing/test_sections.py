@@ -6,9 +6,9 @@ import Text_Processing as tp
 from typing import List
 from buffered_iterator import BufferedIterator
 import read_dvh_file
+from pprint import pprint
 
 #%% Test Text
-from pprint import pprint
 test_source_groups = [
     [
         ['Patient Name         ', ' ____, ____'],
@@ -377,17 +377,28 @@ class TestProcessing(unittest.TestCase):
             ]
 
     def test_trim_line_processor(self):
-        test_trimmed_output = [tp.trim_items(parsed_line)
-               for parsed_line in self.test_text]
+        processed_lines = tp.cascading_iterators(
+            iter(self.test_text),
+            [tp.trim_items])
+        test_trimmed_output = [processed_line
+                               for processed_line in processed_lines]
         self.assertListEqual(test_trimmed_output, self.trimmeded_output)
 
     def test_dropped_blank_processor(self):
-        test_dropped_blank_output = [tp.drop_blanks(parsed_line)
-               for parsed_line in self.trimmeded_output]
+        processed_lines = tp.cascading_iterators(
+            iter(self.trimmeded_output),
+            [tp.drop_blanks])
+        test_dropped_blank_output = [processed_line
+                                     for processed_line in processed_lines]
         self.assertListEqual(test_dropped_blank_output,
                              self.dropped_blank_output)
 
     def test_merged_line_processor(self):
+        processed_lines = tp.cascading_iterators(
+            iter(self.dropped_blank_output),
+            [tp.merge_continued_rows])
+        test_merged_line_output = [processed_line
+                                   for processed_line in processed_lines]
         test_merged_line_output = [tp.merge_continued_rows(parsed_line)
                for parsed_line in self.dropped_blank_output]
         self.assertListEqual(test_merged_line_output,
