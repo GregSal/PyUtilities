@@ -201,9 +201,9 @@ class TestProcessing(unittest.TestCase):
             ['Exported by          ', ' gsal'],
             ['Type                 ', ' Cumulative Dose Volume Histogram'],
             ['Description          ',
-             ' The cumulative DVH displays the percentage (relative)'],
+             ' The cumulative DVH displays the percentage (relative) '],
             ['                       or volume (absolute) of structures that '
-             'receive a dose'],
+             'receive a dose '],
             ['                       equal to or greater than a given dose.'],
             [''],
             ['Plan sum', ' Plan Sum'],
@@ -296,7 +296,7 @@ class TestProcessing(unittest.TestCase):
             ['Type','Cumulative Dose Volume Histogram'],
             ['Description',
             'The cumulative DVH displays the percentage (relative)'],
-            ['or volume (absolute) of structures that'
+            ['or volume (absolute) of structures that '
             'receive a dose'],
             ['equal to or greater than a given dose.'],
             ['Plan sum','Plan Sum'],
@@ -338,12 +338,10 @@ class TestProcessing(unittest.TestCase):
             'Friday, January 17, 2020 09:45:07'],
             ['Exported by','gsal'],
             ['Type','Cumulative Dose Volume Histogram'],
-            [
-            'Description',
-            'The cumulative DVH displays the percentage (relative)'
+            ['Description',
+            'The cumulative DVH displays the percentage (relative) '
             'or volume (absolute) of structures that '
-            'receive a dose '
-            'equal to or greater than a given dose.'
+            'receive a dose equal to or greater than a given dose.'
             ],
             ['Plan sum','Plan Sum'],
             ['Course','PLAN SUM'],
@@ -399,8 +397,6 @@ class TestProcessing(unittest.TestCase):
             [tp.merge_continued_rows])
         test_merged_line_output = [processed_line
                                    for processed_line in processed_lines]
-        test_merged_line_output = [tp.merge_continued_rows(parsed_line)
-               for parsed_line in self.dropped_blank_output]
         self.assertListEqual(test_merged_line_output,
                              self.merged_line_output)
 

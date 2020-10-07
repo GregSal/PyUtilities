@@ -333,7 +333,7 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
                 next_line = parsed_line_iter.look_ahead()
             except (StopSection, BufferOverflowWarning) as eol:
                 completed_line = True
-                completed_section = eol
+                #completed_section = eol
             else:
                 if len(next_line) == 1:
                     parsed_line[1] = join_strings(parsed_line[1], next_line[0],
@@ -342,10 +342,10 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
                 else:
                     completed_line = True
         yield parsed_line
-        if completed_section:
-            # If StopSection was raised by look_ahead, re-raise it after
-            # yielding the current line.
-            raise completed_section
+        #if completed_section:
+        #    # If StopSection was raised by look_ahead, re-raise it after
+        #    # yielding the current line.
+        #    raise completed_section
 
 
 def drop_blanks(lines: Source) -> Source:
