@@ -1,0 +1,1531 @@
+﻿Patient Name         : ____, ____
+Patient ID           : 1234567
+Comment              : DVHs for multiple plans and plan sums
+Date                 : Friday, January 17, 2020 09:45:07
+Exported by          : gsal
+Type                 : Cumulative Dose Volume Histogram
+Description          : The cumulative DVH displays the percentage (relative)
+                       or volume (absolute) of structures that receive a dose
+                       equal to or greater than a given dose.
+
+Plan sum: Plan Sum
+Course: PLAN SUM
+Prescribed dose [cGy]: not defined
+% for dose (%): not defined
+
+Plan: PARR
+Course: C1
+Plan Status: Treatment Approved Thursday, January 02, 2020 12:55:56 by gsal
+Prescribed dose [cGy]: 5000.0
+% for dose (%): 100.0
+
+Structure: PRV5 SpinalCanal
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 121.5
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.1
+Min Dose [cGy]: 36.7
+Max Dose [cGy]: 3670.1
+Mean Dose [cGy]: 891.9
+Modal Dose [cGy]: 44.5
+Median Dose [cGy]: 863.2
+STD [cGy]: 621.9
+NDR: 
+Equiv. Sphere Diam. [cm]: 6.1
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      3667              4.23876e-005
+      3668              2.87336e-005
+      3669              1.50797e-005
+      3670               1.4257e-006
+
+Structure: PRV8 SpinalCanal
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 275.1
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 33.8
+Max Dose [cGy]: 4039.4
+Mean Dose [cGy]: 713.3
+Modal Dose [cGy]: 78.3
+Median Dose [cGy]: 642.4
+STD [cGy]: 662.7
+NDR: 
+Equiv. Sphere Diam. [cm]: 8.1
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      4036              8.68759e-005
+      4037              6.18094e-005
+      4038              3.67429e-005
+      4039              1.16763e-005
+
+Structure: PTV 40 R
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 580.4
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 1483.4
+Max Dose [cGy]: 5442.0
+Mean Dose [cGy]: 4830.0
+Modal Dose [cGy]: 5177.3
+Median Dose [cGy]: 5090.7
+STD [cGy]: 464.2
+NDR: 
+Equiv. Sphere Diam. [cm]: 10.3
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5436              8.84936e-005
+      5437              5.93605e-005
+      5438              3.98091e-005
+      5439              2.26993e-005
+      5440                1.142e-005
+      5441              5.73082e-006
+      5442              4.16382e-008
+
+Structure: PTV 50
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 363.6
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 3985.9
+Max Dose [cGy]: 5442.0
+Mean Dose [cGy]: 5144.5
+Modal Dose [cGy]: 5177.3
+Median Dose [cGy]: 5166.9
+STD [cGy]: 131.9
+NDR: 
+Equiv. Sphere Diam. [cm]: 8.9
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5437               9.4777e-005
+      5438              6.35607e-005
+      5439              3.62425e-005
+      5440              1.82336e-005
+      5441              9.15003e-006
+      5442               6.6481e-008
+
+Structure: SpinalCanal
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 38.2
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 40.6
+Max Dose [cGy]: 2514.9
+Mean Dose [cGy]: 861.6
+Modal Dose [cGy]: 50.8
+Median Dose [cGy]: 830.5
+STD [cGy]: 520.2
+NDR: 
+Equiv. Sphere Diam. [cm]: 4.2
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: Dose 107[%]2
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 19.3
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.1
+Min Dose [cGy]: 4799.8
+Max Dose [cGy]: 5442.0
+Mean Dose [cGy]: 5269.1
+Modal Dose [cGy]: 5304.2
+Median Dose [cGy]: 5284.1
+STD [cGy]: 67.5
+NDR: 
+Equiv. Sphere Diam. [cm]: 3.3
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5442              1.25005e-006
+
+Structure: PRV5 Brain Stem
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 65.6
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 66.3
+Max Dose [cGy]: 1365.4
+Mean Dose [cGy]: 323.3
+Modal Dose [cGy]: 85.8
+Median Dose [cGy]: 173.5
+STD [cGy]: 308.3
+NDR: 
+Equiv. Sphere Diam. [cm]: 5.0
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      1364              9.98718e-005
+      1365              2.39034e-005
+
+Structure: Parotid L
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 31.7
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 299.5
+Max Dose [cGy]: 709.5
+Mean Dose [cGy]: 463.7
+Modal Dose [cGy]: 434.3
+Median Dose [cGy]: 453.8
+STD [cGy]: 69.8
+NDR: 
+Equiv. Sphere Diam. [cm]: 3.9
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: OpticNerve R
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 1.6
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.3
+Min Dose [cGy]: 87.9
+Max Dose [cGy]: 140.7
+Mean Dose [cGy]: 108.3
+Modal Dose [cGy]: 101.6
+Median Dose [cGy]: 106.8
+STD [cGy]: 10.4
+NDR: 
+Equiv. Sphere Diam. [cm]: 1.4
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: OpticNerve L
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 1.4
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.2
+Min Dose [cGy]: 73.5
+Max Dose [cGy]: 127.5
+Mean Dose [cGy]: 100.7
+Modal Dose [cGy]: 104.9
+Median Dose [cGy]: 101.3
+STD [cGy]: 10.8
+NDR: 
+Equiv. Sphere Diam. [cm]: 1.4
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: OpticChiasm
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 0.7
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.3
+Min Dose [cGy]: 83.9
+Max Dose [cGy]: 126.2
+Mean Dose [cGy]: 97.6
+Modal Dose [cGy]: 92.5
+Median Dose [cGy]: 95.7
+STD [cGy]: 8.3
+NDR: 
+Equiv. Sphere Diam. [cm]: 1.1
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: opt PTV 50
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 334.1
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 4245.9
+Max Dose [cGy]: 5442.0
+Mean Dose [cGy]: 5163.4
+Modal Dose [cGy]: 5182.6
+Median Dose [cGy]: 5174.2
+STD [cGy]: 101.7
+NDR: 
+Equiv. Sphere Diam. [cm]: 8.6
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5438              6.91664e-005
+      5439              3.94389e-005
+      5440              1.98417e-005
+      5441              9.95702e-006
+      5442              7.23444e-008
+
+Structure: opt PTV 40 R b
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 88.0
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 3400.2
+Max Dose [cGy]: 4334.9
+Mean Dose [cGy]: 4079.7
+Modal Dose [cGy]: 4077.5
+Median Dose [cGy]: 4082.8
+STD [cGy]: 47.2
+NDR: 
+Equiv. Sphere Diam. [cm]: 5.5
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      4334              6.17483e-005
+
+Structure: opt PTV 40 R a
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 103.6
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 3310.3
+Max Dose [cGy]: 5216.4
+Mean Dose [cGy]: 4475.1
+Modal Dose [cGy]: 4142.5
+Median Dose [cGy]: 4480.9
+STD [cGy]: 297.6
+NDR: 
+Equiv. Sphere Diam. [cm]: 5.8
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5215               9.7133e-005
+      5216               2.4411e-005
+
+Structure: opt CTV 50
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 232.0
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 4789.5
+Max Dose [cGy]: 5442.0
+Mean Dose [cGy]: 5193.7
+Modal Dose [cGy]: 5202.3
+Median Dose [cGy]: 5191.5
+STD [cGy]: 66.0
+NDR: 
+Equiv. Sphere Diam. [cm]: 7.6
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5438               9.9314e-005
+      5439              5.66334e-005
+      5440              2.84995e-005
+      5441              1.43017e-005
+      5442              1.03912e-007
+
+Structure: Mandible
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 82.5
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 113.2
+Max Dose [cGy]: 5384.0
+Mean Dose [cGy]: 1750.2
+Modal Dose [cGy]: 605.2
+Median Dose [cGy]: 1289.3
+STD [cGy]: 1251.2
+NDR: 
+Equiv. Sphere Diam. [cm]: 5.4
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5382              7.72479e-005
+      5383              3.89506e-005
+      5384              6.53234e-007
+
+Structure: Lens R
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 0.3
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 99.5
+Min Dose [cGy]: 71.7
+Max Dose [cGy]: 102.3
+Mean Dose [cGy]: 83.4
+Modal Dose [cGy]: 81.3
+Median Dose [cGy]: 82.8
+STD [cGy]: 6.1
+NDR: 
+Equiv. Sphere Diam. [cm]: 0.8
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: Lens L
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 0.2
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 98.3
+Min Dose [cGy]: 55.3
+Max Dose [cGy]: 86.0
+Mean Dose [cGy]: 67.1
+Modal Dose [cGy]: 64.5
+Median Dose [cGy]: 66.6
+STD [cGy]: 5.7
+NDR: 
+Equiv. Sphere Diam. [cm]: 0.7
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: Larynx
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 44.1
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 960.1
+Max Dose [cGy]: 4142.2
+Mean Dose [cGy]: 2088.8
+Modal Dose [cGy]: 1476.0
+Median Dose [cGy]: 1878.2
+STD [cGy]: 764.4
+NDR: 
+Equiv. Sphere Diam. [cm]: 4.4
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      4137              9.55607e-005
+      4138              6.74401e-005
+      4139              4.36166e-005
+      4140              2.67516e-005
+      4141              1.69262e-005
+      4142              2.74556e-006
+
+Structure: GTV
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 144.2
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 4779.9
+Max Dose [cGy]: 5383.2
+Mean Dose [cGy]: 5182.8
+Modal Dose [cGy]: 5153.5
+Median Dose [cGy]: 5176.7
+STD [cGy]: 65.9
+NDR: 
+Equiv. Sphere Diam. [cm]: 6.5
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5382              9.90288e-005
+      5383              1.53177e-005
+
+Structure: Globe R
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 7.7
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 60.0
+Max Dose [cGy]: 140.2
+Mean Dose [cGy]: 89.5
+Modal Dose [cGy]: 81.3
+Median Dose [cGy]: 87.9
+STD [cGy]: 15.6
+NDR: 
+Equiv. Sphere Diam. [cm]: 2.5
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: Globe L
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 7.6
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.1
+Min Dose [cGy]: 46.1
+Max Dose [cGy]: 109.5
+Mean Dose [cGy]: 72.3
+Modal Dose [cGy]: 69.4
+Median Dose [cGy]: 71.5
+STD [cGy]: 13.1
+NDR: 
+Equiv. Sphere Diam. [cm]: 2.4
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: CTV 50
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 234.0
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 4474.1
+Max Dose [cGy]: 5442.0
+Mean Dose [cGy]: 5191.4
+Modal Dose [cGy]: 5202.3
+Median Dose [cGy]: 5190.8
+STD [cGy]: 72.0
+NDR: 
+Equiv. Sphere Diam. [cm]: 7.6
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5438              9.84779e-005
+      5439              5.61566e-005
+      5440              2.82596e-005
+      5441              1.41813e-005
+      5442              1.03037e-007
+
+Structure: CTV 40 R
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 378.7
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 3975.1
+Max Dose [cGy]: 5442.0
+Mean Dose [cGy]: 4998.3
+Modal Dose [cGy]: 5182.6
+Median Dose [cGy]: 5157.3
+STD [cGy]: 398.7
+NDR: 
+Equiv. Sphere Diam. [cm]: 9.0
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5437              9.09794e-005
+      5438              6.10138e-005
+      5439              3.47902e-005
+      5440               1.7503e-005
+      5441              8.78339e-006
+      5442              6.38172e-008
+
+Structure: Cochlea R
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 1.4
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.1
+Min Dose [cGy]: 216.2
+Max Dose [cGy]: 407.7
+Mean Dose [cGy]: 288.6
+Modal Dose [cGy]: 276.7
+Median Dose [cGy]: 284.2
+STD [cGy]: 39.3
+NDR: 
+Equiv. Sphere Diam. [cm]: 1.4
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: Cochlea L
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 1.7
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 114.8
+Max Dose [cGy]: 373.0
+Mean Dose [cGy]: 232.7
+Modal Dose [cGy]: 160.1
+Median Dose [cGy]: 227.3
+STD [cGy]: 68.6
+NDR: 
+Equiv. Sphere Diam. [cm]: 1.5
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: BrainStem
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 26.8
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 74.8
+Max Dose [cGy]: 1152.3
+Mean Dose [cGy]: 291.7
+Modal Dose [cGy]: 94.9
+Median Dose [cGy]: 173.2
+STD [cGy]: 263.9
+NDR: 
+Equiv. Sphere Diam. [cm]: 3.7
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      1152              9.17309e-005
+
+Structure: Brain
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 1153.3
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 15.6
+Max Dose [cGy]: 2777.4
+Mean Dose [cGy]: 137.0
+Modal Dose [cGy]: 26.0
+Median Dose [cGy]: 56.5
+STD [cGy]: 253.6
+NDR: 
+Equiv. Sphere Diam. [cm]: 13.0
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      2756              9.15293e-005
+      2757              8.34708e-005
+      2758               7.6649e-005
+      2759              7.04951e-005
+      2760              6.48425e-005
+      2761              5.91899e-005
+      2762              5.35374e-005
+      2763              4.78848e-005
+      2764              4.22322e-005
+      2765              3.65797e-005
+      2766              3.08389e-005
+      2767              2.59201e-005
+      2768              2.10915e-005
+      2769               1.6815e-005
+      2770              1.29852e-005
+      2771              1.00727e-005
+      2772              7.24219e-006
+      2773              4.78584e-006
+      2774              3.02181e-006
+      2775              2.14827e-006
+      2776              1.27473e-006
+      2777               4.0119e-007
+
+Structure: BODY
+Approval Status: Approved
+Plan: Plan Sum
+Course: PLAN SUM
+Volume [cm³]: 24453.1
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 0.0
+Max Dose [cGy]: 5442.0
+Mean Dose [cGy]: 425.6
+Modal Dose [cGy]: 0.4
+Median Dose [cGy]: 52.4
+STD [cGy]: 958.0
+NDR: 
+Equiv. Sphere Diam. [cm]: 36.0
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5414              9.74241e-005
+      5415               9.2497e-005
+      5416              8.75698e-005
+      5417              8.26426e-005
+      5418              7.77154e-005
+      5419              7.27882e-005
+      5420              6.78611e-005
+      5421              6.29339e-005
+      5422              5.80067e-005
+      5423              5.30795e-005
+      5424              4.81523e-005
+      5425              4.42088e-005
+      5426                4.048e-005
+      5427              3.67513e-005
+      5428              3.30225e-005
+      5429              2.92937e-005
+      5430               2.5565e-005
+      5431              2.18362e-005
+      5432              1.81075e-005
+      5433              1.43787e-005
+      5434              1.11115e-005
+      5435               8.6953e-006
+      5436              7.29959e-006
+      5437              6.08448e-006
+      5438              4.86936e-006
+      5439              3.65424e-006
+      5440              2.43913e-006
+      5441              1.22401e-006
+      5442              8.89328e-009
+
+Structure: CTV 50
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 246.7
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 4488.2
+Max Dose [cGy]: 5423.4
+Mean Dose [cGy]: 5192.8
+Modal Dose [cGy]: 5185.1
+Median Dose [cGy]: 5193.5
+STD [cGy]: 79.5
+NDR: 
+Equiv. Sphere Diam. [cm]: 7.8
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5419               7.0799e-005
+      5420              4.40462e-005
+      5421              2.74122e-005
+      5422               1.2543e-005
+      5423              2.30984e-006
+
+Structure: CTV 40 R
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 406.8
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 3942.2
+Max Dose [cGy]: 5465.3
+Mean Dose [cGy]: 5019.4
+Modal Dose [cGy]: 5185.1
+Median Dose [cGy]: 5160.1
+STD [cGy]: 375.9
+NDR: 
+Equiv. Sphere Diam. [cm]: 9.2
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5450               9.6123e-005
+      5451              8.24737e-005
+      5452              6.97618e-005
+      5453               5.7966e-005
+      5454               4.9852e-005
+      5455              4.23637e-005
+      5456              3.48754e-005
+      5457              2.73871e-005
+      5458              2.03288e-005
+      5459              1.53771e-005
+      5460              1.29158e-005
+      5461              1.04821e-005
+      5462              8.04836e-006
+      5463              5.61465e-006
+      5464              3.18093e-006
+      5465              7.47221e-007
+
+Structure: Cochlea R
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 0.8
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.1
+Min Dose [cGy]: 282.2
+Max Dose [cGy]: 1113.8
+Mean Dose [cGy]: 502.3
+Modal Dose [cGy]: 315.3
+Median Dose [cGy]: 410.5
+STD [cGy]: 208.5
+NDR: 
+Equiv. Sphere Diam. [cm]: 1.2
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: Cochlea L
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 0.6
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.6
+Min Dose [cGy]: 238.4
+Max Dose [cGy]: 456.0
+Mean Dose [cGy]: 360.8
+Modal Dose [cGy]: 385.0
+Median Dose [cGy]: 369.8
+STD [cGy]: 51.0
+NDR: 
+Equiv. Sphere Diam. [cm]: 1.1
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+       456              6.99677e-005
+
+Structure: BrainStem
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 25.7
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 81.9
+Max Dose [cGy]: 1401.7
+Mean Dose [cGy]: 356.8
+Modal Dose [cGy]: 97.4
+Median Dose [cGy]: 189.1
+STD [cGy]: 339.1
+NDR: 
+Equiv. Sphere Diam. [cm]: 3.7
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      1401              7.15384e-005
+
+Structure: Brain
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 1149.1
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.1
+Min Dose [cGy]: 16.8
+Max Dose [cGy]: 3077.8
+Mean Dose [cGy]: 158.7
+Modal Dose [cGy]: 28.5
+Median Dose [cGy]: 61.3
+STD [cGy]: 296.7
+NDR: 
+Equiv. Sphere Diam. [cm]: 13.0
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      3035              9.84964e-005
+      3036              9.50444e-005
+      3037              9.16513e-005
+      3038              8.82582e-005
+      3039               8.4865e-005
+      3040              8.14719e-005
+      3041              7.80788e-005
+      3042              7.46856e-005
+      3043              7.18005e-005
+      3044              6.90246e-005
+      3045              6.62486e-005
+      3046              6.34727e-005
+      3047              6.06968e-005
+      3048              5.79209e-005
+      3049              5.51449e-005
+      3050               5.2369e-005
+      3051              4.95931e-005
+      3052              4.68172e-005
+      3053              4.39053e-005
+      3054               4.0554e-005
+      3055              3.72028e-005
+      3056              3.38516e-005
+      3057              3.12906e-005
+      3058              2.92143e-005
+      3059              2.72468e-005
+      3060              2.58305e-005
+      3061              2.41596e-005
+      3062              2.23067e-005
+      3063              2.02361e-005
+      3064              1.81654e-005
+      3065              1.60948e-005
+      3066              1.40242e-005
+      3067              1.19536e-005
+      3068              9.88301e-006
+      3069               7.8124e-006
+      3070              5.74179e-006
+      3071              4.75236e-006
+      3072              4.05905e-006
+      3073              3.36574e-006
+      3074              2.67243e-006
+      3075              1.97913e-006
+      3076              1.28582e-006
+      3077              5.92513e-007
+
+Structure: Dose 107[%]
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 11.7
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 99.9
+Min Dose [cGy]: 5123.0
+Max Dose [cGy]: 5465.3
+Mean Dose [cGy]: 5317.1
+Modal Dose [cGy]: 5322.6
+Median Dose [cGy]: 5319.2
+STD [cGy]: 34.4
+NDR: 
+Equiv. Sphere Diam. [cm]: 2.8
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5465              2.59829e-005
+
+Structure: opt CTV 50
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 243.4
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 4626.8
+Max Dose [cGy]: 5423.4
+Mean Dose [cGy]: 5195.0
+Modal Dose [cGy]: 5185.1
+Median Dose [cGy]: 5194.3
+STD [cGy]: 74.5
+NDR: 
+Equiv. Sphere Diam. [cm]: 7.7
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5419              7.17641e-005
+      5420              4.46466e-005
+      5421              2.77858e-005
+      5422              1.27139e-005
+      5423              2.34133e-006
+
+Structure: OpticNerve R
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 1.5
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.2
+Min Dose [cGy]: 89.4
+Max Dose [cGy]: 135.6
+Mean Dose [cGy]: 108.1
+Modal Dose [cGy]: 104.0
+Median Dose [cGy]: 107.4
+STD [cGy]: 8.7
+NDR: 
+Equiv. Sphere Diam. [cm]: 1.4
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: Parotid L
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 22.1
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 294.6
+Max Dose [cGy]: 625.4
+Mean Dose [cGy]: 432.3
+Modal Dose [cGy]: 417.0
+Median Dose [cGy]: 424.8
+STD [cGy]: 65.0
+NDR: 
+Equiv. Sphere Diam. [cm]: 3.5
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: PRV5 Brain Stem
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 63.1
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 72.8
+Max Dose [cGy]: 1683.6
+Mean Dose [cGy]: 385.6
+Modal Dose [cGy]: 88.5
+Median Dose [cGy]: 189.2
+STD [cGy]: 372.4
+NDR: 
+Equiv. Sphere Diam. [cm]: 4.9
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      1683              7.40493e-005
+
+Structure: PRV5 SpinalCanal
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 117.7
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.1
+Min Dose [cGy]: 10.0
+Max Dose [cGy]: 3238.0
+Mean Dose [cGy]: 769.3
+Modal Dose [cGy]: 17.2
+Median Dose [cGy]: 804.6
+STD [cGy]: 628.1
+NDR: 
+Equiv. Sphere Diam. [cm]: 6.1
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      3234              9.63973e-005
+      3235              8.70667e-005
+      3236               7.7736e-005
+      3237              4.54039e-005
+      3238              4.76931e-007
+
+Structure: PRV8 SpinalCanal
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 180.3
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.1
+Min Dose [cGy]: 9.7
+Max Dose [cGy]: 3781.5
+Mean Dose [cGy]: 794.9
+Modal Dose [cGy]: 17.6
+Median Dose [cGy]: 816.5
+STD [cGy]: 665.7
+NDR: 
+Equiv. Sphere Diam. [cm]: 7.0
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      3779               8.2596e-005
+      3780              5.04621e-005
+      3781              1.83281e-005
+
+Structure: Globe L
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 6.5
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 99.7
+Min Dose [cGy]: 47.1
+Max Dose [cGy]: 105.7
+Mean Dose [cGy]: 70.5
+Modal Dose [cGy]: 64.9
+Median Dose [cGy]: 69.3
+STD [cGy]: 12.1
+NDR: 
+Equiv. Sphere Diam. [cm]: 2.3
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: Globe R
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 6.3
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.1
+Min Dose [cGy]: 60.2
+Max Dose [cGy]: 117.6
+Mean Dose [cGy]: 84.5
+Modal Dose [cGy]: 79.3
+Median Dose [cGy]: 83.8
+STD [cGy]: 12.3
+NDR: 
+Equiv. Sphere Diam. [cm]: 2.3
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: GTV
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 154.6
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 4942.0
+Max Dose [cGy]: 5423.4
+Mean Dose [cGy]: 5187.3
+Modal Dose [cGy]: 5185.0
+Median Dose [cGy]: 5182.7
+STD [cGy]: 71.8
+NDR: 
+Equiv. Sphere Diam. [cm]: 6.7
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5420              7.03021e-005
+      5421              4.37524e-005
+      5422              2.00196e-005
+      5423              3.68709e-006
+
+Structure: Larynx
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 35.7
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 816.0
+Max Dose [cGy]: 4247.2
+Mean Dose [cGy]: 2074.7
+Modal Dose [cGy]: 1497.6
+Median Dose [cGy]: 1818.5
+STD [cGy]: 841.3
+NDR: 
+Equiv. Sphere Diam. [cm]: 4.1
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      4247              6.30825e-005
+
+Structure: Lens L
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 0.2
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 99.2
+Min Dose [cGy]: 53.7
+Max Dose [cGy]: 73.4
+Mean Dose [cGy]: 62.4
+Modal Dose [cGy]: 62.4
+Median Dose [cGy]: 62.4
+STD [cGy]: 3.7
+NDR: 
+Equiv. Sphere Diam. [cm]: 0.8
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: Lens R
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 0.3
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.3
+Min Dose [cGy]: 68.8
+Max Dose [cGy]: 92.6
+Mean Dose [cGy]: 78.5
+Modal Dose [cGy]: 73.4
+Median Dose [cGy]: 78.3
+STD [cGy]: 5.2
+NDR: 
+Equiv. Sphere Diam. [cm]: 0.8
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: Mandible
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 57.3
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 98.1
+Max Dose [cGy]: 5421.9
+Mean Dose [cGy]: 1742.5
+Modal Dose [cGy]: 550.3
+Median Dose [cGy]: 1402.1
+STD [cGy]: 1306.5
+NDR: 
+Equiv. Sphere Diam. [cm]: 4.8
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5420              7.58333e-005
+      5421              3.70645e-005
+      5422              7.74046e-018
+
+Structure: PTV 40 R
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 618.9
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 1.1
+Max Dose [cGy]: 5465.3
+Mean Dose [cGy]: 4821.9
+Modal Dose [cGy]: 5185.1
+Median Dose [cGy]: 5076.5
+STD [cGy]: 489.4
+NDR: 
+Equiv. Sphere Diam. [cm]: 10.6
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5447              9.84494e-005
+      5448              8.45448e-005
+      5449              7.32976e-005
+      5450              6.31984e-005
+      5451              5.42243e-005
+      5452              4.58666e-005
+      5453              3.81111e-005
+      5454              3.27764e-005
+      5455              2.78531e-005
+      5456              2.29297e-005
+      5457              1.80063e-005
+      5458              1.33657e-005
+      5459              1.01101e-005
+      5460               8.4918e-006
+      5461              6.89169e-006
+      5462              5.29159e-006
+      5463              3.69149e-006
+      5464              2.09138e-006
+      5465              4.91278e-007
+
+Structure: PTV 50
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 383.0
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 2972.3
+Max Dose [cGy]: 5465.3
+Mean Dose [cGy]: 5137.5
+Modal Dose [cGy]: 5185.1
+Median Dose [cGy]: 5170.6
+STD [cGy]: 179.4
+NDR: 
+Equiv. Sphere Diam. [cm]: 9.0
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5451              8.76151e-005
+      5452              7.41107e-005
+      5453              6.15795e-005
+      5454              5.29598e-005
+      5455              4.50047e-005
+      5456              3.70495e-005
+      5457              2.90944e-005
+      5458              2.15961e-005
+      5459              1.63357e-005
+      5460               1.3721e-005
+      5461              1.11355e-005
+      5462               8.5501e-006
+      5463              5.96466e-006
+      5464              3.37923e-006
+      5465              7.93802e-007
+
+Structure: SpinalCanal
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 34.6
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 99.9
+Min Dose [cGy]: 15.2
+Max Dose [cGy]: 2011.8
+Mean Dose [cGy]: 756.8
+Modal Dose [cGy]: 16.9
+Median Dose [cGy]: 801.5
+STD [cGy]: 580.2
+NDR: 
+Equiv. Sphere Diam. [cm]: 4.0
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      2011              7.28175e-005
+
+Structure: opt PTV 40 R a
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 119.3
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 3092.9
+Max Dose [cGy]: 5237.0
+Mean Dose [cGy]: 4472.0
+Modal Dose [cGy]: 4172.0
+Median Dose [cGy]: 4478.0
+STD [cGy]: 296.9
+NDR: 
+Equiv. Sphere Diam. [cm]: 6.1
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5233              7.77376e-005
+      5234              5.83484e-005
+      5235              3.89591e-005
+      5236              1.95698e-005
+      5237              1.80526e-007
+
+Structure: opt PTV 40 R b
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 83.7
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 99.9
+Min Dose [cGy]: 3173.4
+Max Dose [cGy]: 4525.4
+Mean Dose [cGy]: 4100.5
+Modal Dose [cGy]: 4100.2
+Median Dose [cGy]: 4102.0
+STD [cGy]: 68.2
+NDR: 
+Equiv. Sphere Diam. [cm]: 5.4
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      4525              6.59446e-005
+
+Structure: opt PTV 50
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 347.4
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 4401.7
+Max Dose [cGy]: 5465.3
+Mean Dose [cGy]: 5172.7
+Modal Dose [cGy]: 5185.1
+Median Dose [cGy]: 5180.2
+STD [cGy]: 95.8
+NDR: 
+Equiv. Sphere Diam. [cm]: 8.7
+Conformity Index: 0.98
+Gradient Measure [cm]: 2.42
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5451              9.65859e-005
+      5452              8.16989e-005
+      5453              6.78846e-005
+      5454              5.83823e-005
+      5455              4.96127e-005
+      5456               4.0843e-005
+      5457              3.20734e-005
+      5458              2.38074e-005
+      5459              1.80083e-005
+      5460              1.51258e-005
+      5461              1.22757e-005
+      5462              9.42553e-006
+      5463              6.57538e-006
+      5464              3.72523e-006
+      5465              8.75079e-007
+
+Structure: OpticChiasm
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 0.6
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.2
+Min Dose [cGy]: 88.0
+Max Dose [cGy]: 121.9
+Mean Dose [cGy]: 100.9
+Modal Dose [cGy]: 96.9
+Median Dose [cGy]: 99.0
+STD [cGy]: 7.1
+NDR: 
+Equiv. Sphere Diam. [cm]: 1.1
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: OpticNerve L
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 1.5
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.4
+Min Dose [cGy]: 72.4
+Max Dose [cGy]: 127.5
+Mean Dose [cGy]: 99.8
+Modal Dose [cGy]: 107.0
+Median Dose [cGy]: 100.2
+STD [cGy]: 11.1
+NDR: 
+Equiv. Sphere Diam. [cm]: 1.4
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+
+Structure: BODY
+Approval Status: Approved
+Plan: PARR
+Course: C1
+Volume [cm³]: 21979.3
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 0.0
+Max Dose [cGy]: 5465.3
+Mean Dose [cGy]: 485.3
+Modal Dose [cGy]: 0.5
+Median Dose [cGy]: 72.1
+STD [cGy]: 1010.9
+NDR: 
+Equiv. Sphere Diam. [cm]: 34.8
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5418              9.60523e-005
+      5419              8.60627e-005
+      5420              7.88669e-005
+      5421              7.27059e-005
+      5422              6.73957e-005
+      5423              6.30197e-005
+      5424              5.94443e-005
+      5425              5.61023e-005
+      5426              5.27602e-005
+      5427              4.94182e-005
+      5428              4.60762e-005
+      5429              4.27841e-005
+      5430              4.03583e-005
+      5431              3.80942e-005
+      5432              3.58302e-005
+      5433              3.35662e-005
+      5434              3.13021e-005
+      5435              2.90381e-005
+      5436              2.67741e-005
+      5437                2.451e-005
+      5438               2.2246e-005
+      5439              1.99819e-005
+      5440              1.79452e-005
+      5441              1.61675e-005
+      5442              1.43898e-005
+      5443               1.2699e-005
+      5444              1.13832e-005
+      5445              1.00674e-005
+      5446              8.75158e-006
+      5447              7.72842e-006
+      5448              7.01849e-006
+      5449              6.61296e-006
+      5450              6.20744e-006
+      5451              5.80191e-006
+      5452              5.39638e-006
+      5453              4.99085e-006
+      5454              4.58532e-006
+      5455              4.17979e-006
+      5456              3.77427e-006
+      5457              3.36874e-006
+      5458              2.96321e-006
+      5459              2.55768e-006
+      5460              2.15215e-006
+      5461              1.74662e-006
+      5462              1.34109e-006
+      5463              9.35566e-007
+      5464              5.30037e-007
+      5465              1.24509e-007
+
+Structure: = "opt PTV 40 R a" OR "opt PTV 40 R b"
+Approval Status: 
+Plan: PARR
+Course: C1
+Volume [cm³]: 205.5
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 100.0
+Min Dose [cGy]: 3092.9
+Max Dose [cGy]: 5237.0
+Mean Dose [cGy]: 4315.6
+Modal Dose [cGy]: 4100.2
+Median Dose [cGy]: 4173.9
+STD [cGy]: 294.7
+NDR: 
+Equiv. Sphere Diam. [cm]: N/A
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+      5232               7.5754e-005
+      5233              4.51514e-005
+      5234              3.38898e-005
+      5235              2.26281e-005
+      5236              1.13665e-005
+      5237              1.04853e-007
+
+Structure: = "Dose 107[%]" SUB "PTV 50"
+Approval Status: 
+Plan: PARR
+Course: C1
+Volume [cm³]: 0.0
+Dose Cover.[%]: 100.0
+Sampling Cover.[%]: 0.0
+Min Dose [cGy]: 0.0
+Max Dose [cGy]: 0.0
+Mean Dose [cGy]: 0.0
+Modal Dose [cGy]: 0.0
+Median Dose [cGy]: 0.0
+STD [cGy]: 0.0
+NDR: 
+Equiv. Sphere Diam. [cm]: N/A
+Conformity Index: N/A
+Gradient Measure [cm]: N/A
+
+Dose [cGy] Ratio of Total Structure Volume [%]
+

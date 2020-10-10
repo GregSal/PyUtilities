@@ -761,48 +761,71 @@ class SectionBoundaries():
 class Section():
     def __init__(self,
                  section_name,
-                 preprocessing,
+                 preprocessing_methods,
                  parsing_rules,
-                 processed_lines,
+                 default_parser,
+                 post_processing_methods,
                  output_method):
         self.section_name = section_name
-        self.preprocessing = preprocessing
+        self.preprocessing_methods = preprocessing_methods
         self.parsing_rules = parsing_rules
-        self.processed_lines = processed_lines
+        self.default_parser = default_parser
+        self.post_processing_methods = post_processing_methods
         self.output_method = output_method
 
-    def scan_section(self, context):
+    def set_line_parser(self)->Callable:
+        parser_instance = LineParser(self.parsing_rules,
+                                     self.default_parser)
+        return parser_instance.parse
+
+    def scan_section(self, source, context):
         # Apply Section Cleaning -> clean_lines
         # Check for End of Section Break -> break_triggers
         # Call Line Parser, passing Context & Lines -> Dialect, Special Lines
         # Apply Line Processing Rules -> trim_lines
         # Apply Section Formatting ->
-
         context['Current Section'] = self.section_name
         logger.debug(f'Starting New Section: {self.section_name}.')
-        #cleaned_lines = cascading_iterators(context['Source'],
-        #                                    self.preprocessing)
-        #active_lines = self.break_iterator(context, cleaned_lines)
-        #parsed_lines = self.line_parser(context, active_lines)
-        #processed_lines = cascading_iterators(iter(parsed_lines),
-        #                                      self.processed_lines)
 
-        section_output = self.output_method(self.section_iter(processed_lines))
+        section_stages = list()
+        section_stages.extend(self.preprocessing_methods)
+        section_stages.append(self.set_line_parser())
+        section_stages.extend(self.post_processing_methods)
+
+        section_iter = cascading_iterators(source,  section_stages)
+
+        section_output = self.output_method(section_iter)
+
         return section_output
 
-    def section_iter(self, source):
+    def iter_section(self, source, context):
+        # Apply Section Cleaning -> clean_lines
+        # Check for End of Section Break -> break_triggers
+        # Call Line Parser, passing Context & Lines -> Dialect, Special Lines
+        # Apply Line Processing Rules -> trim_lines
+        # Apply Section Formatting ->
+        context['Current Section'] = self.section_name
+        logger.debug(f'Starting New Section: {self.section_name}.')
+
+        section_stages = list()
+        section_stages.extend(self.preprocessing_methods)
+        section_stages.append(self.set_line_parser())
+        section_stages.extend(self.post_processing_methods)
+
+        section_iter = iter(cascading_iterators(source,  section_stages))
+        source_iter = iter(source)
         while True:
             row = None
             try:
-                row = source.__next__()
+                row = source_iter.__next__()
             except StopSection as stop_sign:
                 logger.debug('end of the section')
                 break
-            except BufferedIteratorEOF as eof:
+            except (BufferedIteratorEOF, StopIteration) as eof:
                 logger.debug('End of Source')
                 break
-            logger.debug(f'Found row: {row}.')
-            if row is not None:
-                yield row
+            else:
+                logger.debug(f'Found row: {row}.')
+                if row is not None:
+                    yield row
             logger.debug('next line')
-
