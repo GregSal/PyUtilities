@@ -4,7 +4,7 @@ from typing import List
 from file_utilities import clean_ascii_text
 import Text_Processing as tp
 import read_dvh_file
-
+import pandas as pd
 
 class Test_cascading_iterators(unittest.TestCase):
     def test_simple_cascading_iterators(self):
@@ -225,7 +225,43 @@ class TestLineParser(unittest.TestCase):
         self.assertListEqual(test_output, expected_output)
 
 
+class TestFixedWidthParser(unittest.TestCase):
+    def test_uniforn_width_parser(self):
+        parser = tp.define_fixed_width_parser(widths=6,number=3)
+        line = 'Part 1Part 2Part 2'
+        test_output = parser(line)
+        self.assertListEqual(test_output, ['Part 1', 'Part 2', 'Part 2'])
 
+    def test_varied_width_parser(self):
+        parser = tp.define_fixed_width_parser(widths=[6,7,8])
+        line = 'Part 1Part 2aPart 3ab'
+        test_output = parser(line)
+        self.assertListEqual(test_output, ['Part 1', 'Part 2a', 'Part 3ab'])
+
+    def test_position_parser(self):
+        expected_output = ['Part 1', 'Part 2a', 'Part 3ab', 'Remainder']
+        parser = tp.define_fixed_width_parser(locations=[6,13,21])
+        line = 'Part 1Part 2aPart 3abRemainder'
+        test_output = parser(line)
+        self.assertListEqual(test_output, expected_output)
+
+    def test_empty_parser(self):
+        parser = tp.define_fixed_width_parser()
+        line = 'Part 1Part 2aPart 3ab'
+        test_output = parser(line)
+        self.assertListEqual(test_output, [line])
+
+
+class TestDataFrameOutput(unittest.TestCase):
+    def test_single_header_dataframe(self):
+        test_text = [
+            ['A', 'B', 'C'],
+            [1, 2, 3],
+            [4, 5, 6]
+            ]
+        expected_output = pd.DataFrame({'A': [1,4],'B': [2,5],'C':[3,6]})
+        output = tp.to_dataframe(test_text, header=True)
+        self.assertDictEqual(output.to_dict(), expected_output.to_dict())
 
 if __name__ == '__main__':
     unittest.main()

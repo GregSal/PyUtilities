@@ -18,6 +18,7 @@ import csv
 from inspect import isgeneratorfunction
 from functools import partial, partialmethod
 from typing import Dict, List, Sequence, TypeVar, Iterator, Any, Callable, Union
+import pandas as pd
 
 from file_utilities import clean_ascii_text
 from data_utilities import true_iterable
@@ -36,6 +37,7 @@ Strings = Union[str, ParsedString]
 OptStrings = Union[Strings, None]
 OptStr = Union[str, None]
 AlphaNumeric = Union[float, str]
+Integers = Union[int, List[int]]
 
 ParseResults = Union[List[ParsedString], None]
 
@@ -253,12 +255,12 @@ def csv_parser(line: str, *args, dialect_name='excel',
 def define_csv_parser(name='csv', **dialect_parameters) -> Callable:
     '''Create a function that applies the defined csv parsing rules.
 
-    Create a unique csv parsing Dialect refered to by name. Use the partial
+    Create a unique csv parsing Dialect referred to by name. Use the partial
     method to create and return a function that applies the defines parsing
     rules to a string.
 
     Args:
-        name: Optional, The name for the new Dialect. Defauly is 'csv'.
+        name: Optional, The name for the new Dialect. Default is 'csv'.
         **dialect_parameters: Any valid csv reader parameter.
             default values are:
                 delimiter=',',
@@ -269,7 +271,7 @@ def define_csv_parser(name='csv', **dialect_parameters) -> Callable:
                 lineterminator='\r\n',
                 skipinitialspace=False,
                 strict=False
-            See documentation on the csv module for explanatiojns of these
+            See documentation on the csv module for explanations of these
             parameters.
 
     Returns:
@@ -292,6 +294,103 @@ def define_csv_parser(name='csv', **dialect_parameters) -> Callable:
     csv.register_dialect(name, **parameters)
     parse_csv = partial(csv_parser, dialect_name=name)
     return parse_csv
+
+# Fixed Width Parser
+class FixedWidthParser():
+    def __init__(self, widths: Integers = None, number: int = 1,
+                 locations: List[int] = None):
+        '''Define a parser that will convert a single text line into parsed
+        text items of fixed widths.
+
+        number=n, width=w -> widths = [w]*n
+        locations=[l1,l2,l3...] -> widths = [l1, l2-l1, l3-l2...]
+
+        Args:
+            line: A text string for parsing.
+            widths: Optional A list of the widths of the successive items on a row.
+                Alternatively a single integer width if all numbers items are of
+                equal width.
+            number: The number of items in a row if widths is a single integer.
+                If widths is a list of integers number represents the number of
+                times that the widths sequence is repeated.
+            locations: A list of the locations of the item breaks in a row.
+                If widths is given, then this value is ignored.
+        '''
+        if widths:
+            if isinstance(widths, int):
+                self.item_widths = [widths]*number
+            else:
+                self.item_widths = widths*number
+
+        elif locations:
+            self.item_widths = [
+                l2-l1
+                for l2, l1 in zip(locations,
+                                  [0] + locations[:-1])
+                ]
+        else:
+            self.item_widths = [None]
+
+    def parse_iter(self, line):
+        remainder = line
+        for w in self.item_widths:
+            if w is None:
+                break
+            if len(remainder) < w:
+                break
+            item = remainder[:w]
+            remainder = remainder[w:]
+            yield item
+        if remainder:
+            yield remainder
+
+    def parser(self, line: str, *args, **kwargs) -> ParseResults:
+        '''Convert a single text line into a single text line into parsed
+        text items of fixed widths.
+
+        Args:
+            line: A text string for parsing.
+            *args: Place holder for positional arguments to maintain compatibility
+                for all parsing methods.
+            **kwargs: Place holder for keyword arguments to maintain compatibility
+                for all parsing methods.
+
+        Returns:
+            A list of lists of strings obtained by parsing line.
+            For example:
+                csv_parser('Part 1,"Part 2a, Part 2b"') ->
+                    [['Part 1', 'Part 2a, Part 2b']]
+        '''
+        parsed_line = [item for item in self.parse_iter(line)]
+        return parsed_line
+
+
+def define_fixed_width_parser(widths: List[int] = None, number: int = 1,
+                              locations: List[int] = None) -> Callable:
+    '''Create a function that will convert a single text line into parsed
+        text items of fixed widths.
+
+        Args:
+            line: A text string for parsing.
+            widths: Optional A list of the widths of the successive items on a row.
+                Alternatively a single integer width if all numbers items are of
+                equal width.
+            number: The number of items in a row if widths is a single integer.
+                If widths is a list of integers number represents the number of
+                times that the widths sequence is repeated.
+                    number=n, width=w -> widths = [w]*n
+            locations: A list of the locations of the item breaks in a row.
+                If widths is given, then this value is ignored.
+                    locations=[l1,l2,l3...] -> widths = [l1, l2-l1, l3-l2...]
+
+    Returns:
+        A csv parser method.  For example:
+            default_parser = define_csv_parser(name='Default csv')
+            default_parser('Part 1,"Part 2a, Part 2b"') ->
+                [['Part 1', 'Part 2a, Part 2b']]
+    '''
+    parser_constructor = FixedWidthParser(widths, number, locations)
+    return parser_constructor.parser
 
 
 #%% Parsed Line Iterators
@@ -383,6 +482,19 @@ def to_dict(processed_lines: ParsedStringSource,
             continue
         dict_output.update(dict_item)
     return dict_output
+
+def to_dataframe(processed_lines: ParsedStringSource,
+                 header=True) -> pd.DataFrame:
+    '''Build a Pandas DataFrame from a sequence of lists.
+        header: Bool or int if true or positive int, n, use the first 1 or n
+            lines as column names.
+    '''
+    header_index = int(header)  # int(True) = 1
+    # FIXME Multi Line headers don't work
+    header_lines = processed_lines[:header_index][0]
+    data = processed_lines[header_index:]
+    dataframe = pd.DataFrame(data, columns=header_lines)
+    return dataframe
 
 #%% Parsed Line processors
 # These functions take a list of strings and return a processed list of strings.

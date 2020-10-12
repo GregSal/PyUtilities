@@ -15,7 +15,8 @@ from buffered_iterator import BufferedIterator
 from buffered_iterator import BufferedIteratorEOF
 from buffered_iterator import BufferOverflowWarning
 import Text_Processing as tp
-
+import pandas as pd
+from file_utilities import clean_ascii_text
 
 #%% Logging
 logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
@@ -140,31 +141,76 @@ def make_default_csv_parser() -> Callable:
 
 
 #%% Section definitions
-def section_manager(context):
-    dvh_info_break = [
-        tp.SectionBreak(tp.Trigger(['Plan:', 'Plan sum:']),name='dvh_info')
-        ]
+default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
+                                      skipinitialspace=True)
+dvh_info_section = tp.Section(section_name='DVH Info',
+                              preprocessing_methods=[clean_ascii_text],
+                              parsing_rules=[make_date_parse_rule()],
+                              default_parser=default_parser,
+                              post_processing_methods=[
+                                  tp.trim_items,
+                                  tp.drop_blanks,
+                                  tp.merge_continued_rows],
+                              output_method=tp.to_dict)
+plan_info_section = tp.Section(section_name='Plan Info',
+                               preprocessing_methods=[clean_ascii_text],
+                               parsing_rules=[make_prescribed_dose_rule(),
+                                              make_approved_status_rule()],
+                               default_parser=default_parser,
+                               post_processing_methods=[
+                                   tp.trim_items,
+                                   tp.drop_blanks,
+                                   tp.convert_numbers],
+                               output_method=tp.to_dict)
+structure_info_section = tp.Section(section_name='Structure',
+                                    preprocessing_methods=[clean_ascii_text],
+                                    parsing_rules=[],
+                                    default_parser=default_parser,
+                                    post_processing_methods=[
+                                        tp.trim_items,
+                                        tp.drop_blanks,
+                                        tp.convert_numbers],
+                                    output_method=tp.to_dict)
 
-    plan_info_break = [
-        tp.SectionBreak(tp.Trigger(['% for dose (%):']), offset='After',
-                     name='End of Plan Info')
-        ]
+# FIXME  THis is just a place holder for the correct DVH parsing section
+dvh_info_section = tp.Section(section_name='DVH',
+                              preprocessing_methods=[clean_ascii_text],
+                              parsing_rules=[make_date_parse_rule()],
+                              default_parser=default_parser,
+                              post_processing_methods=[
+                                  tp.trim_items,
+                                  tp.drop_blanks,
+                                  tp.merge_continued_rows],
+                              output_method=tp.to_dict)
 
-    plan_data_break = [
-        tp.SectionBreak(tp.Trigger(['Structure:']), offset='Before',
-                     name='End of Plan Info')
-        ]
+#%% SectionBreak definitions
+dvh_info_end = tp.SectionBreak(
+    name='End of DVH Info',
+    trigger=tp.Trigger(['Plan:', 'Plan sum:'])
+    )
+plan_info_end = tp.SectionBreak(
+    name='End of Plan Info',
+    trigger=tp.Trigger(['% for dose (%):']),
+    offset='After'
+    )
+structure_info_start = tp.SectionBreak(
+    name='Start of Structure Info',
+    trigger=tp.Trigger(['Structure:']),
+    offset='Before'
+    )
+structure_info_end = tp.SectionBreak(
+    name='End of Structure Info',
+    trigger=tp.Trigger(['Gradient Measure']),
+    offset='After'
+    )
 
-    #section_lines = scan_section(context, section_name = 'DVH Info',
-    #                             break_triggers = dvh_info_break)
-    #pprint(section_lines)
-    #section_lines = scan_section(context, section_name = 'Plan Info',
-    #                             break_triggers = plan_info_break)
-    #pprint(section_lines)
-    #section_lines = scan_section(context, section_name = 'Plan Info',
-    #                             break_triggers = plan_data_break)
-    #pprint(section_lines)
-    #return context, section_lines
+dvh_info_break = tp.SectionBoundaries(start_section=None,
+                                       end_section=dvh_info_end)
+plan_info_break = tp.SectionBoundaries(start_section=dvh_info_end,
+                                       end_section=plan_info_end)
+structure_info_break = tp.SectionBoundaries(start_section=structure_info_start,
+                                            end_section=structure_info_end)
+
 
 
 def file_reader(test_file):
