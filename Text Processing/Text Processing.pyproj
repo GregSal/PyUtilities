@@ -29,6 +29,7 @@
     <Compile Include="read_dvh_file.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="temp.py" />
     <Compile Include="temp2.py">
       <SubType>Code</SubType>
     </Compile>

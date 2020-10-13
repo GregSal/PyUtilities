@@ -652,7 +652,8 @@ class Trigger():
                 self.test_type = self.re_test
                 self.test = self.multi_test
             else:
-                raise NotImplementedError('Only String and Regular Expression'
+                raise NotImplementedError('Only Boolean, String and '
+                                          'Regular Expression '
                                           'tests are currently supported.')
         elif isinstance(self.sentinel, str):
             self.sentinel_type = 'String'
@@ -663,7 +664,8 @@ class Trigger():
             self.test_type = self.re_test
             self.test = self.single_test
         else:
-            raise NotImplementedError('Only String and Regular Expression '
+            raise NotImplementedError('Only Boolean, String and '
+                                      'Regular Expression '
                                       'tests are currently supported.')
         self.set_sentinel_test_location()
 
@@ -837,15 +839,24 @@ class SectionBoundaries():
     def __init__(self,
                  start_section: List[SectionBreak] = None,
                  end_section: List[SectionBreak] = None):
-        if isinstance(start_section, SectionBreak):
+        # start_section = None -> Always Break
+        # end_section = None -> Never Break
+        if not start_section:
+            self.start_section = SectionBreak(Trigger(True),
+                                              name='AlwaysBreak')
+        elif isinstance(start_section, SectionBreak):
             self.start_section = [start_section]
         else:
             self.start_section = start_section
+        if not end_section:
+            self.end_section = SectionBreak(Trigger(False),
+                                            name='NeverBreak')
         if isinstance(end_section, SectionBreak):
             self.end_section = [end_section]
         else:
             self.end_section = end_section
 
+    # FIXME Update Context with Section name and starts or end
     def check(self, line, context, location='End'):
         logger.debug(f'In SectionBoundaries.check, received line: {line}')
         if 'Start' in location:
@@ -870,7 +881,7 @@ class SectionBoundaries():
         return partial(self.check, context=context, location='End')
 
 
-class Section():
+class SectionReader():
     def __init__(self,
                  section_name,
                  preprocessing_methods,

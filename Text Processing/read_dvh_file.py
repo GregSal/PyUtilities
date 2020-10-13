@@ -143,50 +143,45 @@ def make_default_csv_parser() -> Callable:
 #%% Section definitions
 default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
                                       skipinitialspace=True)
-dvh_info_section = tp.Section(section_name='DVH Info',
-                              preprocessing_methods=[clean_ascii_text],
-                              parsing_rules=[make_date_parse_rule()],
-                              default_parser=default_parser,
-                              post_processing_methods=[
-                                  tp.trim_items,
-                                  tp.drop_blanks,
-                                  tp.merge_continued_rows],
-                              output_method=tp.to_dict)
-plan_info_section = tp.Section(section_name='Plan Info',
-                               preprocessing_methods=[clean_ascii_text],
-                               parsing_rules=[make_prescribed_dose_rule(),
-                                              make_approved_status_rule()],
-                               default_parser=default_parser,
-                               post_processing_methods=[
-                                   tp.trim_items,
-                                   tp.drop_blanks,
-                                   tp.convert_numbers],
-                               output_method=tp.to_dict)
-structure_info_section = tp.Section(section_name='Structure',
-                                    preprocessing_methods=[clean_ascii_text],
-                                    parsing_rules=[],
-                                    default_parser=default_parser,
-                                    post_processing_methods=[
-                                        tp.trim_items,
-                                        tp.drop_blanks,
-                                        tp.convert_numbers],
-                                    output_method=tp.to_dict)
-
-# FIXME  THis is just a place holder for the correct DVH parsing section
-dvh_info_section = tp.Section(section_name='DVH',
-                              preprocessing_methods=[clean_ascii_text],
-                              parsing_rules=[make_date_parse_rule()],
-                              default_parser=default_parser,
-                              post_processing_methods=[
-                                  tp.trim_items,
-                                  tp.drop_blanks,
-                                  tp.merge_continued_rows],
-                              output_method=tp.to_dict)
+dvh_info_section = tp.SectionReader(
+    section_name='DVH Info',
+    preprocessing_methods=[clean_ascii_text],
+    parsing_rules=[make_date_parse_rule()],
+    default_parser=default_parser,
+    post_processing_methods=[tp.trim_items, tp.drop_blanks,
+                             tp.merge_continued_rows],
+    output_method=tp.to_dict)
+plan_info_section = tp.SectionReader(
+    section_name='Plan Info',
+    preprocessing_methods=[clean_ascii_text],
+    parsing_rules=[make_prescribed_dose_rule(),
+                   make_approved_status_rule()],
+    default_parser=default_parser,
+    post_processing_methods=[tp.trim_items, tp.drop_blanks,
+                             tp.convert_numbers],
+    output_method=tp.to_dict)
+structure_info_section = tp.SectionReader(
+    section_name='Structure',
+    preprocessing_methods=[clean_ascii_text],
+    parsing_rules=[],
+    default_parser=default_parser,
+    post_processing_methods=[tp.trim_items, tp.drop_blanks,
+                             tp.convert_numbers],
+    output_method=tp.to_dict)
+dvh_info_section = tp.SectionReader(
+    section_name='DVH',
+    preprocessing_methods=[clean_ascii_text],
+    parsing_rules=[],
+    default_parser=tp.define_fixed_width_parser(widths=10),
+    post_processing_methods=[tp.trim_items, tp.drop_blanks,
+                             tp.merge_continued_rows],
+    output_method=tp.to_dataframe)
 
 #%% SectionBreak definitions
 dvh_info_end = tp.SectionBreak(
     name='End of DVH Info',
-    trigger=tp.Trigger(['Plan:', 'Plan sum:'])
+    trigger=tp.Trigger(['Plan:', 'Plan sum:']),
+    offset='Before'
     )
 plan_info_end = tp.SectionBreak(
     name='End of Plan Info',
@@ -204,12 +199,15 @@ structure_info_end = tp.SectionBreak(
     offset='After'
     )
 
-dvh_info_break = tp.SectionBoundaries(start_section=None,
-                                       end_section=dvh_info_end)
-plan_info_break = tp.SectionBoundaries(start_section=dvh_info_end,
-                                       end_section=plan_info_end)
-structure_info_break = tp.SectionBoundaries(start_section=structure_info_start,
-                                            end_section=structure_info_end)
+dvh_info_break = tp.SectionBoundaries(
+    start_section=None,
+    end_section=dvh_info_end)
+plan_info_break = tp.SectionBoundaries(
+    start_section=dvh_info_end,
+    end_section=plan_info_end)
+structure_info_break = tp.SectionBoundaries(
+    start_section=structure_info_start,
+    end_section=structure_info_end)
 
 
 
