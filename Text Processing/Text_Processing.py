@@ -883,18 +883,33 @@ class SectionBoundaries():
 
 class SectionReader():
     def __init__(self,
-                 section_name,
-                 preprocessing_methods,
-                 parsing_rules,
-                 default_parser,
-                 post_processing_methods,
-                 output_method):
+                 section_name = 'SectionReader',
+                 preprocessing_methods=None,
+                 parsing_rules=None,
+                 default_parser=None,
+                 post_processing_methods=None,
+                 output_method=None):
         self.section_name = section_name
-        self.preprocessing_methods = preprocessing_methods
-        self.parsing_rules = parsing_rules
-        self.default_parser = default_parser
-        self.post_processing_methods = post_processing_methods
-        self.output_method = output_method
+        if preprocessing_methods:
+            self.preprocessing_methods = preprocessing_methods
+        else:
+            self.preprocessing_methods = list()
+        if parsing_rules:
+            self.parsing_rules = parsing_rules
+        else:
+            self.parsing_rules = list()
+        if default_parser:
+            self.default_parser = default_parser
+        else:
+            self.default_parser = define_csv_parser()
+        if post_processing_methods:
+            self.post_processing_methods = post_processing_methods
+        else:
+            self.post_processing_methods = list()
+        if output_method:
+            self.output_method = output_method
+        else:
+            self.output_method = self.standard_output
 
     def set_line_parser(self)->Callable:
         parser_instance = LineParser(self.parsing_rules,
@@ -914,12 +929,26 @@ class SectionReader():
         section_stages.extend(self.preprocessing_methods)
         section_stages.append(self.set_line_parser())
         section_stages.extend(self.post_processing_methods)
-
         section_iter = cascading_iterators(source,  section_stages)
-
         section_output = self.output_method(section_iter)
-
         return section_output
+
+    def __iter__(self, section_iter):
+        while True:
+            row = None
+            try:
+                row = section_iter.__next__()
+            except StopSection as stop_sign:
+                logger.debug('end of the section')
+                break
+            except (BufferedIteratorEOF, StopIteration) as eof:
+                logger.debug('End of Source')
+                break
+            else:
+                logger.debug(f'Found row: {row}.')
+                if row is not None:
+                    yield row
+            logger.debug('next line')
 
     def iter_section(self, source, context):
         # Apply Section Cleaning -> clean_lines
@@ -936,19 +965,10 @@ class SectionReader():
         section_stages.extend(self.post_processing_methods)
 
         section_iter = iter(cascading_iterators(source,  section_stages))
-        source_iter = iter(source)
-        while True:
-            row = None
-            try:
-                row = source_iter.__next__()
-            except StopSection as stop_sign:
-                logger.debug('end of the section')
-                break
-            except (BufferedIteratorEOF, StopIteration) as eof:
-                logger.debug('End of Source')
-                break
-            else:
-                logger.debug(f'Found row: {row}.')
-                if row is not None:
-                    yield row
-            logger.debug('next line')
+
+        yield from self.__iter__(section_iter)
+
+    def standard_output(self, processed_lines: ParsedStringSource) -> List[Any]:
+        '''Iterate through section.
+            '''
+        return [line for line in processed_lines]

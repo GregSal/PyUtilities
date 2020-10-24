@@ -200,6 +200,42 @@ context = {
     'Line Count': 0
     }
 
+#%%
+context = {}
+
+test_source_DVH = [
+    'Dose [cGy] Ratio of Total Structure Volume [%]',
+    '         0                       100',
+    '         1                       100',
+    '         2                       100',
+    '         3                       100',
+    '         4                       100',
+    '         5                       100',
+    '      3667              4.23876e-005',
+    '      3668              2.87336e-005',
+    '      3669              1.50797e-005',
+    '      3670               1.4257e-006',
+    ]
+
+dvh_info_section = tp.SectionReader(
+    section_name='DVH',
+#    preprocessing_methods=[clean_ascii_text],
+    parsing_rules=[],
+    default_parser=tp.define_fixed_width_parser(widths=10,number=2),
+#    post_processing_methods=[tp.trim_items, tp.drop_blanks, tp.convert_numbers],
+#    output_method=tp.to_dataframe
+    )
+# scan_section
+source = BufferedIterator(test_source_DVH)
+context['Source'] = source
+a = [line for line in dvh_info_section.iter_section(source, context)]
+pprint(a)
+# FIXME parser not producing line breaks
+
+test_output = dvh_info_section.scan_section(source, context)
+
+
+
 
 #%% scan_section
 
