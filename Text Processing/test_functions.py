@@ -229,26 +229,32 @@ class TestFixedWidthParser(unittest.TestCase):
     def test_uniforn_width_parser(self):
         parser = tp.define_fixed_width_parser(widths=6,number=3)
         line = 'Part 1Part 2Part 2'
-        test_output = parser(line)
+        test_output = parser(line)[0]
         self.assertListEqual(test_output, ['Part 1', 'Part 2', 'Part 2'])
+
+    def test_single_break_parser(self):
+        parser = tp.define_fixed_width_parser(widths=6)
+        line = 'Part 1Part 2Part 2'
+        test_output = parser(line)[0]
+        self.assertListEqual(test_output, ['Part 1', 'Part 2Part 2'])
 
     def test_varied_width_parser(self):
         parser = tp.define_fixed_width_parser(widths=[6,7,8])
         line = 'Part 1Part 2aPart 3ab'
-        test_output = parser(line)
+        test_output = parser(line)[0]
         self.assertListEqual(test_output, ['Part 1', 'Part 2a', 'Part 3ab'])
 
     def test_position_parser(self):
         expected_output = ['Part 1', 'Part 2a', 'Part 3ab', 'Remainder']
         parser = tp.define_fixed_width_parser(locations=[6,13,21])
         line = 'Part 1Part 2aPart 3abRemainder'
-        test_output = parser(line)
+        test_output = parser(line)[0]
         self.assertListEqual(test_output, expected_output)
 
     def test_empty_parser(self):
         parser = tp.define_fixed_width_parser()
         line = 'Part 1Part 2aPart 3ab'
-        test_output = parser(line)
+        test_output = parser(line)[0]
         self.assertListEqual(test_output, [line])
 
 

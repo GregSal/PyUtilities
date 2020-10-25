@@ -311,7 +311,7 @@ class TestSectionSequencer(unittest.TestCase):
                                      tp.merge_continued_rows],
             output_method=tp.to_dict)
         # scan_section
-        source = BufferedIterator(self.test_source['DVH Info'])
+        source = BufferedIterator(self.test_source)
         self.context['Source'] = source
         test_output = dvh_info_section.scan_section(source, self.context)
 
@@ -375,11 +375,12 @@ class TestSectionSequencer(unittest.TestCase):
         dvh_info_section = tp.SectionReader(
             section_name='DVH',
             preprocessing_methods=[clean_ascii_text],
-            parsing_rules=[read_dvh_file.make_date_parse_rule()],
-            default_parser=self.default_parser,
+            parsing_rules=[],
+            default_parser=tp.define_fixed_width_parser(widths=10),
             post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                                     tp.merge_continued_rows],
-            output_method=tp.to_dict)
+                                     tp.convert_numbers],
+            output_method=tp.to_dataframe
+            )
         # scan_section
         source = BufferedIterator(self.test_source['DVH'])
         self.context['Source'] = source

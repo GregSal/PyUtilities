@@ -335,13 +335,14 @@ class FixedWidthParser():
         remainder = line
         for w in self.item_widths:
             if w is None:
-                break
+                continue
             if len(remainder) < w:
-                break
+                continue
             item = remainder[:w]
             remainder = remainder[w:]
             yield item
-        if remainder:
+        else:
+           if remainder:
             yield remainder
 
     def parser(self, line: str, *args, **kwargs) -> ParseResults:
@@ -362,7 +363,7 @@ class FixedWidthParser():
                     [['Part 1', 'Part 2a, Part 2b']]
         '''
         parsed_line = [item for item in self.parse_iter(line)]
-        return parsed_line
+        return [parsed_line]
 
 
 def define_fixed_width_parser(widths: List[int] = None, number: int = 1,
@@ -489,10 +490,11 @@ def to_dataframe(processed_lines: ParsedStringSource,
         header: Bool or int if true or positive int, n, use the first 1 or n
             lines as column names.
     '''
+    all_lines = [line for line in processed_lines]
     header_index = int(header)  # int(True) = 1
     # FIXME Multi Line headers don't work
-    header_lines = processed_lines[:header_index][0]
-    data = processed_lines[header_index:]
+    header_lines = all_lines[:header_index][0]
+    data = all_lines[header_index:]
     dataframe = pd.DataFrame(data, columns=header_lines)
     return dataframe
 
@@ -841,6 +843,7 @@ class SectionBoundaries():
                  end_section: List[SectionBreak] = None):
         # start_section = None -> Always Break
         # end_section = None -> Never Break
+        # FIXME start_section and end_section should take SectionBreak or List[SectionBreak]
         if not start_section:
             self.start_section = SectionBreak(Trigger(True),
                                               name='AlwaysBreak')
@@ -970,5 +973,9 @@ class SectionReader():
 
     def standard_output(self, processed_lines: ParsedStringSource) -> List[Any]:
         '''Iterate through section.
-            '''
-        return [line for line in processed_lines]
+        '''
+        list_output = list()
+        for line in processed_lines:
+            print(repr(line))
+            list_output.append(line)
+        return list_output
