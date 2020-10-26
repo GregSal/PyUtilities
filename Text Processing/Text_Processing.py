@@ -843,17 +843,16 @@ class SectionBoundaries():
                  end_section: List[SectionBreak] = None):
         # start_section = None -> Always Break
         # end_section = None -> Never Break
-        # FIXME start_section and end_section should take SectionBreak or List[SectionBreak]
         if not start_section:
-            self.start_section = SectionBreak(Trigger(True),
-                                              name='AlwaysBreak')
+            self.start_section = [SectionBreak(Trigger(True),
+                                              name='AlwaysBreak')]
         elif isinstance(start_section, SectionBreak):
             self.start_section = [start_section]
         else:
             self.start_section = start_section
         if not end_section:
-            self.end_section = SectionBreak(Trigger(False),
-                                            name='NeverBreak')
+            self.end_section = [SectionBreak(Trigger(False),
+                                            name='NeverBreak')]
         if isinstance(end_section, SectionBreak):
             self.end_section = [end_section]
         else:
@@ -914,29 +913,31 @@ class SectionReader():
         else:
             self.output_method = self.standard_output
 
+        # Apply Section Cleaning -> clean_lines
+        # Check for End of Section Break -> break_triggers
+        # Call Line Parser, passing Context & Lines -> Dialect, Special Lines
+        # Apply Line Processing Rules -> trim_lines
+        # Apply Section Formatting ->
+        self.section_stages = list()
+        self.section_stages.extend(self.preprocessing_methods)
+        self.section_stages.append(self.set_line_parser())
+        self.section_stages.extend(self.post_processing_methods)
+
     def set_line_parser(self)->Callable:
         parser_instance = LineParser(self.parsing_rules,
                                      self.default_parser)
         return parser_instance.parse
 
     def scan_section(self, source, context):
-        # Apply Section Cleaning -> clean_lines
-        # Check for End of Section Break -> break_triggers
-        # Call Line Parser, passing Context & Lines -> Dialect, Special Lines
-        # Apply Line Processing Rules -> trim_lines
-        # Apply Section Formatting ->
         context['Current Section'] = self.section_name
         logger.debug(f'Starting New Section: {self.section_name}.')
-
-        section_stages = list()
-        section_stages.extend(self.preprocessing_methods)
-        section_stages.append(self.set_line_parser())
-        section_stages.extend(self.post_processing_methods)
-        section_iter = cascading_iterators(source,  section_stages)
+        section_iter = cascading_iterators(source,  self.section_stages)
         section_output = self.output_method(section_iter)
         return section_output
 
-    def __iter__(self, section_iter):
+    def __iter__(self, source, context):
+        context['Current Section'] = self.section_name
+        section_iter = iter(cascading_iterators(source,  section_stages))
         while True:
             row = None
             try:
@@ -953,29 +954,8 @@ class SectionReader():
                     yield row
             logger.debug('next line')
 
-    def iter_section(self, source, context):
-        # Apply Section Cleaning -> clean_lines
-        # Check for End of Section Break -> break_triggers
-        # Call Line Parser, passing Context & Lines -> Dialect, Special Lines
-        # Apply Line Processing Rules -> trim_lines
-        # Apply Section Formatting ->
-        context['Current Section'] = self.section_name
-        logger.debug(f'Starting New Section: {self.section_name}.')
-
-        section_stages = list()
-        section_stages.extend(self.preprocessing_methods)
-        section_stages.append(self.set_line_parser())
-        section_stages.extend(self.post_processing_methods)
-
-        section_iter = iter(cascading_iterators(source,  section_stages))
-
-        yield from self.__iter__(section_iter)
-
     def standard_output(self, processed_lines: ParsedStringSource) -> List[Any]:
         '''Iterate through section.
         '''
-        list_output = list()
-        for line in processed_lines:
-            print(repr(line))
-            list_output.append(line)
+        list_output = [line for line in processed_lines]
         return list_output

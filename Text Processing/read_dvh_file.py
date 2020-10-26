@@ -168,7 +168,7 @@ structure_info_section = tp.SectionReader(
     post_processing_methods=[tp.trim_items, tp.drop_blanks,
                              tp.convert_numbers],
     output_method=tp.to_dict)
-dvh_info_section = tp.SectionReader(
+dvh_section = tp.SectionReader(
     section_name='DVH',
     preprocessing_methods=[clean_ascii_text],
     parsing_rules=[],

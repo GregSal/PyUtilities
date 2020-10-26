@@ -58,12 +58,18 @@ class TestSectionBoundaries(unittest.TestCase):
             'Gradient Measure [cm]: N/A'
             ]
 
-    @unittest.skip('Not Working')
+    #@unittest.skip('Not Working')
     def test_dvh_info_section(self):
         self.context = {}
-        dvh_info_break = tp.SectionBoundaries(start_section=None,
-                                              end_section=self.dvh_info_end)
-        #self.assertDictEqual(section_output, test_result_dicts[1])
+        dvh_info_break = tp.SectionBoundaries(
+            start_section=None,
+            end_section=self.dvh_info_end)
+        source = BufferedIterator(self.test_text)
+        context = self.context.copy()
+        context['Source'] = source
+        break_check = dvh_info_break.check_start(context)
+        with self.assertRaises(tp.StartSection):
+            lines = [break_check(row) for row in source]
 
     def test_start_plan_info_break(self):
         plan_info_break = tp.SectionBoundaries(

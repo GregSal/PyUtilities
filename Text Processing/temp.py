@@ -23,7 +23,7 @@ test_source = [
     ('                       or volume (absolute) of structures '
     'that receive a dose'),
     '                      equal to or greater than a given dose.',
-    ''
+    '',
     'Plan sum: Plan Sum',
     'Course: PLAN SUM',
     'Prescribed dose [cGy]: not defined',
@@ -201,193 +201,49 @@ context = {
     }
 
 #%% scan_section
+def break_iter(source, break_check):
+    source_iter = iter(source)
+    while True:
+        try:
+            row = source_iter.__next__()
+            test_output = break_check(row)
+        except (tp.StartSection, tp.StopSection) as marker:
+            context = marker.get_context()
+            break
+        except (BufferedIteratorEOF, StopIteration) as eof:
+            ##
+            # FIXME get context
+            ##
+            #context['sentinel'] = 'End of Source'
+            break
+        yield row
+
+# scan_section
+source = BufferedIterator(test_source)
+context['Source'] = source
 
 dvh_info_break = read_dvh_file.dvh_info_break
 dvh_info_section = read_dvh_file.dvh_info_section
-repeating = False
 
-source = iter(BufferedIterator(test_source))
-context = {}
-context['Source'] = source
 break_check = dvh_info_break.check_start(context)
-while True:
-    try:
-        row = source.__next__()
-        test_output = break_check(row)
-    except tp.StartSection as start_marker:
-        break
-# Done To Here
-sentinel = end_marker.get_context()['sentinel']
+skiped_rows = [row for row in break_iter(source, break_check)]
+
 context['Current Section'] = 'DVH Info'
 break_check = dvh_info_break.check_end(context)
-while True:
-    try:
-        row = source.__next__()
-        test_output = break_check(row)
-    except tp.StartSection as start_marker:
-        break
+section_scan = break_iter(source, break_check)
+test_output = dvh_info_section.scan_section(section_scan, context)
 
+for key, value in test_output.items():
+    print(f'{key}\t\t{value}\n')
 
-section_iter = tp.cascading_iterators(source, [
-    clean_ascii_text,
-    dvh_info_parser.parse,
-    tp.trim_items,
-    tp.drop_blanks,
-    tp.merge_continued_rows
-    ])
+plan_info_break = read_dvh_file.plan_info_break
+plan_info_section = read_dvh_file.plan_info_section
 
-test_output = output_method(section_iter)
-pprint(test_output)
+break_check = plan_info_break.check_end(context)
+section_scan = break_iter(source, break_check)
+test_output = plan_info_section.scan_section(section_scan, context)
 
-#%% Plan Info 1 Section
-preprocessing_methods = [clean_ascii_text]
-parsing_rules = [read_dvh_file.make_prescribed_dose_rule(),
-                 read_dvh_file.make_approved_status_rule()]
-default_parser = tp.define_csv_parser('plan_info', delimiter=':',
-                                        skipinitialspace=True)
-plan_info_parser = tp.LineParser(parsing_rules, default_parser)
-post_processing_methods=[tp.trim_items, tp.drop_blanks, tp.convert_numbers]
-output_method=tp.to_dict
+for key, value in test_output.items():
+    print(f'{key}\t\t{value}\n')
 
-# scan_section
-source = BufferedIterator(test_source['Plan Info 1'])
-context = {}
-context['Source'] = source
-context['Current Section'] = 'Plan Info 1'
-
-section_iter = tp.cascading_iterators(source, [
-    clean_ascii_text,
-    plan_info_parser.parse,
-    tp.trim_items,
-    tp.drop_blanks,
-    tp.convert_numbers
-    ])
-
-test_output = output_method(section_iter)
-pprint(test_output)
-
-#%% Plan Info 2 Section
-preprocessing_methods = [clean_ascii_text]
-parsing_rules = [read_dvh_file.make_prescribed_dose_rule(),
-                 read_dvh_file.make_approved_status_rule()]
-default_parser = tp.define_csv_parser('plan_info', delimiter=':',
-                                        skipinitialspace=True)
-plan_info_parser = tp.LineParser(parsing_rules, default_parser)
-post_processing_methods=[tp.trim_items, tp.drop_blanks, tp.convert_numbers]
-output_method=tp.to_dict
-
-plan_info_section = tp.SectionReader(section_name='Plan Info',
-                               preprocessing_methods=preprocessing_methods,
-                               parsing_rules=parsing_rules,
-                               default_parser=default_parser,
-                               post_processing_methods=post_processing_methods,
-                               output_method=output_method)
-# scan_section
-source = BufferedIterator(test_source['Plan Info 2'])
-context = {}
-context['Source'] = source
-
-test_output = plan_info_section.scan_section(source, context)
-pprint(test_output)
-
-source = BufferedIterator(test_source['Plan Info 1'])
-context = {}
-context['Source'] = source
-
-test_output2 = [row for
-                row in plan_info_section.iter_section(source, context)]
-pprint(test_output2)
-
-#test_output = [processed_line for processed_line in section_iter]
-
-#pprint(test_output)
-#test_output = [parsed_line
-#                for parsed_line in test_parser.parse(test_text)]
-
-
-#processed_lines = tp.cascading_iterators(iter(self.test_text),
-#                                            post_processing_methods)
-#test_output = [processed_line for processed_line in processed_lines]
-
-#parsing_rules = [
-#    read_dvh_file.make_prescribed_dose_rule(),
-#    read_dvh_file.make_date_parse_rule(),
-#    read_dvh_file.make_approved_status_rule()
-#    ]
-#default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
-#                                        skipinitialspace=True)
-
-#test_parser = tp.LineParser(parsing_rules, default_parser)
-#test_output = [parsed_line
-#                for parsed_line in test_parser.parse(test_text)]
-
-
-
-#post_processing_methods=[
-#    tp.trim_items,
-#    tp.drop_blanks,
-#    tp.merge_continued_rows
-#    ]
-#processed_lines = tp.cascading_iterators(iter(self.test_text),
-#                                            post_processing_methods)
-#test_output = [processed_line for processed_line in processed_lines]
-
-
-#dvh_info_end = tp.SectionBreak(
-#    name='End of DVH Info',
-#    trigger=tp.Trigger(['Plan:', 'Plan sum:'])
-#    )
-#plan_info_end = tp.SectionBreak(
-#    name='End of Plan Info',
-#    trigger=tp.Trigger(['% for dose (%):']),
-#    offset='After'
-#    )
-#structure_info_start = tp.SectionBreak(
-#    name='Start of Structure Info',
-#    trigger=tp.Trigger(['Structure:']),
-#    offset='Before'
-#    )
-#structure_info_end = tp.SectionBreak(
-#    name='End of Structure Info',
-#    trigger=tp.Trigger(['Gradient Measure']),
-#    offset='After'
-#    )
-
-#class TestSections(unittest.TestCase):
-#    def setUp(self):
-#        self.context = {
-#            'File Name': 'trigger_test_text.txt',
-#            'File Path': Path.cwd() / 'trigger_test_text.txt',
-#            'Line Count': 0
-#            }
-#        preprocessing_methods = [clean_ascii_text]
-#        parsing_rules = [read_dvh_file.make_date_parse_rule()]
-#        default_parser = read_dvh_file.make_default_csv_parser()
-#        line_parser = tp.LineParser(parsing_rules, default_parser)
-#        post_processing_methods=[
-#            tp.trim_items,
-#            tp.drop_blanks,
-#            tp.merge_continued_rows
-#            ],
-
-
-#        self.dvh_info_section = tp.Section(
-#            section_name='dvh_info',
-#            preprocessing=[clean_ascii_text],
-#            parsing_rules=parsing_rules,
-#            processed_lines=[
-#                tp.trim_items,
-#                tp.drop_blanks,
-#                tp.merge_continued_rows
-#                ],
-#            output_method=tp.to_dict
-#            )
-
-
-#    @unittest.skip('Not Working')
-#    def test_dvh_info_section(self):
-#        source = (line for line in test_source_groups[1].splitlines())
-#        self.context['Source'] = source
-#        section_output = self.dvh_info_section.scan_section(self.context)
-#        self.assertDictEqual(section_output, test_result_dicts[1])
 

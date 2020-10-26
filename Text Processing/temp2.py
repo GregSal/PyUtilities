@@ -1,20 +1,86 @@
+import unittest
+from pathlib import Path
+import re
+from file_utilities import clean_ascii_text
 import Text_Processing as tp
+from typing import List
+from buffered_iterator import BufferedIterator
+import read_dvh_file
+from pprint import pprint
+import pandas as pd
+from buffered_iterator import BufferedIterator, BufferedIteratorEOF
 
-parser = tp.define_fixed_width_parser(widths=10)
-test_text = [
-                'Dose [cGy] Ratio of Total Structure Volume [%]',
-                '         0                       100',
-                '         1                       100',
-                '         2                       100',
-                '         3                       100',
-                '         4                       100',
-                '         5                       100',
-                '      3667              4.23876e-005',
-                '      3668              2.87336e-005',
-                '      3669              1.50797e-005',
-                '      3670               1.4257e-006',
-]
+test_source = [
+    'Patient Name         : _y__, ____',
+    'Patient ID           : 1234567',
+    'Comment              : DVHs for multiple plans and plan sums',
+    'Date                 : Friday, January 17, 2020 09:45:07',
+    'Exported by          : gsal',
+    'Type                 : Cumulative Dose Volume Histogram',
+    ('Description          : The cumulative DVH displays the '
+    'percentage (relative)'),
+    ('                       or volume (absolute) of structures '
+    'that receive a dose'),
+    '                      equal to or greater than a given dose.',
+    '',
+    'Plan sum: Plan Sum',
+    'Course: PLAN SUM',
+    'Prescribed dose [cGy]: not defined',
+    '% for dose (%): not defined',
+    ''
+    'Plan: PARR',
+    'Course: C1',
+    'Plan Status: Treatment Approved Thursday, January 02, '
+    '2020 12:55:56 by gsal',
+    'Prescribed dose [cGy]: 5000.0',
+    '% for dose (%): 100.0',
+    ''
+    'Structure: PRV5 SpinalCanal',
+    'Approval Status: Approved',
+    'Plan: Plan Sum',
+    'Course: PLAN SUM',
+    'Volume [cm³]: 121.5',
+    'Dose Cover.[%]: 100.0',
+    'Sampling Cover.[%]: 100.1',
+    'Min Dose [cGy]: 36.7',
+    'Max Dose [cGy]: 3670.1',
+    'Mean Dose [cGy]: 891.9',
+    'Modal Dose [cGy]: 44.5',
+    'Median Dose [cGy]: 863.2',
+    'STD [cGy]: 621.9',
+    'NDR: ',
+    'Equiv. Sphere Diam. [cm]: 6.1',
+    'Conformity Index: N/A',
+    'Gradient Measure [cm]: N/A',
+    '']
+def break_iter(source, break_check):
+    source_iter = iter(source)
+    while True:
+        try:
+            row = source_iter.__next__()
+            test_output = break_check(row)
+        except (tp.StartSection, tp.StopSection) as marker:
+            context = marker.get_context()
+            break
+        except (BufferedIteratorEOF, StopIteration) as eof:
+            ##
+            # FIXME get context
+            ##
+            #context['sentinel'] = 'End of Source'
+            break
+        yield row
 
-processed_lines = [parser(line) for line in test_text]
-output = tp.to_dataframe(processed_lines, header=True)
-print(output)
+
+context = {}
+dvh_info_break = read_dvh_file.dvh_info_break
+dvh_info_section = read_dvh_file.dvh_info_section
+# scan_section
+source = BufferedIterator(test_source)
+context['Source'] = source
+context['Current Section'] = 'DVH Info'
+break_check = dvh_info_break.check_end(context)
+section_scan = break_iter(source, break_check)
+test_output = dvh_info_section.scan_section(section_scan, context)
+
+for key, value in test_output.items():
+    print(f'{key}\t\t{value}\n')
