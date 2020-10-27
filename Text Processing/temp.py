@@ -201,76 +201,38 @@ context = {
     }
 
 #%% scan_section
-def break_iter(source, break_check):
-    source_iter = iter(source)
-    while True:
-        try:
-            row = source_iter.__next__()
-            test_output = break_check(row)
-        except (tp.StartSection, tp.StopSection) as marker:
-            context = marker.get_context()
-            break
-        except (BufferedIteratorEOF, StopIteration) as eof:
-            ##
-            # FIXME get context
-            ##
-            #context['sentinel'] = 'End of Source'
-            break
-        yield row
-
-def read_section(section_break, section_reader, section_name, source, context):
-    break_check = section_break.check_start(context)
-    skiped_rows = [row for row in break_iter(source, break_check)]
-
-    context['Current Section'] = section_name
-    section_scan = break_iter(source, section_break.check_end(context))
-    section_output = section_reader.scan_section(section_scan, context)
-    return section_output, context
-
 
 # scan_section
 source = BufferedIterator(test_source)
 context['Source'] = source
-
-section_output, context = read_section(read_dvh_file.dvh_info_break,
-                                       read_dvh_file.dvh_info_section,
-                                       'DVH_Info', source, context)
-for key, value in section_output.items():
+print('Reading DVH Info Section')
+output, context = read_dvh_file.dvh_info_section.read_section(source, context)
+for key, value in output.items():
     print(f'{key}\t\t{value}')
 
-
-section_output, context = read_section(read_dvh_file.plan_info_break,
-                                       read_dvh_file.plan_info_section,
-                                       'Plan_Info', source, context)
-for key, value in section_output.items():
+print('\\n\nReading Plan Info Section 1')
+output, context = read_dvh_file.plan_info_section.read_section(source, context)
+for key, value in output.items():
     print(f'{key}\t\t{value}')
 
-section_output, context = read_section(read_dvh_file.plan_info_break,
-                                       read_dvh_file.plan_info_section,
-                                       'Plan_Info', source, context)
-for key, value in section_output.items():
+print('\n\nReading Plan Info Section 2')
+output, context = read_dvh_file.plan_info_section.read_section(source, context)
+for key, value in output.items():
     print(f'{key}\t\t{value}')
 
-section_output, context = read_section(read_dvh_file.structure_info_break,
-                                       read_dvh_file.structure_info_section,
-                                       'Structure_Info', source, context)
-for key, value in section_output.items():
+print('\n\nReading Structure Section')
+output, context = read_dvh_file.structure_info_section.read_section(source, context)
+for key, value in output.items():
     print(f'{key}\t\t{value}')
 
-section_output, context = read_section(read_dvh_file.dvh_data_break,
-                                       read_dvh_file.dvh_section,
-                                       'DVH_Data', source, context)
-print(section_output)
+print('Reading DVH Section')
+output, context = read_dvh_file.dvh_data_section.read_section(source, context)
+print(output)
 
-section_output, context = read_section(read_dvh_file.structure_info_break,
-                                       read_dvh_file.structure_info_section,
-                                       'Structure_Info', source, context)
-for key, value in section_output.items():
+print('\n\nReading Structure Section')
+output, context = read_dvh_file.structure_info_section.read_section(source, context)
+for key, value in output.items():
     print(f'{key}\t\t{value}')
-
-section_output, context = read_section(read_dvh_file.dvh_data_break,
-                                       read_dvh_file.dvh_section,
-                                       'DVH_Data', source, context)
-print(section_output)
-
-
+print('Reading DVH Section')
+output, context = read_dvh_file.dvh_data_section.read_section(source, context)
+print(output)

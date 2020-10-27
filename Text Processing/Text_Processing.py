@@ -47,7 +47,7 @@ Source = Union[StringSource, ParsedStringSource]
 
 
 #%% Logging
-logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
+logger = lg.config_logger(prefix='Text Processing', level='INFO')
 
 
 #%% Exceptions
@@ -959,7 +959,6 @@ class Section():
             self.output_method = output_method
         else:
             self.output_method = self.standard_output
-
         # check for start
         # read section while checking for end
         # Apply Section Formatting ->
@@ -979,22 +978,19 @@ class Section():
             except (BufferedIteratorEOF, StopIteration) as eof:
                 self.context['status'] = 'End of Source'
                 break
-            except tp.StartSection as marker:
-                context = start_marker.get_context()
+            except (StartSection, StopSection) as marker:
+                context = marker.get_context()
                 context['status'] = f'{location} of {self.section_name}'
                 self.context = context.copy()
+                logger.debug(f'{location} of {self.section_name}')
                 break
-            except tp.StopSection as end_marker:
-                context = end_marker.get_context()
-                context['status'] = f'{location} of {self.section_name}'
-                self.context = context.copy()
-            yield row
+            yield line
 
     def read_section(self, source, context):
         skiped = [row for row in self.break_iter(source, context, 'Start')]
         context['Current Section'] = self.section_name
         self.context = context.copy()
         section_scan = self.break_iter(source, context, 'End')
-        section_reader = self.read(section_scan, context)
+        section_reader = self.reader.read(section_scan, context)
         section_output = self.output_method(section_reader)
         return section_output, context
