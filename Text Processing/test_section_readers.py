@@ -474,89 +474,84 @@ class TestSections(unittest.TestCase):
         self.default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
                                                    skipinitialspace=True)
 
-    def test_dvh_info_section(self):
-        dvh_info_section = tp.SectionReader(
-            section_name='DVH Info',
+    def test_dvh_info_reader(self):
+        dvh_info_reader = tp.SectionReader(
             preprocessing_methods=[clean_ascii_text],
             parsing_rules=[read_dvh_file.make_date_parse_rule()],
             default_parser=self.default_parser,
             post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                                     tp.merge_continued_rows],
-            output_method=tp.to_dict)
+                                     tp.merge_continued_rows]
+            )
         # scan_section
         source = BufferedIterator(self.test_source['DVH Info'])
         self.context['Source'] = source
-        test_output = dvh_info_section.scan_section(source, self.context)
-
+        reader = dvh_info_reader.read(source, self.context)
+        test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['DVH Info'])
 
-    def test_plan_info1_section(self):
-        dvh_info_section = tp.SectionReader(
-            section_name='Plan Info 1',
+    def test_plan_info1_read(self):
+        plan_info_reader = tp.SectionReader(
             preprocessing_methods=[clean_ascii_text],
             parsing_rules=[read_dvh_file.make_prescribed_dose_rule(),
                            read_dvh_file.make_approved_status_rule()],
             default_parser=self.default_parser,
             post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                                     tp.convert_numbers],
-            output_method=tp.to_dict)
+                                     tp.convert_numbers]
+            )
         # scan_section
         source = BufferedIterator(self.test_source['Plan Info 1'])
         self.context['Source'] = source
-        test_output = dvh_info_section.scan_section(source, self.context)
-
+        reader = plan_info_reader.read(source, self.context)
+        test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['Plan Info 1'])
 
 
-    def test_plan_info2_section(self):
-        dvh_info_section = tp.SectionReader(
-            section_name='Plan Info 2',
+    def test_plan_info2_read(self):
+        plan_info_reader = tp.SectionReader(
             preprocessing_methods=[clean_ascii_text],
             parsing_rules=[read_dvh_file.make_prescribed_dose_rule(),
                            read_dvh_file.make_approved_status_rule()],
             default_parser=self.default_parser,
             post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                                     tp.convert_numbers],
-            output_method=tp.to_dict)
+                                     tp.convert_numbers]
+            )
         # scan_section
         source = BufferedIterator(self.test_source['Plan Info 2'])
         self.context['Source'] = source
-        test_output = dvh_info_section.scan_section(source, self.context)
-
+        reader = plan_info_reader.read(source, self.context)
+        test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['Plan Info 2'])
 
 
-    def test_structure_section(self):
-        dvh_info_section = tp.SectionReader(
-            section_name='Structure',
+    def test_structure_reader(self):
+        structure_reader = tp.SectionReader(
             preprocessing_methods=[clean_ascii_text],
             parsing_rules=[],
             default_parser=self.default_parser,
             post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                                     tp.convert_numbers],
-            output_method=tp.to_dict)
+                                     tp.convert_numbers]
+            )
         # scan_section
         source = BufferedIterator(self.test_source['Structure'])
         self.context['Source'] = source
-        test_output = dvh_info_section.scan_section(source, self.context)
-
+        reader = structure_reader.read(source, self.context)
+        test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['Structure'])
 
 
-    def test_dvh_section(self):
-        dvh_info_section = tp.SectionReader(
-            section_name='DVH',
+    def test_dvh_reader(self):
+        dvh_data_reader = tp.SectionReader(
             preprocessing_methods=[clean_ascii_text],
             parsing_rules=[],
             default_parser=tp.define_fixed_width_parser(widths=10),
             post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                                     tp.convert_numbers],
-            output_method=tp.to_dataframe)
+                                     tp.convert_numbers]
+            )
         # scan_section
         source = BufferedIterator(self.test_source['DVH'])
         self.context['Source'] = source
-        test_output = dvh_info_section.scan_section(source, self.context)
-
+        reader = dvh_data_reader.read(source, self.context)
+        test_output = tp.to_dataframe(reader)
         self.assertDictEqual(test_output.to_dict(),
                              self.test_result['DVH'].to_dict())
 

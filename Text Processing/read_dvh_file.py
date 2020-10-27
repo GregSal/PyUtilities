@@ -140,46 +140,39 @@ def make_default_csv_parser() -> Callable:
 #%% Line Processing
 
 
-#%% Section definitions
+#%% Reader definitions
 default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
                                       skipinitialspace=True)
-dvh_info_section = tp.SectionReader(
-    section_name='DVH Info',
+dvh_info_reader = tp.SectionReader(
     preprocessing_methods=[clean_ascii_text],
     parsing_rules=[make_date_parse_rule()],
     default_parser=default_parser,
     post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.merge_continued_rows],
-    output_method=tp.to_dict)
-plan_info_section = tp.SectionReader(
-    section_name='Plan Info',
+                             tp.merge_continued_rows])
+plan_info_reader = tp.SectionReader(
     preprocessing_methods=[clean_ascii_text],
     parsing_rules=[make_prescribed_dose_rule(),
                    make_approved_status_rule()],
     default_parser=default_parser,
     post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.convert_numbers],
-    output_method=tp.to_dict)
-structure_info_section = tp.SectionReader(
-    section_name='Structure',
+                             tp.convert_numbers]
+    )
+structure_info_reader = tp.SectionReader(
     preprocessing_methods=[clean_ascii_text],
     parsing_rules=[],
     default_parser=default_parser,
     post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.convert_numbers],
-    output_method=tp.to_dict)
-dvh_section = tp.SectionReader(
-    section_name='DVH',
+                             tp.convert_numbers]
+    )
+dvh_data_reader = tp.SectionReader(
     preprocessing_methods=[clean_ascii_text],
-    parsing_rules=[],
     default_parser=tp.define_fixed_width_parser(widths=10),
-    post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.merge_continued_rows],
-    output_method=tp.to_dataframe)
+    post_processing_methods=[tp.trim_items, tp.drop_blanks]
+    )
 
 #%% SectionBreak definitions
-dvh_info_end = tp.SectionBreak(
-    name='End of DVH Info',
+plan_info_start = tp.SectionBreak(
+    name='Start of Plan Info',
     trigger=tp.Trigger(['Plan:', 'Plan sum:']),
     offset='Before'
     )
@@ -201,43 +194,38 @@ structure_info_end = tp.SectionBreak(
 
 dvh_info_break = tp.SectionBoundaries(
     start_section=None,
-    end_section=dvh_info_end)
+    end_section=plan_info_start)
 plan_info_break = tp.SectionBoundaries(
-    start_section=dvh_info_end,
+    start_section=None,
     end_section=plan_info_end)
 structure_info_break = tp.SectionBoundaries(
     start_section=structure_info_start,
     end_section=structure_info_end)
+dvh_data_break = tp.SectionBoundaries(
+    start_section=None,
+    end_section=structure_info_start)
 
 
-
-def file_reader(test_file):
-    with open(test_file, newline='') as csvfile:
-        raw_lines = BufferedIterator(csvfile)
-        context = {
-            'File Name': test_file.name,
-            'File Path': test_file.parent,
-            'Line Count': 0,
-            'Source': raw_lines
-            }
-        context, section_lines = section_manager(context)
-    return context, section_lines
-
-def process_lines(section_lines):
-    parsed_lines = BufferedIterator(section_lines)
-    pass
-
-
-
-def merge_rows(parsed_lines):
-    for parsed_line in parsed_lines:
-        if len(parsed_line) > 0:
-            yield parsed_line
-
-def drop_blanks(parsed_lines):
-    for parsed_line in parsed_lines:
-        if len(parsed_line) > 0:
-            yield parsed_line
+dvh_info_section = tp.Section(
+    section_name='DVH Info',
+    boundaries=dvh_info_break,
+    reader=dvh_info_reader,
+    output_method=tp.to_dict)
+plan_info_section = tp.Section(
+    section_name='Plan Info',
+    boundaries=plan_info_break,
+    reader=plan_info_reader,
+    output_method=tp.to_dict)
+structure_info_section = tp.Section(
+    section_name='Structure',
+    boundaries=structure_info_break,
+    reader=structure_info_reader,
+    output_method=tp.to_dict)
+dvh_data_section = tp.Section(
+    section_name='DVH',
+    boundaries=dvh_data_break,
+    reader=dvh_data_reader,
+    output_method=tp.to_dataframe)
 
 
 def date_processing():

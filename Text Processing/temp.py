@@ -218,32 +218,59 @@ def break_iter(source, break_check):
             break
         yield row
 
+def read_section(section_break, section_reader, section_name, source, context):
+    break_check = section_break.check_start(context)
+    skiped_rows = [row for row in break_iter(source, break_check)]
+
+    context['Current Section'] = section_name
+    section_scan = break_iter(source, section_break.check_end(context))
+    section_output = section_reader.scan_section(section_scan, context)
+    return section_output, context
+
+
 # scan_section
 source = BufferedIterator(test_source)
 context['Source'] = source
 
-dvh_info_break = read_dvh_file.dvh_info_break
-dvh_info_section = read_dvh_file.dvh_info_section
+section_output, context = read_section(read_dvh_file.dvh_info_break,
+                                       read_dvh_file.dvh_info_section,
+                                       'DVH_Info', source, context)
+for key, value in section_output.items():
+    print(f'{key}\t\t{value}')
 
-break_check = dvh_info_break.check_start(context)
-skiped_rows = [row for row in break_iter(source, break_check)]
 
-context['Current Section'] = 'DVH Info'
-break_check = dvh_info_break.check_end(context)
-section_scan = break_iter(source, break_check)
-test_output = dvh_info_section.scan_section(section_scan, context)
+section_output, context = read_section(read_dvh_file.plan_info_break,
+                                       read_dvh_file.plan_info_section,
+                                       'Plan_Info', source, context)
+for key, value in section_output.items():
+    print(f'{key}\t\t{value}')
 
-for key, value in test_output.items():
-    print(f'{key}\t\t{value}\n')
+section_output, context = read_section(read_dvh_file.plan_info_break,
+                                       read_dvh_file.plan_info_section,
+                                       'Plan_Info', source, context)
+for key, value in section_output.items():
+    print(f'{key}\t\t{value}')
 
-plan_info_break = read_dvh_file.plan_info_break
-plan_info_section = read_dvh_file.plan_info_section
+section_output, context = read_section(read_dvh_file.structure_info_break,
+                                       read_dvh_file.structure_info_section,
+                                       'Structure_Info', source, context)
+for key, value in section_output.items():
+    print(f'{key}\t\t{value}')
 
-break_check = plan_info_break.check_end(context)
-section_scan = break_iter(source, break_check)
-test_output = plan_info_section.scan_section(section_scan, context)
+section_output, context = read_section(read_dvh_file.dvh_data_break,
+                                       read_dvh_file.dvh_section,
+                                       'DVH_Data', source, context)
+print(section_output)
 
-for key, value in test_output.items():
-    print(f'{key}\t\t{value}\n')
+section_output, context = read_section(read_dvh_file.structure_info_break,
+                                       read_dvh_file.structure_info_section,
+                                       'Structure_Info', source, context)
+for key, value in section_output.items():
+    print(f'{key}\t\t{value}')
+
+section_output, context = read_section(read_dvh_file.dvh_data_break,
+                                       read_dvh_file.dvh_section,
+                                       'DVH_Data', source, context)
+print(section_output)
 
 

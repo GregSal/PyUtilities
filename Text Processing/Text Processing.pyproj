@@ -35,7 +35,7 @@
     </Compile>
     <Compile Include="test_buffered_iterator.py" />
     <Compile Include="test_functions.py" />
-    <Compile Include="test_sections.py" />
+    <Compile Include="test_section_readers.py" />
     <Compile Include="test_rules.py" />
     <Compile Include="test_section_sequencer.py" />
     <Compile Include="test_trigger.py" />

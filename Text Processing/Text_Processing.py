@@ -165,6 +165,19 @@ def drop_units(text: str) -> float:
 
 
 #%% Iteration Tools
+def file_reader(test_file):
+    with open(test_file, newline='') as csvfile:
+        raw_lines = BufferedIterator(csvfile)
+        context = {
+            'File Name': test_file.name,
+            'File Path': test_file.parent,
+            'Line Count': 0,
+            'Source': raw_lines
+            }
+        context, section_lines = section_manager(context)
+    return context, section_lines
+
+
 def func_to_iter(source: Iterator, func: Callable) -> Iterator:
     '''Create a iterator that applies func to each item in source.
 
@@ -526,16 +539,16 @@ class Trigger():
      bool
      List[str]
      Regex
-     Callable
-     n
+     Callable   -- Not Yet Implemented
+     n          -- Not Yet Implemented
      If None, the test will never pass
      If bool, the test will always return the boolean value
      If list of strings, a match with any string in the list will be a pass
-     The matched string will be added to the Context dict.
+        The matched string will be added to the Context dict.
      If Regex the re.match object will be added to the Context dict.
-     If Callable, a non-None return value will be a pass
-     The return value will be added to the Context dict.
-     If n skip n lines then trigger
+     If Callable, a non-None return value will be a pass -- Not Yet Implemented
+        The return value will be added to the Context dict.
+     If n skip n lines then trigger                      -- Not Yet Implemented
      If Repeating sub-sections, can be number of repetitions
      '''
 
@@ -858,7 +871,6 @@ class SectionBoundaries():
         else:
             self.end_section = end_section
 
-    # FIXME Update Context with Section name and starts or end
     def check(self, line, context, location='End'):
         logger.debug(f'In SectionBoundaries.check, received line: {line}')
         if 'Start' in location:
@@ -889,9 +901,9 @@ class SectionReader():
                  preprocessing_methods=None,
                  parsing_rules=None,
                  default_parser=None,
-                 post_processing_methods=None,
-                 output_method=None):
+                 post_processing_methods=None):
         self.section_name = section_name
+        self.context = dict()
         if preprocessing_methods:
             self.preprocessing_methods = preprocessing_methods
         else:
@@ -908,16 +920,10 @@ class SectionReader():
             self.post_processing_methods = post_processing_methods
         else:
             self.post_processing_methods = list()
-        if output_method:
-            self.output_method = output_method
-        else:
-            self.output_method = self.standard_output
-
         # Apply Section Cleaning -> clean_lines
         # Check for End of Section Break -> break_triggers
         # Call Line Parser, passing Context & Lines -> Dialect, Special Lines
         # Apply Line Processing Rules -> trim_lines
-        # Apply Section Formatting ->
         self.section_stages = list()
         self.section_stages.extend(self.preprocessing_methods)
         self.section_stages.append(self.set_line_parser())
@@ -928,34 +934,67 @@ class SectionReader():
                                      self.default_parser)
         return parser_instance.parse
 
-    def scan_section(self, source, context):
-        context['Current Section'] = self.section_name
+    def read(self, source, context):
         logger.debug(f'Starting New Section: {self.section_name}.')
         section_iter = cascading_iterators(source,  self.section_stages)
-        section_output = self.output_method(section_iter)
-        return section_output
+        return section_iter
 
-    def __iter__(self, source, context):
-        context['Current Section'] = self.section_name
-        section_iter = iter(cascading_iterators(source,  section_stages))
-        while True:
-            row = None
-            try:
-                row = section_iter.__next__()
-            except StopSection as stop_sign:
-                logger.debug('end of the section')
-                break
-            except (BufferedIteratorEOF, StopIteration) as eof:
-                logger.debug('End of Source')
-                break
-            else:
-                logger.debug(f'Found row: {row}.')
-                if row is not None:
-                    yield row
-            logger.debug('next line')
 
-    def standard_output(self, processed_lines: ParsedStringSource) -> List[Any]:
+class Section():
+    def __init__(self,
+                 section_name = 'Section',
+                 boundaries: SectionBoundaries = None,
+                 reader: SectionReader = None,
+                 output_method: Callable = None):
+        self.section_name = section_name
+        if boundaries:
+            self.boundaries = boundaries
+        else:
+            self.boundaries = SectionBoundaries()
+        if reader:
+            self.reader = reader
+        else:
+            self.reader = SectionReader()
+        if output_method:
+            self.output_method = output_method
+        else:
+            self.output_method = self.standard_output
+
+        # check for start
+        # read section while checking for end
+        # Apply Section Formatting ->
+
+    def standard_output(self, section_lines: ParsedStringSource) -> List[Any]:
         '''Iterate through section.
         '''
         list_output = [line for line in processed_lines]
         return list_output
+
+    def break_iter(self, source, context, location):
+        source_iter = iter(source)
+        while True:
+            try:
+                line = source_iter.__next__()
+                test_output = self.boundaries.check(line, context, location)
+            except (BufferedIteratorEOF, StopIteration) as eof:
+                self.context['status'] = 'End of Source'
+                break
+            except tp.StartSection as marker:
+                context = start_marker.get_context()
+                context['status'] = f'{location} of {self.section_name}'
+                self.context = context.copy()
+                break
+            except tp.StopSection as end_marker:
+                context = end_marker.get_context()
+                context['status'] = f'{location} of {self.section_name}'
+                self.context = context.copy()
+            yield row
+
+    def read_section(self, source, context):
+        skiped = [row for row in self.break_iter(source, context, 'Start')]
+        context['Current Section'] = self.section_name
+        self.context = context.copy()
+        section_scan = self.break_iter(source, context, 'End')
+        section_reader = self.read(section_scan, context)
+        section_output = self.output_method(section_reader)
+        return section_output, context
