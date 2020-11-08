@@ -139,6 +139,22 @@ def make_default_csv_parser() -> Callable:
     return default_csv
 #%% Line Processing
 
+def to_plan_info_dict(plan_info_dict_list: List[Dict[str, Any]]
+            ) -> Dict[str, Dict[str, Any]]:
+    '''Combine Plan Info dictionaries into dictionary of dictionaries.
+    '''
+    output_dict = dict()
+    for plan_info_dict in plan_info_dict_list:
+        plan_name = plan_info_dict.get['Plan']
+        if not plan_name:
+            plan_name = plan_info_dict.get['Plan sum']
+            plan_info_dict['Plan'] = plan_name
+            if not plan_name:
+                plan_name = 'Plan'
+                plan_info_dict['Plan'] = plan_name
+        output_dict[plan_name] = plan_info_dict
+    return output_dict
+
 
 #%% Reader definitions
 default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
@@ -196,7 +212,7 @@ dvh_info_break = tp.SectionBoundaries(
     start_section=None,
     end_section=plan_info_start)
 plan_info_break = tp.SectionBoundaries(
-    start_section=None,
+    start_section=plan_info_start,
     end_section=plan_info_end)
 structure_info_break = tp.SectionBoundaries(
     start_section=structure_info_start,
@@ -205,7 +221,7 @@ dvh_data_break = tp.SectionBoundaries(
     start_section=None,
     end_section=structure_info_start)
 
-
+#%% Section definitions
 dvh_info_section = tp.Section(
     section_name='DVH Info',
     boundaries=dvh_info_break,

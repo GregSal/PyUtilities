@@ -206,33 +206,33 @@ context = {
 source = BufferedIterator(test_source)
 context['Source'] = source
 print('Reading DVH Info Section')
-output, context = read_dvh_file.dvh_info_section.read_section(source, context)
+output, context = read_dvh_file.dvh_info_section.read(source, context)
 for key, value in output.items():
     print(f'{key}\t\t{value}')
 
 print('\\n\nReading Plan Info Section 1')
-output, context = read_dvh_file.plan_info_section.read_section(source, context)
+output, context = read_dvh_file.plan_info_section.read(source, context)
 for key, value in output.items():
     print(f'{key}\t\t{value}')
 
 print('\n\nReading Plan Info Section 2')
-output, context = read_dvh_file.plan_info_section.read_section(source, context)
+output, context = read_dvh_file.plan_info_section.read(source, context)
 for key, value in output.items():
     print(f'{key}\t\t{value}')
 
 print('\n\nReading Structure Section')
-output, context = read_dvh_file.structure_info_section.read_section(source, context)
+output, context = read_dvh_file.structure_info_section.read(source, context)
 for key, value in output.items():
     print(f'{key}\t\t{value}')
 
 print('Reading DVH Section')
-output, context = read_dvh_file.dvh_data_section.read_section(source, context)
+output, context = read_dvh_file.dvh_data_section.read(source, context)
 print(output)
 
 print('\n\nReading Structure Section')
-output, context = read_dvh_file.structure_info_section.read_section(source, context)
+output, context = read_dvh_file.structure_info_section.read(source, context)
 for key, value in output.items():
     print(f'{key}\t\t{value}')
 print('Reading DVH Section')
-output, context = read_dvh_file.dvh_data_section.read_section(source, context)
+output, context = read_dvh_file.dvh_data_section.read(source, context)
 print(output)

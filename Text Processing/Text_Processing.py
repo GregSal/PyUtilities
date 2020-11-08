@@ -986,7 +986,7 @@ class Section():
                 break
             yield line
 
-    def read_section(self, source, context):
+    def read(self, source, context):
         skiped = [row for row in self.break_iter(source, context, 'Start')]
         context['Current Section'] = self.section_name
         self.context = context.copy()

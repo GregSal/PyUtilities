@@ -55,8 +55,10 @@
     <Content Include="Text Files\PlanCheck%3b PELB Cleaned.txt" />
     <Content Include="Text Files\PlanCheck%3bPlan Sum Cleaned.txt" />
     <Content Include="Text Files\PlanSum Only.dvh" />
+    <Content Include="Text Files\PlanSum vs Original Abbreviated.txt" />
     <Content Include="Text Files\PlanSum vs Original.dvh" />
     <Content Include="Text Files\Test1.dvh" />
+    <Content Include="Text Files\Test_DVH_Sections.txt" />
     <Content Include="Text Files\trigger_test_text.txt" />
   </ItemGroup>
   <ItemGroup>
