@@ -47,7 +47,7 @@ Source = Union[StringSource, ParsedStringSource]
 
 
 #%% Logging
-logger = lg.config_logger(prefix='Text Processing', level='INFO')
+logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
 
 
 #%% Exceptions
@@ -983,6 +983,9 @@ class Section():
                 context['status'] = f'{location} of {self.section_name}'
                 self.context = context.copy()
                 logger.debug(f'{location} of {self.section_name}')
+                break
+            except:   #  FIXME For debugging only
+                self.context['status'] = 'End of Source'
                 break
             yield line
 

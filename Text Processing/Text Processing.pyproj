@@ -13,6 +13,8 @@
     <TestFramework>unittest</TestFramework>
     <UnitTestPattern>test*.py</UnitTestPattern>
     <UnitTestRootDirectory>.</UnitTestRootDirectory>
+    <InterpreterId>CondaEnv|CondaEnv|standard</InterpreterId>
+    <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -37,6 +39,7 @@
     <Compile Include="test_functions.py" />
     <Compile Include="test_section_readers.py" />
     <Compile Include="test_rules.py" />
+    <Compile Include="test_section_boundaries.py" />
     <Compile Include="test_section_sequencer.py" />
     <Compile Include="test_trigger.py" />
     <Compile Include="buffered_iterator.py" />
@@ -63,6 +66,9 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Text Files\" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="CondaEnv|CondaEnv|standard" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

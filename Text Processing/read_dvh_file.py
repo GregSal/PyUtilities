@@ -139,8 +139,7 @@ def make_default_csv_parser() -> Callable:
     return default_csv
 #%% Line Processing
 
-def to_plan_info_dict(plan_info_dict_list: List[Dict[str, Any]]
-            ) -> Dict[str, Dict[str, Any]]:
+def to_plan_info_dict(plan_info_dict_list):
     '''Combine Plan Info dictionaries into dictionary of dictionaries.
     '''
     output_dict = dict()
@@ -261,7 +260,7 @@ def main():
     test_file = base_path / test_file_path / 'PlanSum vs Original.dvh'
 
     # Call Primary routine
-    context, section_lines = file_reader(test_file)
+    context, section_lines = tp.file_reader(test_file)
     print('done')
 
 

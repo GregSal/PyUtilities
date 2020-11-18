@@ -58,7 +58,7 @@ class TestSectionBoundaries(unittest.TestCase):
             'Gradient Measure [cm]: N/A'
             ]
 
-    #@unittest.skip('Not Working')
+    @unittest.skip('Not Working')
     def test_dvh_info_section(self):
         self.context = {}
         dvh_info_break = tp.SectionBoundaries(

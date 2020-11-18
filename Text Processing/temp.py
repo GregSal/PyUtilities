@@ -8,6 +8,10 @@ import read_dvh_file
 from pprint import pprint
 import pandas as pd
 from buffered_iterator import BufferedIterator, BufferedIteratorEOF
+#%% Logging
+import logging_tools as lg
+logger = lg.config_logger(prefix='test_section_boundaries', level='DEBUG')
+
 
 
 #%% Test Text
@@ -199,40 +203,112 @@ context = {
     'File Path': Path.cwd() / 'Text Files' / 'Test_DVH_Sections.txt',
     'Line Count': 0
     }
-
+test_text = [
+    'Patient Name: ____, ____',
+    'Patient ID: 1234567',
+    'Comment: DVHs for multiple plans and plan sums',
+    'Exported by: gsal',
+    'Type: Cumulative Dose Volume Histogram',
+    '',
+    'Plan sum: Plan Sum',
+    'Course: PLAN SUM',
+    'Prescribed dose [cGy]: not defined',
+    '% for dose (%): not defined',
+    '',
+    'Plan: PARR',
+    'Course: C1',
+    'Prescribed dose [cGy]: 5000.0',
+    '% for dose (%): 100.0',
+    '',
+    'Structure: PRV5 SpinalCanal',
+    'Approval Status: Approved',
+    'Plan: Plan Sum',
+    'Course: PLAN SUM',
+    'Volume [cm³]: 121.5',
+    'Conformity Index: N/A',
+    'Gradient Measure [cm]: N/A'
+    ]
 #%% scan_section
 
-# scan_section
-source = BufferedIterator(test_source)
-context['Source'] = source
-print('Reading DVH Info Section')
-output, context = read_dvh_file.dvh_info_section.read(source, context)
-for key, value in output.items():
-    print(f'{key}\t\t{value}')
+def scan_section():
+    source = BufferedIterator(test_source)
+    context['Source'] = source
+    print('Reading DVH Info Section')
+    output, context = read_dvh_file.dvh_info_section.read(source, context)
+    for key, value in output.items():
+        print(f'{key}\t\t{value}')
 
-print('\\n\nReading Plan Info Section 1')
-output, context = read_dvh_file.plan_info_section.read(source, context)
-for key, value in output.items():
-    print(f'{key}\t\t{value}')
+    print('\\n\nReading Plan Info Section 1')
+    output, context = read_dvh_file.plan_info_section.read(source, context)
+    for key, value in output.items():
+        print(f'{key}\t\t{value}')
 
-print('\n\nReading Plan Info Section 2')
-output, context = read_dvh_file.plan_info_section.read(source, context)
-for key, value in output.items():
-    print(f'{key}\t\t{value}')
+    print('\n\nReading Plan Info Section 2')
+    output, context = read_dvh_file.plan_info_section.read(source, context)
+    for key, value in output.items():
+        print(f'{key}\t\t{value}')
 
-print('\n\nReading Structure Section')
-output, context = read_dvh_file.structure_info_section.read(source, context)
-for key, value in output.items():
-    print(f'{key}\t\t{value}')
+    print('\n\nReading Structure Section')
+    output, context = read_dvh_file.structure_info_section.read(source, context)
+    for key, value in output.items():
+        print(f'{key}\t\t{value}')
 
-print('Reading DVH Section')
-output, context = read_dvh_file.dvh_data_section.read(source, context)
-print(output)
+    print('Reading DVH Section')
+    output, context = read_dvh_file.dvh_data_section.read(source, context)
+    print(output)
 
-print('\n\nReading Structure Section')
-output, context = read_dvh_file.structure_info_section.read(source, context)
-for key, value in output.items():
-    print(f'{key}\t\t{value}')
-print('Reading DVH Section')
-output, context = read_dvh_file.dvh_data_section.read(source, context)
-print(output)
+    print('\n\nReading Structure Section')
+    output, context = read_dvh_file.structure_info_section.read(source, context)
+    for key, value in output.items():
+        print(f'{key}\t\t{value}')
+    print('Reading DVH Section')
+    output, context = read_dvh_file.dvh_data_section.read(source, context)
+    print(output)
+
+
+logger.debug('In Temp test_start_plan_info_break_sentinal')
+dvh_info_end = tp.SectionBreak(
+    name='End of DVH Info',
+    trigger=tp.Trigger(['Plan:', 'Plan sum:'])
+    )
+plan_info_end = tp.SectionBreak(
+            name='End of Plan Info',
+            trigger=tp.Trigger(['% for dose (%):']),
+            offset='After'
+            )
+def test():
+    plan_info_break = tp.SectionBoundaries(
+            start_section=dvh_info_end,
+            end_section=plan_info_end)
+    source = BufferedIterator(test_text)
+    context['Source'] = source
+    break_check = plan_info_break.check_start(context)
+    sentinel = None
+    try:
+        for row in source:
+            test_output = break_check(row)
+    except tp.StartSection as end_marker:
+        sentinel = end_marker.get_context()['sentinel']
+    pprint(sentinel)
+    return break_check, plan_info_break, sentinel, source
+
+
+def test_start_plan_info_break():
+    context = {}
+
+    logger.debug('test_start_plan_info_break')
+    plan_info_break = tp.SectionBoundaries(
+        start_section=dvh_info_end,
+        end_section=plan_info_end)
+    source = BufferedIterator(test_text)
+    context['Source'] = source
+    break_check = plan_info_break.check_start(context)
+    try:
+        lines = [break_check(row) for row in source]
+    except tp.StartSection:
+        print('done')
+        
+
+
+if __name__ == '__main__':
+    test_start_plan_info_break()
