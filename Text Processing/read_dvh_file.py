@@ -133,12 +133,14 @@ def make_prescribed_dose_rule() -> tp.Rule:
                      name='prescribed_dose_rule')
     return dose_rule
 
+
 def make_default_csv_parser() -> Callable:
     default_csv = tp.define_csv_parser('dvh_info', delimiter=':',
                                        skipinitialspace=True)
     return default_csv
-#%% Line Processing
 
+
+#%% Line Processing
 def to_plan_info_dict(plan_info_dict_list):
     '''Combine Plan Info dictionaries into dictionary of dictionaries.
     '''
@@ -213,6 +215,9 @@ dvh_info_break = tp.SectionBoundaries(
 plan_info_break = tp.SectionBoundaries(
     start_section=plan_info_start,
     end_section=plan_info_end)
+plan_group_break = tp.SectionBoundaries(
+    start_section=plan_info_start,
+    end_section=structure_info_start)
 structure_info_break = tp.SectionBoundaries(
     start_section=structure_info_start,
     end_section=structure_info_end)
@@ -225,22 +230,22 @@ dvh_info_section = tp.Section(
     section_name='DVH Info',
     boundaries=dvh_info_break,
     reader=dvh_info_reader,
-    output_method=tp.to_dict)
+    aggregate=tp.to_dict)
 plan_info_section = tp.Section(
     section_name='Plan Info',
     boundaries=plan_info_break,
     reader=plan_info_reader,
-    output_method=tp.to_dict)
+    aggregate=tp.to_dict)
 structure_info_section = tp.Section(
     section_name='Structure',
     boundaries=structure_info_break,
     reader=structure_info_reader,
-    output_method=tp.to_dict)
+    aggregate=tp.to_dict)
 dvh_data_section = tp.Section(
     section_name='DVH',
     boundaries=dvh_data_break,
     reader=dvh_data_reader,
-    output_method=tp.to_dataframe)
+    aggregate=tp.to_dataframe)
 
 
 def date_processing():
