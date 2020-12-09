@@ -10,7 +10,7 @@ import logging_tools as lg
 T = TypeVar('T')
 
 #%% Logging
-logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
+logger = lg.config_logger(prefix='Buffered Iterator', level='DEBUG')
 
 
 #%% Exceptions
@@ -58,6 +58,7 @@ class BufferedIterator():
             except (StopIteration, RuntimeError) as eof:
                 raise BufferedIteratorEOF from eof
             logger.debug(f'Getting item: {next_item}\t from source')
+            print(f'Getting item: {next_item}\t from source')
         return next_item
 
     def __iter__(self) -> T:
@@ -83,9 +84,11 @@ class BufferedIterator():
     def step_back(self, steps: int):
         '''Move the iterator pointer back the given number of steps.
         '''
+        logger.debug(f'Have {len(self.previous_items)} Previous Items')
+        logger.debug(f'Need {steps} Steps back')
         if steps < 0:
             raise BufferedIteratorValueError("Can't step back negative amount")
-        if len(self.previous_items) < steps:
+        elif len(self.previous_items) < steps:
             msg = (f"Can't step back {steps} items.\n\t"
                    f"only have {len(self.previous_items)} previous items "
                     "available.")

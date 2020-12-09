@@ -47,7 +47,7 @@ Source = Union[StringSource, ParsedStringSource]
 
 
 #%% Logging
-logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
+logger = lg.config_logger(prefix='Text Processing', level='INFO')
 
 
 #%% Exceptions
@@ -806,7 +806,7 @@ class SectionBreak():
                 raise ValueError(msg) from err
         return offset_value
 
-    def check(self, line: str, context: Dict[str, any]):
+    def check(self, line: str, source: BufferedIterator, **context):
         '''Check for a Break condition
         If an Active count down situation exists, continue the count down.
         Otherwise, apply the trigger test.
@@ -814,40 +814,40 @@ class SectionBreak():
         the break based on the offset value.
         '''
         logger.debug('in section_break.check')
+        # Check for a Break condition
         if self.count_down is None:  # No Active Count Down
+            # apply the trigger test.
             is_break, sentinel = self.trigger.apply(line, context)
             if is_break:
-                is_break, context = self.set_line_location(is_break, sentinel,
-                                                           context)
+                logger.debug(f'Break triggered by {sentinel}')
+                self.active_sentinel = sentinel
+                is_break = self.set_line_location(source)
+
         elif self.count_down == 0:  # End of Count Down Reached
             logger.debug(f'Line count down in {self.name} completed.')
             self.count_down = None  # Remove Active Count Down
             is_break = True
-            context['Source'].step_back = 1  # Save current line for next section
-            context['sentinel'] = self.active_sentinel
+            source.step_back = 1  # Save current line for next section
         elif self.count_down > 0:  #  Active Count Down Exists
             logger.debug(f'Line count down in {self.name} Continuing;\t'
                          f'Count down now at {self.count_down}')
             self.count_down -= 1   #  Continue Count Down
             is_break = False
-            sentinel = self.active_sentinel
-        return is_break, context
+        return is_break
 
-    def set_line_location(self, is_break, sentinel, context):
+    def set_line_location(self, source: BufferedIterator):
         '''Set the appropriate line location for a break based on the offset
         value.
         '''
-        logger.debug(f'Break triggered by {sentinel}')
-        self.active_sentinel = sentinel
         if self.offset < 0: # Save current line for next section
             logger.debug(f'Stepping back {-self.offset} lines')
-            context['sentinel'] = sentinel
-            context['Source'].step_back = -self.offset
+            source.step_back = -self.offset
+            is_break = True
         else: # Use more lines before activating break
             logger.debug(f'Using {self.offset} more lines.')
             self.count_down = self.offset  # Begin Active Count Down
             is_break = False
-        return is_break, context
+        return is_break
 
 
 class SectionBoundaries():
@@ -870,9 +870,9 @@ class SectionBoundaries():
             self.end_section = [end_section]
         else:
             self.end_section = end_section
-        self.context = dict()
 
-    def check(self, line, context, location='End'):
+    def check(self, line, source: BufferedIterator, location='End',
+              **context):
         logger.debug(f'In SectionBoundaries.check, received line: {line}')
         if 'Start' in location:
             break_triggers = self.start_section
@@ -882,40 +882,58 @@ class SectionBoundaries():
             trigger_exception = StopSection
         for break_trigger in break_triggers:
             logger.debug(f'Checking Trigger: {break_trigger.name}')
-            is_break, context = break_trigger.check(line, context)
+            is_break = break_trigger.check(line, source, **context)
             if is_break:
                 logger.debug('Section Break Detected')
-                raise trigger_exception(context=context)
+                break_context = {
+                    'Sentinel': break_trigger.active_sentinel,
+                    'Break': break_trigger.name,
+                    'Location': location
+                    }
+                raise trigger_exception(context=break_context)
         logger.debug('No Break Triggered')
         return line
 
+    def scan(self, location, source, section_name, **context):
+        for line in source:
+            yield self.check(line, source, location, **context)
+
     def check_start(self, context):
-        return partial(self.check, context=context, location='Start')
+        # TODO Is check_start Necessary?
+        return partial(self.check, location='Start', **context)
 
     def check_end(self, context):
-        return partial(self.check, context=context, location='End')
+        # TODO Is check_end Necessary?
+        return partial(self.check, location='End', **context)
 
-    def scan(self, source, context, location, section_name='Section'):
-        self.context = context.copy()
+    #%% Methods not used
+    def scan_x(self, location, source: BufferedIterator,
+             section_name='Section', **context):
+        self.context = context
         source_iter = iter(source)
         while True:
             try:
-                line = self.check(source_iter.__next__(),
-                                  self.context, location)
+                line = self.check(source_iter.__next__(), source, location,
+                                  **context)
             except (BufferedIteratorEOF, StopIteration) as eof:
                 self.context['status'] = 'End of Source'
                 break
             except (StartSection, StopSection) as marker:
-                self.context = marker.get_context().copy()
+                self.context.update(marker.get_context().copy())
                 self.context['status'] = f'{location} of {section_name}'
                 logger.debug(f'{location} of {section_name}')
                 break
             yield line
 
-    def __iter__(self, source, context, location, section_name='Section'):
-        return iter(self.scan(source, context, location, section_name))
+    def find_start(self, source: BufferedIterator, **context):
+        # Skip lines before start
+        find_start_scan = self.scan_x('Start', source, **context)
+        skipped_lines = [row for row in find_start_scan]
 
+    def break_scan(self, source: BufferedIterator, **context):
+        return iter(self.scan_x('End', source, **section.context))
 
+#%% Reader
 class SectionReader():
     def __init__(self,
                  section_name = 'SectionReader',
@@ -955,9 +973,10 @@ class SectionReader():
                                      self.default_parser)
         return parser_instance.parse
 
-    def scan(self, source, context):
-        self.context = context.copy()
-        section_iter = cascading_iterators(source,  self.section_stages)
+    def scan(self, buffered_source, **context):
+        self.context = context
+        section_iter = cascading_iterators(buffered_source,
+                                           self.section_stages)
         for item in section_iter:
             yield item
 
@@ -967,7 +986,7 @@ class SectionReader():
     def read(self, source, context):
         return [item for item in self.scan(source, context)]
 
-
+#%% Section
 class Section():
     def __init__(self,
                  section_name = 'Section',
@@ -991,6 +1010,7 @@ class Section():
         # check for start
         # read section while checking for end
         # Apply Section Formatting ->
+    # TODO Use property methods to update context
 
     def no_aggregate(self, section_lines: ParsedStringSource) -> List[Any]:
         '''Iterate through section.
@@ -998,45 +1018,39 @@ class Section():
         list_output = [line for line in section_lines]
         return list_output
 
-    def check_iter(self, source, context, location):
-        self.context = context.copy()
-        source_iter = iter(source)
-        while True:
-            line = source_iter.__next__()
-            yield self.check(line, self.context, location)
+    def catch_break(self, gen_method):
+        try:
+            break_context = {'status': 'No Break Found'}
+            yield from gen_method
+        except (BufferedIteratorEOF, StopIteration) as eof:
+            break_context['status'] = 'End of Source'
+        except (StartSection, StopSection) as marker:
+            break_context = marker.get_context()
+            location = break_context['Location']
+            break_context['status'] = f'{location} of {self.section_name}'
+        finally:
+            self.context.update(break_context)
 
-    def find_start(self, source):
+    def find_start(self, buffered_source):
         # Skip lines before start
-        find_start = self.boundaries.scan(source, self.context,
-                                          'Start', self.section_name)
-        skipped_lines = [row for row in find_start]
+        scan_start = self.boundaries.scan('Start', buffered_source,
+                                          section_name=self.section_name,
+                                          **self.context)
+        skipped_lines = [row for row in self.catch_break(scan_start)]
         return skipped_lines
 
-    def scan(self, source, context):
-        self.find_start(source)
-        self.context = self.boundaries.context
+    def scan(self, source, **context):
+        self.context.update(context)
+        buffered_source = BufferedIterator(source)
+        skipped_lines = self.find_start(buffered_source, **context)
         self.context['Current Section'] = self.section_name
         logger.debug(f'Starting New Section: {self.section_name}.')
 
-        break_scan = self.boundaries.scan(source, self.context,
-                                          'End', self.section_name)
-        try:
-            while True:
-                section_reader = self.reader.read(break_scan, self.context)
-                yield from section_reader
-        except (BufferedIteratorEOF, StopIteration) as eof:
-            self.context = getattr(self.reader, 'context', self.context)
-            self.context['status'] = 'End of Source'
-        except (StartSection, StopSection) as marker:
-            context = getattr(self.reader, 'context', self.context)
-            context.update(marker.get_context())
-            context['status'] = f'End of {self.section_name}'
-            self.context = context.copy()
-            logger.debug(f'End of {self.section_name}')
+        section_scan = self.boundaries.scan('End', buffered_source,
+                                          section_name=self.section_name,
+                                          **self.context)
+        yield from self.catch_break(section_scan)
 
-    def __iter__(self, source, context):
-        return iter(self.scan(source, context))
-
-    def read(self, source, context):
+    def read(self, source, **context):
         section_aggregate = self.aggregate(self.scan(source, context))
         return section_aggregate

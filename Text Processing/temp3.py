@@ -1,25 +1,26 @@
-'''Initial testing of DVH read
-'''
-# pylint: disable=anomalous-backslash-in-string
 
 #%% Imports
 from pathlib import Path
-from pprint import pprint
-from functools import partial
 from itertools import chain
+from functools import partial
+from pprint import pprint
 from typing import List, Callable
 import csv
 import re
+
+import pandas as pd
+
 import logging_tools as lg
+from file_utilities import clean_ascii_text
+
+import Text_Processing as tp
 from buffered_iterator import BufferedIterator
 from buffered_iterator import BufferedIteratorEOF
 from buffered_iterator import BufferOverflowWarning
-import Text_Processing as tp
-import pandas as pd
-from file_utilities import clean_ascii_text
+
 
 #%% Logging
-logger = lg.config_logger(prefix='read_dvh.file', level='DEBUG')
+logger = lg.config_logger(prefix='Temp3', level='INFO')
 
 
 #%% Line Parsing Functions
@@ -76,8 +77,7 @@ def make_approved_status_rule() -> tp.Rule:
 
 # Prescribed Dose Rule
 def make_prescribed_dose_rule() -> tp.Rule:
-    def parse_prescribed_dose(line, sentinel,
-                              *args, **kwargs) -> tp.ParseResults:
+    def parse_prescribed_dose(line, sentinel, *args, **kwargs) -> tp.ParseResults:
         '''Split "Prescribed dose [cGy]" into 2 lines.
 
         Return two rows for a line containing:
@@ -106,11 +106,11 @@ def make_prescribed_dose_rule() -> tp.Rule:
     def make_prescribed_dose_trigger()->tp.Trigger:
         '''Create a trigger that checks for Prescribed Dose Line.
 
-        Use regular expresion to match:
+        Use regular expression to match:
             Prescribed dose [(unit)]: (dose)
 
         Returns:
-            dose_trigger: A trigger that uses a regular expresion to check for
+            dose_trigger: A trigger that uses a regular expression to check for
             a Prescribed Dose Line.
         '''
         prescribed_dose_pattern = (
@@ -134,30 +134,8 @@ def make_prescribed_dose_rule() -> tp.Rule:
     return dose_rule
 
 
-def make_default_csv_parser() -> Callable:
-    default_csv = tp.define_csv_parser('dvh_info', delimiter=':',
-                                       skipinitialspace=True)
-    return default_csv
 
-
-#%% Line Processing
-def to_plan_info_dict(plan_info_dict_list):
-    '''Combine Plan Info dictionaries into dictionary of dictionaries.
-    '''
-    output_dict = dict()
-    for plan_info_dict in plan_info_dict_list:
-        plan_name = plan_info_dict.get['Plan']
-        if not plan_name:
-            plan_name = plan_info_dict.get['Plan sum']
-            plan_info_dict['Plan'] = plan_name
-            if not plan_name:
-                plan_name = 'Plan'
-                plan_info_dict['Plan'] = plan_name
-        output_dict[plan_name] = plan_info_dict
-    return output_dict
-
-
-#%% Reader definitions
+#%% Section definition
 default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
                                       skipinitialspace=True)
 dvh_info_reader = tp.SectionReader(
@@ -166,6 +144,7 @@ dvh_info_reader = tp.SectionReader(
     default_parser=default_parser,
     post_processing_methods=[tp.trim_items, tp.drop_blanks,
                              tp.merge_continued_rows])
+
 plan_info_reader = tp.SectionReader(
     preprocessing_methods=[clean_ascii_text],
     parsing_rules=[make_prescribed_dose_rule(),
@@ -174,99 +153,161 @@ plan_info_reader = tp.SectionReader(
     post_processing_methods=[tp.trim_items, tp.drop_blanks,
                              tp.convert_numbers]
     )
-structure_info_reader = tp.SectionReader(
-    preprocessing_methods=[clean_ascii_text],
-    parsing_rules=[],
-    default_parser=default_parser,
-    post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.convert_numbers]
-    )
-dvh_data_reader = tp.SectionReader(
-    preprocessing_methods=[clean_ascii_text],
-    default_parser=tp.define_fixed_width_parser(widths=10),
-    post_processing_methods=[tp.trim_items, tp.drop_blanks]
-    )
 
-#%% SectionBreak definitions
 plan_info_start = tp.SectionBreak(
     name='Start of Plan Info',
     trigger=tp.Trigger(['Plan:', 'Plan sum:']),
     offset='Before'
     )
+
 plan_info_end = tp.SectionBreak(
     name='End of Plan Info',
     trigger=tp.Trigger(['% for dose (%):']),
-    offset='After'
-    )
-structure_info_start = tp.SectionBreak(
-    name='Start of Structure Info',
-    trigger=tp.Trigger(['Structure:']),
-    offset='Before'
-    )
-structure_info_end = tp.SectionBreak(
-    name='End of Structure Info',
-    trigger=tp.Trigger(['Gradient Measure']),
     offset='After'
     )
 
 dvh_info_break = tp.SectionBoundaries(
     start_section=None,
     end_section=plan_info_start)
+
 plan_info_break = tp.SectionBoundaries(
     start_section=plan_info_start,
     end_section=plan_info_end)
-plan_group_break = tp.SectionBoundaries(
-    start_section=plan_info_start,
-    end_section=structure_info_start)
-structure_info_break = tp.SectionBoundaries(
-    start_section=structure_info_start,
-    end_section=structure_info_end)
-dvh_data_break = tp.SectionBoundaries(
-    start_section=None,
-    end_section=structure_info_start)
 
-#%% Section definitions
 dvh_info_section = tp.Section(
     section_name='DVH Info',
     boundaries=dvh_info_break,
     reader=dvh_info_reader,
     aggregate=tp.to_dict)
+
 plan_info_section = tp.Section(
     section_name='Plan Info',
     boundaries=plan_info_break,
     reader=plan_info_reader,
     aggregate=tp.to_dict)
-structure_info_section = tp.Section(
-    section_name='Structure',
-    boundaries=structure_info_break,
-    reader=structure_info_reader,
-    aggregate=tp.to_dict)
-dvh_data_section = tp.Section(
-    section_name='DVH',
-    boundaries=dvh_data_break,
-    reader=dvh_data_reader,
-    aggregate=tp.to_dataframe)
 
 
-def date_processing():
-    pass
-def number_processing():
-    pass
 
-
-#%% Main Iteration
+#%% main
 def main():
-    # Test File
-    base_path = Path.cwd()
 
-    #test_file = Path.cwd() / 'PlanSum vs Original.dvh'
+    # Test Text
+    test_source = [
+        'Patient Name         : ____, ____',
+        'Patient ID           : 1234567',
+        'Comment              : DVHs for multiple plans and plan sums',
+        'Date                 : Friday, January 17, 2020 09:45:07',
+        'Exported by          : gsal',
+        'Type                 : Cumulative Dose Volume Histogram',
+        ('Description          : The cumulative DVH displays the '
+        'percentage (relative)'),
+        ('                       or volume (absolute) of structures '
+        'that receive a dose'),
+        '                      equal to or greater than a given dose.',
+        '',
+        'Plan sum: Plan Sum',
+        'Course: PLAN SUM',
+        'Prescribed dose [cGy]: not defined',
+        '% for dose (%): not defined',
+        ''
+        'Plan: PARR',
+        'Course: C1',
+        'Plan Status: Treatment Approved Thursday, January 02, '
+        '2020 12:55:56 by gsal',
+        'Prescribed dose [cGy]: 5000.0',
+        '% for dose (%): 100.0',
+        ''
+        'Structure: PRV5 SpinalCanal',
+        'Approval Status: Approved',
+        'Plan: Plan Sum',
+        'Course: PLAN SUM',
+        'Volume [cm³]: 121.5',
+        'Dose Cover.[%]: 100.0',
+        'Sampling Cover.[%]: 100.1',
+        'Min Dose [cGy]: 36.7',
+        'Max Dose [cGy]: 3670.1',
+        'Mean Dose [cGy]: 891.9',
+        'Modal Dose [cGy]: 44.5',
+        'Median Dose [cGy]: 863.2',
+        'STD [cGy]: 621.9',
+        'NDR: ',
+        'Equiv. Sphere Diam. [cm]: 6.1',
+        'Conformity Index: N/A',
+        'Gradient Measure [cm]: N/A',
+        ''
+        'Dose [cGy] Ratio of Total Structure Volume [%]',
+        '         0                       100',
+        '         1                       100',
+        '         2                       100',
+        '         3                       100',
+        '         4                       100',
+        '         5                       100',
+        '      3667              4.23876e-005',
+        '      3668              2.87336e-005',
+        '      3669              1.50797e-005',
+        '      3670               1.4257e-006',
+        '',
+        'Structure: PTV 50',
+        'Approval Status: Approved',
+        'Plan: Plan Sum',
+        'Course: PLAN SUM',
+        'Volume [cm³]: 363.6',
+        'Dose Cover.[%]: 100.0',
+        'Sampling Cover.[%]: 100.0',
+        'Min Dose [cGy]: 3985.9',
+        'Max Dose [cGy]: 5442.0',
+        'Mean Dose [cGy]: 5144.5',
+        'Modal Dose [cGy]: 5177.3',
+        'Median Dose [cGy]: 5166.9',
+        'STD [cGy]: 131.9',
+        'NDR: ',
+        'Equiv. Sphere Diam. [cm]: 8.9',
+        'Conformity Index: N/A',
+        'Gradient Measure [cm]: N/A',
+        '',
+        'Dose [cGy] Ratio of Total Structure Volume [%]',
+        '         0                       100',
+        '         1                       100',
+        '         2                       100',
+        '         3                       100',
+        '         4                       100',
+        '         5                       100',
+        '      5437               9.4777e-005',
+        '      5438              6.35607e-005',
+        '      5439              3.62425e-005',
+        '      5440              1.82336e-005',
+        '      5441              9.15003e-006',
+        '      5442               6.6481e-008'
+        ]
 
-    test_file_path = r'Text Files'
-    test_file = base_path / test_file_path / 'PlanSum vs Original.dvh'
 
-    # Call Primary routine
-    context, section_lines = tp.file_reader(test_file)
-    print('done')
+    # Context
+    context = {
+        'File Name': 'Test_DVH_Sections.txt',
+        'File Path': Path.cwd() / 'Text Files' / 'Test_DVH_Sections.txt',
+        'Line Count': 0
+        }
+    test_section = tp.Section(
+        section_name='Plan Info',
+        boundaries=plan_info_break,
+        reader=plan_info_reader,
+        aggregate=tp.to_dict)
+    buffered_source = BufferedIterator(test_source)
+    test_section.context = context
+    skipped_lines = test_section.find_start(buffered_source)
+    print('Skipped Lines')
+    pprint(skipped_lines)
+    print('Read lines\n\n')
+
+    section_scan = test_section.boundaries.scan(
+        'End', buffered_source, section_name='Plan Info', **context)
+    read_lines = [row for row in test_section.catch_break(section_scan)]
+    pprint(read_lines)
+    source_iter = iter(buffered_source)
+    print('\nNext Item:')
+    print(source_iter.__next__())
+
+
 
 
 if __name__ == '__main__':

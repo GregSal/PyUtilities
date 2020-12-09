@@ -1,4 +1,5 @@
 
+#%% Imports
 from pathlib import Path
 from itertools import chain
 from typing import List
@@ -41,32 +42,36 @@ def scan_plan_info_group(test_source, context):
             logger.debug(f'In PlanGroupOutput, adding line: {row}')
         return output_lines
 
-    def section_iter(section, test_source, context):
-        source = BufferedIterator(test_source)
-        context['Source'] = source
-        find_start = iter(section.boundaries(source, context,
-                                             'Start', section.section_name))
-        [row for row in find_start]
-        section.context = section.boundaries.context
+    def scan(section, source: BufferedIterator, context):
+        # TODO get context as **context
+        # TODO Matching code in SectionBoundaries.  how best to consolidate?
+        #section.context = context
+        skipped_lines = section.boundaries.find_start(
+            source, section_name=section.section_name, **context)
+        section.context.update(section.boundaries.context)
         section.context['Current Section'] = section.section_name
-        section_scan = section.boundaries.__iter__(
-            source, section.context, 'End', section.section_name)
+
+        logger.debug(f'Starting New Section: {section.section_name}.')
+        break_scan = section.boundaries.break_scan(source, **context)
         try:
             while True:
-                section_reader = section.reader.read(section_scan, section.context)
+                section_reader = section.reader.scan(break_scan, section.context)
                 yield from section_reader
         except (BufferedIteratorEOF, StopIteration) as eof:
             section.context = getattr(section.reader, 'context', section.context)
             section.context['status'] = 'End of Source'
-        except (tp.StartSection, tp.StopSection) as marker:
+        except (StartSection, StopSection) as marker:
             context = getattr(section.reader, 'context', section.context)
             context.update(marker.get_context())
             context['status'] = f'End of {section.section_name}'
             section.context = context.copy()
             logger.debug(f'End of {section.section_name}')
 
+    source = BufferedIterator(test_source)
+    source_iter = iter(BufferedIterator(test_source))
+    section_scan = scan(group, test_source, context)
     list_output = list()
-    for item in section_iter(group, test_source, context):
+    for item in section_scan:
         list_output.append(item)
         pprint(item)
     print('Aggregate')
@@ -266,13 +271,23 @@ def main():
         'File Path': Path.cwd() / 'Text Files' / 'Test_DVH_Sections.txt',
         'Line Count': 0
         }
+    test_section = tp.Section(
+        section_name='Plan Info',
+        boundaries=read_dvh_file.plan_info_break,
+        reader=read_dvh_file.plan_info_reader,
+        aggregate=tp.to_dict)
+    source = BufferedIterator(test_source)
+    skipped_lines = test_section.find_start(source, **context)
+    source_iter = iter(source)
+    print(source_iter.__next__())
+
 
     #%% Readers
     #dvh_info, context = scan_dvh_info_section(test_source, context)
     #plan_info, context = scan_plan_info_group(test_source, context)
     #test_plan_info_break(test_source, context)
     #test_plan_group_break(test_source, context)
-    scan_plan_info_group(test_source, context)
+    #scan_plan_info_group(test_source, context)
 
 
 if __name__ == '__main__':
