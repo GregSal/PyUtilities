@@ -65,37 +65,31 @@ class TestSectionBoundaries(unittest.TestCase):
             start_section=None,
             end_section=self.dvh_info_end)
         source = BufferedIterator(self.test_text)
-        context = self.context.copy()
-        context['Source'] = source
-        break_check = dvh_info_break.check_start(context)
+        break_check = dvh_info_break.check_start(**self.context)
         with self.assertRaises(tp.StartSection):
-            lines = [break_check(row) for row in source]
+            lines = [break_check(row, source) for row in source]
 
     def test_start_plan_info_break(self):
         plan_info_break = tp.SectionBoundaries(
             start_section=self.dvh_info_end,
             end_section=self.plan_info_end)
         source = BufferedIterator(self.test_text)
-        context = self.context.copy()
-        context['Source'] = source
-        break_check = plan_info_break.check_start(context)
+        break_check = plan_info_break.check_start(**self.context)
         with self.assertRaises(tp.StartSection):
-            lines = [break_check(row) for row in source]
+            lines = [break_check(row, source) for row in source]
 
     def test_start_plan_info_break_sentinal(self):
         plan_info_break = tp.SectionBoundaries(
              start_section=self.dvh_info_end,
              end_section=self.plan_info_end)
         source = BufferedIterator(self.test_text)
-        context = self.context.copy()
-        context['Source'] = source
-        break_check = plan_info_break.check_start(context)
+        break_check = plan_info_break.check_start(**self.context)
         sentinel = None
         try:
             for row in source:
-                test_output = break_check(row)
+                test_output = break_check(row, source)
         except tp.StartSection as end_marker:
-            sentinel = end_marker.get_context()['sentinel']
+            sentinel = end_marker.get_context()['Sentinel']
         self.assertEqual(sentinel, 'Plan sum:')
 
     def test_all_breaks(self):
@@ -103,15 +97,13 @@ class TestSectionBoundaries(unittest.TestCase):
              start_section=self.dvh_info_end,
              end_section=self.plan_info_end)
         source = BufferedIterator(self.test_text)
-        context = self.context.copy()
-        context['Source'] = source
-        break_check = plan_info_break.check_start(context)
+        break_check = plan_info_break.check_start(**self.context)
         sentinel = None
         try:
             for row in source:
-                test_output = break_check(row)
+                test_output = break_check(row, source)
         except tp.StartSection as end_marker:
-            sentinel = end_marker.get_context()['sentinel']
+            sentinel = end_marker.get_context()['Sentinel']
         self.assertEqual(sentinel, 'Plan sum:')
 
 
@@ -484,8 +476,7 @@ class TestSections(unittest.TestCase):
             )
         # scan_section
         source = BufferedIterator(self.test_source['DVH Info'])
-        self.context['Source'] = source
-        reader = dvh_info_reader.read(source, self.context)
+        reader = dvh_info_reader.read(source, **self.context)
         test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['DVH Info'])
 
@@ -500,8 +491,7 @@ class TestSections(unittest.TestCase):
             )
         # scan_section
         source = BufferedIterator(self.test_source['Plan Info 1'])
-        self.context['Source'] = source
-        reader = plan_info_reader.read(source, self.context)
+        reader = plan_info_reader.read(source, **self.context)
         test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['Plan Info 1'])
 
@@ -517,8 +507,7 @@ class TestSections(unittest.TestCase):
             )
         # scan_section
         source = BufferedIterator(self.test_source['Plan Info 2'])
-        self.context['Source'] = source
-        reader = plan_info_reader.read(source, self.context)
+        reader = plan_info_reader.read(source, **self.context)
         test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['Plan Info 2'])
 
@@ -533,8 +522,7 @@ class TestSections(unittest.TestCase):
             )
         # scan_section
         source = BufferedIterator(self.test_source['Structure'])
-        self.context['Source'] = source
-        reader = structure_reader.read(source, self.context)
+        reader = structure_reader.read(source, **self.context)
         test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['Structure'])
 
@@ -549,8 +537,7 @@ class TestSections(unittest.TestCase):
             )
         # scan_section
         source = BufferedIterator(self.test_source['DVH'])
-        self.context['Source'] = source
-        reader = dvh_data_reader.read(source, self.context)
+        reader = dvh_data_reader.read(source, **self.context)
         test_output = tp.to_dataframe(reader)
         self.assertDictEqual(test_output.to_dict(),
                              self.test_result['DVH'].to_dict())

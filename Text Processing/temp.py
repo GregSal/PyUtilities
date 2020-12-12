@@ -55,7 +55,7 @@ def scan_plan_info_group(test_source, context):
         break_scan = section.boundaries.break_scan(source, **context)
         try:
             while True:
-                section_reader = section.reader.scan(break_scan, section.context)
+                section_reader = section.reader.scan(break_scan, **section.context)
                 yield from section_reader
         except (BufferedIteratorEOF, StopIteration) as eof:
             section.context = getattr(section.reader, 'context', section.context)
@@ -329,7 +329,7 @@ def scan_dvh_info_section(test_source, context):
     source = BufferedIterator(test_source)
     context['Source'] = source
     print('Reading DVH Info Section')
-    dvh_info = dvh_info_section.read(source, context)
+    dvh_info = dvh_info_section.read(source, **context)
     context = dvh_info_section.context
     for key, value in dvh_info.items():
         print(f'{key}\t\t{value}')
@@ -342,7 +342,7 @@ def test_plan_info_break(test_source, context):
         end_section=read_dvh_file.plan_info_end)
     source = BufferedIterator(test_source)
     context['Source'] = source
-    start_check = plan_info_break.check_start(context)
+    start_check = plan_info_break.check_start(**context)
     skipped_lines = list()
     try:
         for row in source:
@@ -353,7 +353,7 @@ def test_plan_info_break(test_source, context):
     else:
         print('Section not found')
 
-    end_check = plan_info_break.check_end(context)
+    end_check = plan_info_break.check_end(**context)
     used_lines = list()
     try:
         for row in source:
@@ -399,7 +399,7 @@ def test_plan_group_break(test_source, context):
     source = BufferedIterator(test_source)
     context['Source'] = source
     print('Reading Plan Info Group')
-    plan_info = plan_info_group.read(source, context)
+    plan_info = plan_info_group.read(source, **context)
     for plan in plan_info:
         for row in plan:
             print(row)
@@ -410,33 +410,33 @@ def scan_section():
     source = BufferedIterator(test_source)
     context['Source'] = source
     print('Reading DVH Info Section')
-    output, context = read_dvh_file.dvh_info_section.read(source, context)
+    output, context = read_dvh_file.dvh_info_section.read(source, **context)
     for key, value in output.items():
         print(f'{key}\t\t{value}')
 
     print('\\n\nReading Plan Info Section 1')
-    output, context = read_dvh_file.plan_info_section.read(source, context)
+    output, context = read_dvh_file.plan_info_section.read(source, **context)
     for key, value in output.items():
         print(f'{key}\t\t{value}')
 
     print('\n\nReading Plan Info Section 2')
-    output, context = read_dvh_file.plan_info_section.read(source, context)
+    output, context = read_dvh_file.plan_info_section.read(source, **context)
     for key, value in output.items():
         print(f'{key}\t\t{value}')
 
     print('\n\nReading Structure Section')
-    output, context = read_dvh_file.structure_info_section.read(source, context)
+    output, context = read_dvh_file.structure_info_section.read(source, **context)
     for key, value in output.items():
         print(f'{key}\t\t{value}')
 
     print('Reading DVH Section')
-    output, context = read_dvh_file.dvh_data_section.read(source, context)
+    output, context = read_dvh_file.dvh_data_section.read(source, **context)
     print(output)
 
     print('\n\nReading Structure Section')
-    output, context = read_dvh_file.structure_info_section.read(source, context)
+    output, context = read_dvh_file.structure_info_section.read(source, **context)
     for key, value in output.items():
         print(f'{key}\t\t{value}')
     print('Reading DVH Section')
-    output, context = read_dvh_file.dvh_data_section.read(source, context)
+    output, context = read_dvh_file.dvh_data_section.read(source, **context)
     print(output)

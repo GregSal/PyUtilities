@@ -299,10 +299,15 @@ def main():
     pprint(skipped_lines)
     print('Read lines\n\n')
 
-    section_scan = test_section.boundaries.scan(
-        'End', buffered_source, section_name='Plan Info', **context)
-    read_lines = [row for row in test_section.catch_break(section_scan)]
+    section_read = test_section.scan(buffered_source, start_search=False,
+                                     **context)
+    read_lines = [row for row in section_read]
     pprint(read_lines)
+    print('\nNext Section:')
+
+    read_section = test_section.read(buffered_source, start_search=False,
+                                     **context)
+    pprint(read_section)
     source_iter = iter(buffered_source)
     print('\nNext Item:')
     print(source_iter.__next__())

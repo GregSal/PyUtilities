@@ -47,7 +47,7 @@ Source = Union[StringSource, ParsedStringSource]
 
 
 #%% Logging
-logger = lg.config_logger(prefix='Text Processing', level='INFO')
+logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
 
 
 #%% Exceptions
@@ -898,40 +898,14 @@ class SectionBoundaries():
         for line in source:
             yield self.check(line, source, location, **context)
 
-    def check_start(self, context):
+    def check_start(self, **context):
         # TODO Is check_start Necessary?
         return partial(self.check, location='Start', **context)
 
-    def check_end(self, context):
+    def check_end(self, **context):
         # TODO Is check_end Necessary?
         return partial(self.check, location='End', **context)
 
-    #%% Methods not used
-    def scan_x(self, location, source: BufferedIterator,
-             section_name='Section', **context):
-        self.context = context
-        source_iter = iter(source)
-        while True:
-            try:
-                line = self.check(source_iter.__next__(), source, location,
-                                  **context)
-            except (BufferedIteratorEOF, StopIteration) as eof:
-                self.context['status'] = 'End of Source'
-                break
-            except (StartSection, StopSection) as marker:
-                self.context.update(marker.get_context().copy())
-                self.context['status'] = f'{location} of {section_name}'
-                logger.debug(f'{location} of {section_name}')
-                break
-            yield line
-
-    def find_start(self, source: BufferedIterator, **context):
-        # Skip lines before start
-        find_start_scan = self.scan_x('Start', source, **context)
-        skipped_lines = [row for row in find_start_scan]
-
-    def break_scan(self, source: BufferedIterator, **context):
-        return iter(self.scan_x('End', source, **section.context))
 
 #%% Reader
 class SectionReader():
@@ -980,11 +954,8 @@ class SectionReader():
         for item in section_iter:
             yield item
 
-    def __iter__(self, source, context):
-        return iter(self.scan(self, source, context))
-
-    def read(self, source, context):
-        return [item for item in self.scan(source, context)]
+    def read(self, source, **context):
+        return [item for item in self.scan(source, **context)]
 
 #%% Section
 class Section():
@@ -1006,13 +977,13 @@ class Section():
         if aggregate:
             self.aggregate = aggregate
         else:
-            self.aggregate = self.no_aggregate
+            self.aggregate = self.list_aggregate
         # check for start
         # read section while checking for end
         # Apply Section Formatting ->
     # TODO Use property methods to update context
 
-    def no_aggregate(self, section_lines: ParsedStringSource) -> List[Any]:
+    def list_aggregate(self, section_lines: ParsedStringSource) -> List[Any]:
         '''Iterate through section.
         '''
         list_output = [line for line in section_lines]
@@ -1039,18 +1010,29 @@ class Section():
         skipped_lines = [row for row in self.catch_break(scan_start)]
         return skipped_lines
 
-    def scan(self, source, **context):
+    def scan(self, source, start_search=True, **context):
         self.context.update(context)
-        buffered_source = BufferedIterator(source)
-        skipped_lines = self.find_start(buffered_source, **context)
-        self.context['Current Section'] = self.section_name
-        logger.debug(f'Starting New Section: {self.section_name}.')
+        if isinstance(source, BufferedIterator):
+            buffered_source = source
+        else:
+            buffered_source = BufferedIterator(source)
+        if start_search:
+            skipped_lines = self.find_start(buffered_source)
 
+        logger.debug(f'Starting New Section: {self.section_name}.')
+        self.context['Current Section'] = self.section_name
         section_scan = self.boundaries.scan('End', buffered_source,
-                                          section_name=self.section_name,
-                                          **self.context)
-        yield from self.catch_break(section_scan)
+                                            section_name=self.section_name,
+                                            **self.context)
+        read_iter = self.reader.scan(self.catch_break(section_scan),
+                                     **context)
+        yield from read_iter
 
     def read(self, source, **context):
-        section_aggregate = self.aggregate(self.scan(source, context))
+        self.context.update(context)
+        buffered_source = BufferedIterator(source)
+        skipped_lines = self.find_start(buffered_source)
+
+        section_aggregate = self.aggregate(self.scan(source,
+                                                     start_search=False))
         return section_aggregate

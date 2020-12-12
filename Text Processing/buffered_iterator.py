@@ -10,7 +10,7 @@ import logging_tools as lg
 T = TypeVar('T')
 
 #%% Logging
-logger = lg.config_logger(prefix='Buffered Iterator', level='DEBUG')
+logger = lg.config_logger(prefix='Buffered Iterator', level='INFO')
 
 
 #%% Exceptions
@@ -58,7 +58,6 @@ class BufferedIterator():
             except (StopIteration, RuntimeError) as eof:
                 raise BufferedIteratorEOF from eof
             logger.debug(f'Getting item: {next_item}\t from source')
-            print(f'Getting item: {next_item}\t from source')
         return next_item
 
     def __iter__(self) -> T:

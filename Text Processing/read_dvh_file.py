@@ -265,7 +265,7 @@ def main():
     test_file = base_path / test_file_path / 'PlanSum vs Original.dvh'
 
     # Call Primary routine
-    context, section_lines = tp.file_reader(test_file)
+    section_lines = tp.file_reader(test_file)
     print('done')
 
 

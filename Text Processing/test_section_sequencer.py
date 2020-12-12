@@ -209,8 +209,7 @@ class TestSectionSequencer(unittest.TestCase):
             aggregate=tp.to_dict)
         # scan_section
         source = BufferedIterator(self.test_source)
-        self.context['Source'] = source
-        test_output, context = section.read(source, self.context)
+        test_output = section.read(source, **self.context)
 
         self.assertDictEqual(test_output, self.test_result['DVH Info'])
 
@@ -237,8 +236,7 @@ class TestSectionSequencer(unittest.TestCase):
             aggregate=read_dvh_file.to_plan_info_dict)
         # scan_section
         source = BufferedIterator(self.test_source)
-        self.context['Source'] = source
-        test_output, context = section.read(source, self.context)
+        test_output = section.read(source, **self.context)
 
         self.assertDictEqual(test_output, self.test_result['Plan Info'])
 
@@ -254,7 +252,6 @@ class TestSectionSequencer(unittest.TestCase):
             output_method=tp.to_dict)
         # scan_section
         source = BufferedIterator(self.test_source['Structure'])
-        self.context['Source'] = source
         test_output = structure_info_section.scan_section(source, self.context)
 
         self.assertDictEqual(test_output, self.test_result['Structure'])
@@ -273,7 +270,6 @@ class TestSectionSequencer(unittest.TestCase):
             )
         # scan_section
         source = BufferedIterator(self.test_source['DVH'])
-        self.context['Source'] = source
         test_output = dvh_info_section.scan_section(source, self.context)
 
         self.assertDictEqual(test_output, self.test_result['DVH'])

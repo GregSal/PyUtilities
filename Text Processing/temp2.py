@@ -78,7 +78,7 @@ dvh_info_section = read_dvh_file.dvh_info_section
 source = BufferedIterator(test_source)
 context['Source'] = source
 context['Current Section'] = 'DVH Info'
-break_check = dvh_info_break.check_end(context)
+break_check = dvh_info_break.check_end(**context)
 section_scan = break_iter(source, break_check)
 test_output = dvh_info_section.scan_section(section_scan, context)
 

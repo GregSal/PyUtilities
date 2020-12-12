@@ -127,21 +127,19 @@ class TestSectionBoundaries(unittest.TestCase):
             start_section=None,
             end_section=self.dvh_info_end)
         source = BufferedIterator(self.test_text)
-        context = self.context.copy()
-        context['Source'] = source
-        start_check = dvh_info_break.check_start(context)
+        start_check = dvh_info_break.check_start(**self.context)
         try:
-            lines = [start_check(row) for row in source]
+            lines = [start_check(row, source) for row in source]
         except tp.StartSection as start_marker:
-            sentinel = start_marker.get_context()['sentinel']
+            sentinel = start_marker.get_context()['Sentinel']
             self.assertTrue(sentinel)
         else:
             self.fail()
-        end_check = dvh_info_break.check_end(context)
+        end_check = dvh_info_break.check_end(**self.context)
         try:
-            lines = [end_check(row) for row in source]
+            lines = [end_check(row, source) for row in source]
         except tp.StopSection as end_marker:
-            sentinel = end_marker.get_context()['sentinel']
+            sentinel = end_marker.get_context()['Sentinel']
             self.assertEqual(sentinel, 'Plan sum:')
         else:
             self.fail()
@@ -151,21 +149,19 @@ class TestSectionBoundaries(unittest.TestCase):
             start_section=self.dvh_info_end,
             end_section=self.plan_info_end)
         source = BufferedIterator(self.test_text)
-        context = self.context.copy()
-        context['Source'] = source
-        start_check = plan_info_break.check_start(context)
+        start_check = plan_info_break.check_start(**self.context)
         try:
-            lines = [start_check(row) for row in source]
+            lines = [start_check(row, source) for row in source]
         except tp.StartSection as start_marker:
-            sentinel = start_marker.get_context()['sentinel']
+            sentinel = start_marker.get_context()['Sentinel']
             self.assertEqual(sentinel, 'Plan sum:')
         else:
             self.fail()
-        end_check = plan_info_break.check_end(context)
+        end_check = plan_info_break.check_end(**self.context)
         try:
-            lines = [end_check(row) for row in source]
+            lines = [end_check(row, source) for row in source]
         except tp.StopSection as end_marker:
-            sentinel = end_marker.get_context()['sentinel']
+            sentinel = end_marker.get_context()['Sentinel']
             self.assertEqual(sentinel, '% for dose (%):')
         else:
             self.fail()
@@ -175,21 +171,19 @@ class TestSectionBoundaries(unittest.TestCase):
              start_section=self.structure_info_start,
              end_section=self.structure_info_end)
         source = BufferedIterator(self.test_text)
-        context = self.context.copy()
-        context['Source'] = source
-        start_check = structure_info_break.check_start(context)
+        start_check = structure_info_break.check_start(**self.context)
         try:
-            lines = [start_check(row) for row in source]
+            lines = [start_check(row, source) for row in source]
         except tp.StartSection as start_marker:
-            sentinel = start_marker.get_context()['sentinel']
+            sentinel = start_marker.get_context()['Sentinel']
             self.assertEqual(sentinel, 'Structure:')
         else:
             self.fail()
-        end_check = structure_info_break.check_end(context)
+        end_check = structure_info_break.check_end(**self.context)
         try:
-            lines = [end_check(row) for row in source]
+            lines = [end_check(row, source) for row in source]
         except tp.StopSection as end_marker:
-            sentinel = end_marker.get_context()['sentinel']
+            sentinel = end_marker.get_context()['Sentinel']
             self.assertEqual(sentinel, 'Gradient Measure')
         else:
             self.fail()
@@ -200,21 +194,19 @@ class TestSectionBoundaries(unittest.TestCase):
             start_section=self.structure_info_end,
             end_section=self.structure_info_start)
         source = BufferedIterator(self.test_text)
-        context = self.context.copy()
-        context['Source'] = source
-        start_check = dvh_data_break.check_start(context)
+        start_check = dvh_data_break.check_start(**self.context)
         try:
-            lines = [start_check(row) for row in source]
+            lines = [start_check(row, source) for row in source]
         except tp.StartSection as start_marker:
-            sentinel = start_marker.get_context()['sentinel']
+            sentinel = start_marker.get_context()['Sentinel']
             self.assertEqual(sentinel, 'Gradient Measure')
         else:
             self.fail()
-        end_check = dvh_data_break.check_end(context)
+        end_check = dvh_data_break.check_end(**self.context)
         try:
-            lines = [end_check(row) for row in source]
+            lines = [end_check(row, source) for row in source]
         except tp.StopSection as end_marker:
-            sentinel = end_marker.get_context()['sentinel']
+            sentinel = end_marker.get_context()['Sentinel']
             self.assertEqual(sentinel, 'Structure:')
         else:
             self.fail()
