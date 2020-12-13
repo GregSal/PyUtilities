@@ -1033,6 +1033,6 @@ class Section():
         buffered_source = BufferedIterator(source)
         skipped_lines = self.find_start(buffered_source)
 
-        section_aggregate = self.aggregate(self.scan(source,
+        section_aggregate = self.aggregate(self.scan(buffered_source,
                                                      start_search=False))
         return section_aggregate
