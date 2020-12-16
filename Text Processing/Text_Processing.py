@@ -1010,12 +1010,16 @@ class Section():
         skipped_lines = [row for row in self.catch_break(scan_start)]
         return skipped_lines
 
-    def scan(self, source, start_search=True, **context):
+    def Initialize_scan(self, source, context):
         self.context.update(context)
         if isinstance(source, BufferedIterator):
             buffered_source = source
         else:
             buffered_source = BufferedIterator(source)
+        return buffered_source
+
+    def scan(self, source, start_search=True, **context):
+        buffered_source = self.Initialize_scan(source, context)
         if start_search:
             skipped_lines = self.find_start(buffered_source)
 
@@ -1029,8 +1033,7 @@ class Section():
         yield from read_iter
 
     def read(self, source, **context):
-        self.context.update(context)
-        buffered_source = BufferedIterator(source)
+        buffered_source = self.Initialize_scan(source, context)
         skipped_lines = self.find_start(buffered_source)
 
         section_aggregate = self.aggregate(self.scan(buffered_source,

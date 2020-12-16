@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>f0b75ef5-e1d5-4a3e-978c-9a8dcf445620</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>temp3.py</StartupFile>
+    <StartupFile>temp.py</StartupFile>
     <SearchPath>..\Ulilities</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>

@@ -15,69 +15,6 @@ from buffered_iterator import BufferedIterator, BufferedIteratorEOF
 import logging_tools as lg
 logger = lg.config_logger(prefix='temp', level='DEBUG')
 
-#%% Scan Group
-def scan_plan_info_group(test_source, context):
-    info_section = tp.Section(
-        section_name='DVH Info',
-        boundaries=read_dvh_file.dvh_info_break,
-        reader=read_dvh_file.dvh_info_reader,
-        aggregate=tp.to_dict)
-
-    test_section = tp.Section(
-        section_name='Plan Info',
-        boundaries=read_dvh_file.plan_info_break,
-        reader=read_dvh_file.plan_info_reader,
-        aggregate=tp.to_dict)
-
-    group = tp.Section(
-        section_name='Plan Info Group',
-        boundaries=read_dvh_file.plan_group_break,
-        reader=test_section,
-        aggregate=list)
-
-    def test_group_output(used_lines):
-        output_lines = list()
-        for row in used_lines:
-            output_lines.append(row)
-            logger.debug(f'In PlanGroupOutput, adding line: {row}')
-        return output_lines
-
-    def scan(section, source: BufferedIterator, context):
-        # TODO get context as **context
-        # TODO Matching code in SectionBoundaries.  how best to consolidate?
-        #section.context = context
-        skipped_lines = section.boundaries.find_start(
-            source, section_name=section.section_name, **context)
-        section.context.update(section.boundaries.context)
-        section.context['Current Section'] = section.section_name
-
-        logger.debug(f'Starting New Section: {section.section_name}.')
-        break_scan = section.boundaries.break_scan(source, **context)
-        try:
-            while True:
-                section_reader = section.reader.scan(break_scan, **section.context)
-                yield from section_reader
-        except (BufferedIteratorEOF, StopIteration) as eof:
-            section.context = getattr(section.reader, 'context', section.context)
-            section.context['status'] = 'End of Source'
-        except (StartSection, StopSection) as marker:
-            context = getattr(section.reader, 'context', section.context)
-            context.update(marker.get_context())
-            context['status'] = f'End of {section.section_name}'
-            section.context = context.copy()
-            logger.debug(f'End of {section.section_name}')
-
-    source = BufferedIterator(test_source)
-    source_iter = iter(BufferedIterator(test_source))
-    section_scan = scan(group, test_source, context)
-    list_output = list()
-    for item in section_scan:
-        list_output.append(item)
-        pprint(item)
-    print('Aggregate')
-    pprint(list_output)
-    return list_output
-
 
 #%% main
 def main():
@@ -271,172 +208,31 @@ def main():
         'File Path': Path.cwd() / 'Text Files' / 'Test_DVH_Sections.txt',
         'Line Count': 0
         }
-    test_section = tp.Section(
-        section_name='Plan Info',
-        boundaries=read_dvh_file.plan_info_break,
-        reader=read_dvh_file.plan_info_reader,
-        aggregate=tp.to_dict)
+
     source = BufferedIterator(test_source)
-    skipped_lines = test_section.find_start(source, **context)
-    source_iter = iter(source)
-    print(source_iter.__next__())
-
-
     #%% Readers
-    #dvh_info, context = scan_dvh_info_section(test_source, context)
-    #plan_info, context = scan_plan_info_group(test_source, context)
-    #test_plan_info_break(test_source, context)
-    #test_plan_group_break(test_source, context)
-    #scan_plan_info_group(test_source, context)
+    info_section = read_dvh_file.dvh_info_section
+    dvh_info = info_section.read(source, **context)
+    print('DVH Info')
+    pprint(dvh_info)
+
+    # Plan Info
+    plan_group = tp.Section(
+        section_name='Plan Info Group',
+        boundaries=read_dvh_file.plan_group_break,
+        reader=read_dvh_file.plan_info_section,
+        aggregate=list)
+    
+    #source_iter = iter(source)
+    #print('\nNext Item:')
+    #print(source_iter.__next__())
+
+    plan_info = plan_group.read(source, **context)
+    print('Plan Info')
+    pprint(plan_info)
 
 
 if __name__ == '__main__':
     main()
 
 
-#%% Old code
-def scan_sections(source, context):
-    [row for row in info_section.break_iter(source, context, 'Start')]
-    context['Current Section'] = info_section.section_name
-    section_scan = info_section.break_iter(source, context, 'End')
-
-    info_items1 = info_section.reader.read(BufferedIterator(section_scan), context)
-    info_output1 = info_section.aggregate(info_items1)
-    print('info_output1')
-    pprint(info_output1)
-    info_items2 = info_section.reader.read(BufferedIterator(section_scan), context)
-    info_output2 = info_section.aggregate(info_items2)
-    print('info_output2')
-    pprint(info_output2)
-
-    [row for row in group.break_iter(source, context, 'Start')]
-    context['Current Section'] = group.section_name
-    section_scan = group.break_iter(source, context, 'End')
-
-    section_items1 = group.reader.read(BufferedIterator(section_scan), context)
-    print('section_items1')
-    pprint(section_items1)
-    section_items2 = group.reader.read(BufferedIterator(section_scan), context)
-    print('section_items2')
-    pprint(section_items2)
-    section_items3 = group.reader.read(BufferedIterator(section_scan), context)
-    print('section_items3')
-    pprint(section_items3)
-
-
-def scan_dvh_info_section(test_source, context):
-    dvh_info_section = read_dvh_file.dvh_info_section
-    source = BufferedIterator(test_source)
-    context['Source'] = source
-    print('Reading DVH Info Section')
-    dvh_info = dvh_info_section.read(source, **context)
-    context = dvh_info_section.context
-    for key, value in dvh_info.items():
-        print(f'{key}\t\t{value}')
-    return dvh_info, context
-
-
-def test_plan_info_break(test_source, context):
-    plan_info_break = tp.SectionBoundaries(
-        start_section=read_dvh_file.plan_info_start,
-        end_section=read_dvh_file.plan_info_end)
-    source = BufferedIterator(test_source)
-    context['Source'] = source
-    start_check = plan_info_break.check_start(**context)
-    skipped_lines = list()
-    try:
-        for row in source:
-            skipped_lines.append(start_check(row))
-    except tp.StartSection as start_marker:
-        context = start_marker.get_context()
-        pprint(context)
-    else:
-        print('Section not found')
-
-    end_check = plan_info_break.check_end(**context)
-    used_lines = list()
-    try:
-        for row in source:
-            used_lines.append(end_check(row))
-    except tp.StopSection as end_marker:
-        context = end_marker.get_context()
-        pprint(context)
-    else:
-        print('End of text')
-    pprint(used_lines)
-    return used_lines, context
-
-
-def test_plan_group_break(test_source, context):
-    def test_plan_output(used_lines):
-        output_lines = list()
-        for row in used_lines:
-            line = ''.join(row)
-            output_lines.append(line)
-            logger.debug(f'In PlanOutput, adding line: {line}')
-        return output_lines
-    def test_group_output(used_lines):
-        output_lines = list()
-        for row in used_lines:
-            output_lines.append(row)
-            logger.debug(f'In PlanGroupOutput, adding line: {row}')
-        return output_lines
-
-    test_parser = tp.define_csv_parser('Test Reader', delimiter='~')
-    test_reader = tp.SectionReader(default_parser=test_parser)
-    test_section = tp.Section(
-        section_name='Test Section',
-        boundaries=read_dvh_file.plan_info_break,
-        reader=test_reader,
-        aggregate=test_plan_output)
-
-    plan_info_group = tp.Section(
-        section_name='Plan Info Group',
-        boundaries=read_dvh_file.plan_group_break,
-        reader=test_section,
-        aggregate=test_group_output)
-
-    source = BufferedIterator(test_source)
-    context['Source'] = source
-    print('Reading Plan Info Group')
-    plan_info = plan_info_group.read(source, **context)
-    for plan in plan_info:
-        for row in plan:
-            print(row)
-    return plan_info
-
-
-def scan_section():
-    source = BufferedIterator(test_source)
-    context['Source'] = source
-    print('Reading DVH Info Section')
-    output, context = read_dvh_file.dvh_info_section.read(source, **context)
-    for key, value in output.items():
-        print(f'{key}\t\t{value}')
-
-    print('\\n\nReading Plan Info Section 1')
-    output, context = read_dvh_file.plan_info_section.read(source, **context)
-    for key, value in output.items():
-        print(f'{key}\t\t{value}')
-
-    print('\n\nReading Plan Info Section 2')
-    output, context = read_dvh_file.plan_info_section.read(source, **context)
-    for key, value in output.items():
-        print(f'{key}\t\t{value}')
-
-    print('\n\nReading Structure Section')
-    output, context = read_dvh_file.structure_info_section.read(source, **context)
-    for key, value in output.items():
-        print(f'{key}\t\t{value}')
-
-    print('Reading DVH Section')
-    output, context = read_dvh_file.dvh_data_section.read(source, **context)
-    print(output)
-
-    print('\n\nReading Structure Section')
-    output, context = read_dvh_file.structure_info_section.read(source, **context)
-    for key, value in output.items():
-        print(f'{key}\t\t{value}')
-    print('Reading DVH Section')
-    output, context = read_dvh_file.dvh_data_section.read(source, **context)
-    print(output)
