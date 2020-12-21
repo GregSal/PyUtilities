@@ -46,7 +46,7 @@ ParsedStringSource = Union[Iterator[ParsedString], Sequence[ParsedString]]
 Source = Union[StringSource, ParsedStringSource]
 
 
-#%% Logging
+#%% LoggingHot Pot
 logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
 
 
@@ -484,6 +484,7 @@ def to_dict(processed_lines: ParsedStringSource,
         '''
     dict_output = dict_type()
     for dict_line in processed_lines:
+        logger.debug(f'dict_line: {dict_line}.')
         if len(dict_line) == 0:
             continue
         if len(dict_line) == 1:
@@ -890,11 +891,12 @@ class SectionBoundaries():
                     'Break': break_trigger.name,
                     'Location': location
                     }
+                #raise BufferError('STOP')
                 raise trigger_exception(context=break_context)
         logger.debug('No Break Triggered')
         return line
 
-    def scan(self, location, source, section_name, **context):
+    def scan(self, location, source, section_name='Boundary', **context):
         for line in source:
             yield self.check(line, source, location, **context)
 
@@ -954,8 +956,8 @@ class SectionReader():
         for item in section_iter:
             yield item
 
-    def read(self, source, **context):
-        return [item for item in self.scan(source, **context)]
+    def read(self, buffered_source, **context):
+        return [item for item in self.scan(buffered_source, **context)]
 
 #%% Section
 class Section():
@@ -966,6 +968,7 @@ class Section():
                  aggregate: Callable = None):
         self.section_name = section_name
         self.context = dict()
+        self.scan_status = 'Not Started'
         if boundaries:
             self.boundaries = boundaries
         else:
@@ -991,16 +994,21 @@ class Section():
 
     def catch_break(self, gen_method):
         try:
-            break_context = {'status': 'No Break Found'}
+            break_context = {'Status': 'No Break Found'}
+            self.scan_status = 'Scan In Progress'
             yield from gen_method
+        except (RuntimeError) as err:
+            break_context['Status'] = 'RuntimeError'
+            logger.debug(f'RuntimeError Encountered: {err}')
         except (BufferedIteratorEOF, StopIteration) as eof:
-            break_context['status'] = 'End of Source'
+            break_context['Status'] = 'End of Source'
         except (StartSection, StopSection) as marker:
             break_context = marker.get_context()
             location = break_context['Location']
-            break_context['status'] = f'{location} of {self.section_name}'
+            break_context['Status'] = f'{location} of {self.section_name}'
         finally:
             self.context.update(break_context)
+            self.scan_status = 'Scan Complete'
 
     def find_start(self, buffered_source):
         # Skip lines before start
@@ -1008,18 +1016,20 @@ class Section():
                                           section_name=self.section_name,
                                           **self.context)
         skipped_lines = [row for row in self.catch_break(scan_start)]
+        self.scan_status = 'Not Started'
         return skipped_lines
 
-    def Initialize_scan(self, source, context):
-        self.context.update(context)
+    def initialize_source(self, source, context):
         if isinstance(source, BufferedIterator):
             buffered_source = source
         else:
             buffered_source = BufferedIterator(source)
         return buffered_source
 
-    def scan(self, source, start_search=True, **context):
-        buffered_source = self.Initialize_scan(source, context)
+    def initialize_scan(self, source, start_search, context):
+        self.context.update(context)
+        buffered_source = self.initialize_source(source, context)
+
         if start_search:
             skipped_lines = self.find_start(buffered_source)
 
@@ -1028,14 +1038,31 @@ class Section():
         section_scan = self.boundaries.scan('End', buffered_source,
                                             section_name=self.section_name,
                                             **self.context)
-        read_iter = self.reader.scan(self.catch_break(section_scan),
-                                     **context)
-        yield from read_iter
+        return section_scan
 
-    def read(self, source, **context):
-        buffered_source = self.Initialize_scan(source, context)
-        skipped_lines = self.find_start(buffered_source)
+    def scan(self, source, start_search=True, **context):
+        section_scan = self.initialize_scan(source, start_search, context)
+        self.scan_status = 'Scan Starting'
+        while 'Complete' not in self.scan_status:
+            scan_iter = self.reader.scan(self.catch_break(section_scan),
+                                         **self.context)
+            yield from scan_iter
 
-        section_aggregate = self.aggregate(self.scan(buffered_source,
-                                                     start_search=False))
+    def read_gen(self, source, start_search=True, **context):
+        section_scan = self.initialize_scan(source, start_search, context)
+        self.scan_status = 'Scan Starting'
+        # FIXME sort out scanning vs reading
+        while 'Complete' not in self.scan_status:
+            logger.debug(f'Scan Status: {self.scan_status}.')
+            yield from self.reader.scan(self.catch_break(section_scan),
+                                    **self.context)
+
+        logger.debug('Section Read completed')
+
+
+    def read(self, source, start_search=True, **context):
+        read_iter = self.scan(source, start_search=True, **context)
+        #read_iter = iter(self.read_gen(source, start_search=True, **context))
+        #section_items = [item for item in read_iter]
+        section_aggregate = self.aggregate(read_iter)
         return section_aggregate

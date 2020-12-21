@@ -1,86 +1,191 @@
-import unittest
+#%% Imports
 from pathlib import Path
-import re
+from itertools import chain
+from typing import List
 from file_utilities import clean_ascii_text
 import Text_Processing as tp
-from typing import List
-from buffered_iterator import BufferedIterator
 import read_dvh_file
 from pprint import pprint
 import pandas as pd
 from buffered_iterator import BufferedIterator, BufferedIteratorEOF
 
+
+#%% Logging
+import logging_tools as lg
+logger = lg.config_logger(prefix='temp', level='DEBUG')
+
+# TODO Convert temp2 into unit tests
+#%% Test Text
 test_source = [
-    'Patient Name         : _y__, ____',
-    'Patient ID           : 1234567',
-    'Comment              : DVHs for multiple plans and plan sums',
-    'Date                 : Friday, January 17, 2020 09:45:07',
-    'Exported by          : gsal',
-    'Type                 : Cumulative Dose Volume Histogram',
-    ('Description          : The cumulative DVH displays the '
-    'percentage (relative)'),
-    ('                       or volume (absolute) of structures '
-    'that receive a dose'),
-    '                      equal to or greater than a given dose.',
-    '',
-    'Plan sum: Plan Sum',
-    'Course: PLAN SUM',
-    'Prescribed dose [cGy]: not defined',
-    '% for dose (%): not defined',
-    ''
-    'Plan: PARR',
-    'Course: C1',
-    'Plan Status: Treatment Approved Thursday, January 02, '
-    '2020 12:55:56 by gsal',
-    'Prescribed dose [cGy]: 5000.0',
-    '% for dose (%): 100.0',
-    ''
-    'Structure: PRV5 SpinalCanal',
-    'Approval Status: Approved',
-    'Plan: Plan Sum',
-    'Course: PLAN SUM',
-    'Volume [cm³]: 121.5',
-    'Dose Cover.[%]: 100.0',
-    'Sampling Cover.[%]: 100.1',
-    'Min Dose [cGy]: 36.7',
-    'Max Dose [cGy]: 3670.1',
-    'Mean Dose [cGy]: 891.9',
-    'Modal Dose [cGy]: 44.5',
-    'Median Dose [cGy]: 863.2',
-    'STD [cGy]: 621.9',
-    'NDR: ',
-    'Equiv. Sphere Diam. [cm]: 6.1',
-    'Conformity Index: N/A',
-    'Gradient Measure [cm]: N/A',
-    '']
-def break_iter(source, break_check):
-    source_iter = iter(source)
-    while True:
-        try:
-            row = source_iter.__next__()
-            test_output = break_check(row)
-        except (tp.StartSection, tp.StopSection) as marker:
-            context = marker.get_context()
-            break
-        except (BufferedIteratorEOF, StopIteration) as eof:
-            ##
-            # FIXME get context
-            ##
-            #context['sentinel'] = 'End of Source'
-            break
-        yield row
+    'Single Section',
+    'Section Name:A',
+    'A Content1:a',
+    'A Content2:b',
+    'A Content3:c',
+    'End Section',
+
+    'Multi Section',
+    'Single Section',
+    'Section Name:B',
+    'B Content1:a',
+    'B Content2:b',
+    'B Content3:c',
+    'End Section',
+
+    'Single Section',
+    'Section Name:C',
+    'C Content1:d',
+    'C Content2:e',
+    'C Content3:f',
+    'End Section',
+
+    'Single Section',
+    'Section Name:D',
+    'D Content1:g',
+    'D Content2:h',
+    'D Content3:i',
+    'End Section',
+
+    'Done Multi Section',
+
+    'Single Section',
+    'Section Name:E',
+    'E Content1:1',
+    'E Content2:2',
+    'E Content3:3'
+    'End Section',
+    ]
 
 
+test_result = [
+    {
+        'A':{
+            'Section Name':'A',
+            'A Content1':'a',
+            'A Content2':'b',
+            'A Content3':'c'
+            }
+        },
+    {
+        'B':{
+            'Section Name':'B',
+            'B Content1':'a',
+            'B Content2':'b',
+            'B Content3':'c'
+            },
+        'C':{
+            'Section Name':'C',
+            'C Content1':'d',
+            'C Content2':'e',
+            'C Content3':'f'
+            },
+        'D':{
+            'Section Name':'D',
+            'D Content1':'g',
+            'D Content2':'h',
+            'D Content3':'i'
+            }
+        },
+    {
+        'E':{
+            'Section Name':'E',
+            'E Content1':'1',
+            'E Content2':'2',
+            'E Content3':'3'
+            }
+        }
+    ]
+#%% Context
 context = {}
-dvh_info_break = read_dvh_file.dvh_info_break
-dvh_info_section = read_dvh_file.dvh_info_section
-# scan_section
-source = BufferedIterator(test_source)
-context['Source'] = source
-context['Current Section'] = 'DVH Info'
-break_check = dvh_info_break.check_end(**context)
-section_scan = break_iter(source, break_check)
-test_output = dvh_info_section.scan_section(section_scan, context)
 
-for key, value in test_output.items():
-    print(f'{key}\t\t{value}\n')
+
+#%% Line Processing
+def combine_sections(section_dict_list):
+    '''Combine section dictionaries into dictionary of dictionaries.
+    '''
+    output_dict = dict()
+    for section_dict in section_dict_list:
+        section_name = section_dict.get['Section Name']
+        output_dict[section_name] = section_dict
+    return output_dict
+
+
+#%% Reader definitions
+default_parser = tp.define_csv_parser('test_parser', delimiter=':',
+                                      skipinitialspace=True)
+test_section_reader = tp.SectionReader(default_parser=default_parser)
+
+#%% SectionBreak definitions
+section_start = tp.SectionBreak(name='Single Section',
+                                trigger=tp.Trigger('Section Name'))
+
+section_end = tp.SectionBreak(name='Single Section',
+                              trigger=tp.Trigger('End Section'))
+
+multi_section_start = tp.SectionBreak(name='Multi Section',
+                                      trigger=tp.Trigger('Multi Section'),
+                                      offset='After')
+
+multi_section_end = tp.SectionBreak(name='End Multi Section',
+                                    trigger=tp.Trigger('Done Multi Section'),
+                                    offset='Before')
+
+section_break = tp.SectionBoundaries(
+    start_section=section_start,
+    end_section=section_end)
+
+multi_section_break = tp.SectionBoundaries(
+    start_section=multi_section_start,
+    end_section=multi_section_end)
+
+#%% Section definitions
+test_section = tp.Section(
+    section_name='Test Section',
+    boundaries=section_break,
+    reader=test_section_reader,
+    aggregate=tp.to_dict)
+
+test_multi_section = tp.Section(
+    section_name='Test Multi Section',
+    boundaries=multi_section_break,
+    reader=test_section,
+    aggregate=tp.to_dict)
+
+#%% main
+def main():
+    section_list = list()
+
+    source = BufferedIterator(test_source)
+
+    section_dict = test_section.read(source, **context)
+    #print('Section A')
+    #pprint(section_dict)
+
+    section_scan = multi_section_break.scan('End', source, **context)
+
+    section_dict = test_section.read(section_scan, **context)
+    #print('Section B')
+    #pprint(section_dict)
+
+    section_dict = test_section.read(section_scan, **context)
+    #print('Section C')
+    #pprint(section_dict)
+
+    section_dict = test_section.read(section_scan, **context)
+    #print('Section D')
+    #pprint(section_dict)
+
+    section_dict = test_section.read(section_scan, **context)
+    #print('Section E')
+    #pprint(section_dict)
+
+
+    #section_dict2 = test_multi_section.read(source, **context)
+    #print('Multi Section')
+    #pprint(section_dict2)
+
+
+if __name__ == '__main__':
+    main()
+
+

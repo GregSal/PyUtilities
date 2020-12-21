@@ -215,22 +215,37 @@ def main():
     dvh_info = info_section.read(source, **context)
     print('DVH Info')
     pprint(dvh_info)
-
+    # TODO Check on Merged rows
     # Plan Info
     plan_group = tp.Section(
         section_name='Plan Info Group',
         boundaries=read_dvh_file.plan_group_break,
-        reader=read_dvh_file.plan_info_section,
-        aggregate=list)
-    
-    #source_iter = iter(source)
-    #print('\nNext Item:')
-    #print(source_iter.__next__())
+        reader=read_dvh_file.plan_info_section)
 
     plan_info = plan_group.read(source, **context)
     print('Plan Info')
     pprint(plan_info)
 
+    section_scan = plan_group.initialize_scan(source, True, context)
+    plan_info = list()
+    scanner = plan_group.catch_break(section_scan)
+    item = plan_group.reader.scan(scanner)
+
+    source_iter = iter(section_scan)
+    print('\nNext Item:')
+    print(source_iter.__next__())
+
+    pprint(plan_info)
+
+    item = plan_group.reader.read(plan_group.catch_break(section_scan),
+                                  **context)
+    #plan_info = plan_group.read(source, **context)
+    #print('Plan Info')
+    #pprint(plan_info)
+
+    #source_iter = iter(source)
+    #print('\nNext Item:')
+    #print(source_iter.__next__())
 
 if __name__ == '__main__':
     main()
