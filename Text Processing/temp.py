@@ -226,10 +226,10 @@ def main():
     print('Plan Info')
     pprint(plan_info)
 
-    section_scan = plan_group.initialize_scan(source, True, context)
+    section_scan = plan_group.initialize_scan(source, **context)
     plan_info = list()
     scanner = plan_group.catch_break(section_scan)
-    item = plan_group.reader.scan(scanner)
+    item = plan_group.reader.read(scanner)
 
     source_iter = iter(section_scan)
     print('\nNext Item:')

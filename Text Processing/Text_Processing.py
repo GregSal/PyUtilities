@@ -46,8 +46,8 @@ ParsedStringSource = Union[Iterator[ParsedString], Sequence[ParsedString]]
 Source = Union[StringSource, ParsedStringSource]
 
 
-#%% LoggingHot Pot
-logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
+#%% Logging
+logger = lg.config_logger(prefix='Text Processing', level='INFO')
 
 
 #%% Exceptions
@@ -899,6 +899,12 @@ class SectionBoundaries():
     def scan(self, location, source, section_name='Boundary', **context):
         for line in source:
             yield self.check(line, source, location, **context)
+        break_context = {
+            'Sentinel': 'End of Source',
+            'Break': 'EOF',
+            'Location': location
+            }
+        raise IteratorEOF(context=break_context)
 
     def check_start(self, **context):
         # TODO Is check_start Necessary?
@@ -957,10 +963,21 @@ class SectionReader():
             yield item
 
     def read(self, buffered_source, **context):
+        # FIXME What should SectionReader.read  do?
+        # Currently it iterates through the entire source.
+        # SectionReader.scan iterates through source until the next Reader
+        # item is generated.
+        # Note: Changing it's behavior will may break some unit tests
+        # Note: csv.reader - returns a generator
+        # Should SectionReader be a generator function?
         return [item for item in self.scan(buffered_source, **context)]
 
 #%% Section
 class Section():
+        # check for start
+        # read section while checking for end
+        # Apply Section Formatting ->
+        # TODO Use property methods to update context
     def __init__(self,
                  section_name = 'Section',
                  boundaries: SectionBoundaries = None,
@@ -981,10 +998,6 @@ class Section():
             self.aggregate = aggregate
         else:
             self.aggregate = self.list_aggregate
-        # check for start
-        # read section while checking for end
-        # Apply Section Formatting ->
-    # TODO Use property methods to update context
 
     def list_aggregate(self, section_lines: ParsedStringSource) -> List[Any]:
         '''Iterate through section.
@@ -995,20 +1008,23 @@ class Section():
     def catch_break(self, gen_method):
         try:
             break_context = {'Status': 'No Break Found'}
-            self.scan_status = 'Scan In Progress'
+            status = 'Scan In Progress'
             yield from gen_method
         except (RuntimeError) as err:
             break_context['Status'] = 'RuntimeError'
             logger.debug(f'RuntimeError Encountered: {err}')
-        except (BufferedIteratorEOF, StopIteration) as eof:
+            status = 'Scan Complete'
+        except (BufferedIteratorEOF, IteratorEOF, StopIteration) as eof:
             break_context['Status'] = 'End of Source'
+            status = 'Scan Complete'
         except (StartSection, StopSection) as marker:
             break_context = marker.get_context()
             location = break_context['Location']
             break_context['Status'] = f'{location} of {self.section_name}'
+            status = 'Scan Complete'
         finally:
             self.context.update(break_context)
-            self.scan_status = 'Scan Complete'
+            self.scan_status = status
 
     def find_start(self, buffered_source):
         # Skip lines before start
@@ -1026,7 +1042,7 @@ class Section():
             buffered_source = BufferedIterator(source)
         return buffered_source
 
-    def initialize_scan(self, source, start_search, context):
+    def initialize_scan(self, source, start_search=True, **context):
         self.context.update(context)
         buffered_source = self.initialize_source(source, context)
 
@@ -1041,28 +1057,39 @@ class Section():
         return section_scan
 
     def scan(self, source, start_search=True, **context):
-        section_scan = self.initialize_scan(source, start_search, context)
+        section_scan = self.initialize_scan(source, start_search, **context)
         self.scan_status = 'Scan Starting'
         while 'Complete' not in self.scan_status:
-            scan_iter = self.reader.scan(self.catch_break(section_scan),
+            scan_iter = self.reader.read(self.catch_break(section_scan),
                                          **self.context)
-            yield from scan_iter
+            yield scan_iter
+        print(f'Done scanning {self.section_name}')
 
-    def read_gen(self, source, start_search=True, **context):
-        section_scan = self.initialize_scan(source, start_search, context)
-        self.scan_status = 'Scan Starting'
-        # FIXME sort out scanning vs reading
-        while 'Complete' not in self.scan_status:
-            logger.debug(f'Scan Status: {self.scan_status}.')
-            yield from self.reader.scan(self.catch_break(section_scan),
-                                    **self.context)
+    #def read_gen(self, source, start_search=True, **context):
+    #    section_scan = self.initialize_scan(source, start_search, context)
+    #    self.scan_status = 'Scan Starting'
+    #    # FIXME sort out scanning vs reading
+    #    while 'Complete' not in self.scan_status:
+    #        logger.debug(f'Scan Status: {self.scan_status}.')
+    #        yield from self.reader.scan(self.catch_break(section_scan),
+    #                                **self.context)
 
-        logger.debug('Section Read completed')
+    #    logger.debug('Section Read completed')
 
 
     def read(self, source, start_search=True, **context):
-        read_iter = self.scan(source, start_search=True, **context)
+        section_scan = self.initialize_scan(source, start_search, **context)
+        self.scan_status = 'Scan Starting'
+        sections_output = list()
+        while 'Complete' not in self.scan_status:
+            section_items = self.reader.read(self.catch_break(section_scan),
+                                             **self.context)
+            section_aggregate = self.aggregate(section_items)
+
+            sections_output.append(section_aggregate)
+        #read_iter = self.scan(source, start_search=True, **context)
         #read_iter = iter(self.read_gen(source, start_search=True, **context))
-        #section_items = [item for item in read_iter]
-        section_aggregate = self.aggregate(read_iter)
-        return section_aggregate
+        #section_items = [item for item in self.scan(source, **context)]
+        #section_aggregate = self.aggregate(section_items)
+        return sections_output
+
