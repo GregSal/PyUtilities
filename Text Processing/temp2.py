@@ -183,14 +183,20 @@ def main():
 
     source = BufferedIterator(test_source)
 
-    #section_scan = test_section.initialize_scan(source, **context)
-    #section_iter = test_section.catch_break(section_scan)
-    #read_iter = test_section.reader.read(section_iter, **context)
-    #print('Section A')
-
     section_dict = test_section.read(source, start_search=True, **context)
     print('Section A')
     pprint(section_dict)
+
+    #section_scan = test_multi_section.initialize_scan(source, **context)
+    #test_multi_section.scan_status = 'Scan Starting'
+    #section_items = test_multi_section.reader.read(
+    #    test_multi_section.catch_break(section_scan),
+    #    **test_multi_section.context)
+    #section_aggregate = test_multi_section.aggregate(section_items)
+
+    #section_iter = test_section.catch_break(section_scan)
+    #read_iter = test_section.reader.read(section_iter, **context)
+    #print('Section A')
 
     #section_scan = test_multi_section.initialize_scan(source, **context)
 
@@ -221,6 +227,7 @@ def main():
     print('Multi Section')
     pprint(section_dict2)
 
+    # FIXME SectionReader.read is a generator function Section.read is a regular function
 
 if __name__ == '__main__':
     main()
