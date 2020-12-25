@@ -1045,7 +1045,8 @@ class Section():
         section_scan = self.boundaries.scan('End', buffered_source,
                                             section_name=self.section_name,
                                             **self.context)
-        return section_scan
+        section_iter = self.catch_break(section_scan)
+        return section_iter
 
     def scan(self, source, start_search=True, **context):
         section_scan = self.initialize_scan(source, start_search, **context)
@@ -1056,21 +1057,19 @@ class Section():
             yield scan_iter
         print(f'Done scanning {self.section_name}')
 
-    def read_gen(self, section_scan):
+    def read_gen(self, section_iter):
         while 'Complete' not in self.scan_status:
-            section_item = self.reader.read(self.catch_break(section_scan),
-                                            **self.context)
+            section_item = self.reader.read(section_iter, **self.context)
             yield section_item
 
     def read(self, source, start_search=True, **context):
-        section_scan = self.initialize_scan(source, start_search, **context)
+        section_iter = self.initialize_scan(source, start_search, **context)
         self.scan_status = 'Scan Starting'
 
         if isgeneratorfunction(self.reader.read):
-            section_items = self.reader.read(self.catch_break(section_scan),
-                                             **self.context)
+            section_items = self.reader.read(section_iter, **self.context)
         else:
-            section_items = self.read_gen(section_scan)
+            section_items = self.read_gen(section_iter)
 
         section_aggregate = self.aggregate(section_items)
         return section_aggregate
