@@ -141,18 +141,26 @@ def make_default_csv_parser() -> Callable:
 
 
 #%% Line Processing
+def combine_sections(section_dict_list):
+    '''Combine section dictionaries into dictionary of dictionaries.
+    '''
+    output_dict = dict()
+    for section_dict in section_dict_list:
+        section_name = section_dict.get('Section Name')
+        output_dict[section_name] = section_dict
+    return output_dict
+
 def to_plan_info_dict(plan_info_dict_list):
     '''Combine Plan Info dictionaries into dictionary of dictionaries.
     '''
     output_dict = dict()
     for plan_info_dict in plan_info_dict_list:
-        plan_name = plan_info_dict.get['Plan']
+        plan_name = plan_info_dict.get('Plan')
         if not plan_name:
-            plan_name = plan_info_dict.get['Plan sum']
-            plan_info_dict['Plan'] = plan_name
+            plan_name = plan_info_dict.get('Plan sum')
             if not plan_name:
                 plan_name = 'Plan'
-                plan_info_dict['Plan'] = plan_name
+        plan_info_dict['Plan'] = plan_name
         output_dict[plan_name] = plan_info_dict
     return output_dict
 
@@ -184,7 +192,8 @@ structure_info_reader = tp.SectionReader(
 dvh_data_reader = tp.SectionReader(
     preprocessing_methods=[clean_ascii_text],
     default_parser=tp.define_fixed_width_parser(widths=10),
-    post_processing_methods=[tp.trim_items, tp.drop_blanks]
+    post_processing_methods=[tp.trim_items, tp.drop_blanks,
+                             tp.convert_numbers]
     )
 
 #%% SectionBreak definitions
@@ -213,7 +222,7 @@ dvh_info_break = tp.SectionBoundaries(
     start_section=None,
     end_section=plan_info_start)
 plan_info_break = tp.SectionBoundaries(
-    start_section=plan_info_start,
+    start_section=None,
     end_section=plan_info_end)
 plan_group_break = tp.SectionBoundaries(
     start_section=plan_info_start,

@@ -227,8 +227,7 @@ def main():
     print('Multi Section')
     pprint(section_dict2)
 
-    # FIXME SectionReader.read is a generator function Section.read is a regular function
-
+    
 if __name__ == '__main__':
     main()
 

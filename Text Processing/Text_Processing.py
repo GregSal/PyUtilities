@@ -506,7 +506,7 @@ def to_dataframe(processed_lines: ParsedStringSource,
     '''
     all_lines = [line for line in processed_lines]
     header_index = int(header)  # int(True) = 1
-    # FIXME Multi Line headers don't work
+    # TODO add ability to handle Multi Line headers
     header_lines = all_lines[:header_index][0]
     data = all_lines[header_index:]
     dataframe = pd.DataFrame(data, columns=header_lines)
@@ -977,6 +977,7 @@ class Section():
         self.section_name = section_name
         self.context = dict()
         self.scan_status = 'Not Started'
+        self.source = None
         if boundaries:
             self.boundaries = boundaries
         else:
@@ -996,11 +997,12 @@ class Section():
         list_output = [line for line in section_lines]
         return list_output
 
-    def catch_break(self, gen_method):
+    def catch_break(self, buffered_source):
         try:
             break_context = {'Status': 'No Break Found'}
             status = 'Scan In Progress'
-            yield from gen_method
+            for item in buffered_source:
+                yield item
         except (RuntimeError) as err:
             break_context['Status'] = 'RuntimeError'
             logger.debug(f'RuntimeError Encountered: {err}')
@@ -1031,21 +1033,21 @@ class Section():
             buffered_source = source
         else:
             buffered_source = BufferedIterator(source)
-        return buffered_source
+        self.source = buffered_source
 
-    def initialize_scan(self, source, start_search=True, **context):
+    def initialize_scan(self, source, start_search=True,
+                        **context)->BufferedIterator:
         self.context.update(context)
-        buffered_source = self.initialize_source(source, context)
-
+        self.initialize_source(source, context)
         if start_search:
-            skipped_lines = self.find_start(buffered_source)
+            skipped_lines = self.find_start(self.source)
 
         logger.debug(f'Starting New Section: {self.section_name}.')
         self.context['Current Section'] = self.section_name
-        section_scan = self.boundaries.scan('End', buffered_source,
+        section_scan = self.boundaries.scan('End', self.source,
                                             section_name=self.section_name,
                                             **self.context)
-        section_iter = self.catch_break(section_scan)
+        section_iter = BufferedIterator(self.catch_break(section_scan))
         return section_iter
 
     def scan(self, source, start_search=True, **context):

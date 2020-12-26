@@ -3,6 +3,7 @@
 # pylint: disable=anomalous-backslash-in-string
 # pylint: disable=logging-fstring-interpolation
 #%% Imports
+from __future__ import annotations
 from collections import deque
 from typing import Sequence, TypeVar
 import logging_tools as lg
@@ -72,7 +73,6 @@ class BufferedIterator():
             else:
                 self.previous_items.append(next_line)
                 yield next_line
-
 
     @property
     def step_back(self) -> int:
@@ -151,7 +151,6 @@ class BufferedIterator():
             raise BufferedIteratorValueError(msg)
         return self.previous_items[-steps]
 
-
     def look_ahead(self, steps: int = 1)->T:
         '''Return the sequence value the given number of steps Ahead.
         '''
@@ -166,3 +165,11 @@ class BufferedIterator():
             self.advance(read_ahead)
             self.backup(read_ahead)
         return self.future_items[steps-1]
+
+    def update(self, other: BufferedIterator, include_items=True):
+        '''Copy buffer items from another instance.
+        '''
+        self._step_back = other._step_back
+        if include_items:
+            self.previous_items = other.previous_items.copy()
+            self.future_items = other.future_items.copy()

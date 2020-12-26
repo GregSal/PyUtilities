@@ -116,6 +116,7 @@ class TestSectionSequencer(unittest.TestCase):
                     },
             'Plan Info': {
                 'Plan Sum': {'Plan sum': 'Plan Sum',
+                             'Plan': 'Plan Sum',
                              'Course': 'PLAN SUM',
                              'Prescribed dose': '',
                              'Prescribed dose unit': '',
@@ -213,15 +214,15 @@ class TestSectionSequencer(unittest.TestCase):
 
         self.assertDictEqual(test_output, self.test_result['DVH Info'])
 
-    @unittest.skip('Not Working')
+
     def test_plan_info_group(self):
         plan_info_break = tp.SectionBoundaries(
             start_section=None,
-            end_section=plan_info_end)
+            end_section=read_dvh_file.plan_info_end)
 
         plan_group_break = tp.SectionBoundaries(
-            start_section=plan_info_start,
-            end_section=structure_info_start)
+            start_section=read_dvh_file.plan_info_start,
+            end_section=read_dvh_file.structure_info_start)
 
         plan_info_section = tp.Section(
             section_name='Plan Info',
@@ -237,41 +238,20 @@ class TestSectionSequencer(unittest.TestCase):
         # scan_section
         source = BufferedIterator(self.test_source)
         test_output = section.read(source, **self.context)
-
+        self.maxDiff=None
         self.assertDictEqual(test_output, self.test_result['Plan Info'])
 
-    @unittest.skip('Not Working')
     def test_structure_section(self):
-        structure_info_section = tp.SectionReader(
-            section_name='Structure',
-            preprocessing_methods=[clean_ascii_text],
-            parsing_rules=[],
-            default_parser=self.default_parser,
-            post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                                     tp.convert_numbers],
-            output_method=tp.to_dict)
-        # scan_section
-        source = BufferedIterator(self.test_source['Structure'])
-        test_output = structure_info_section.scan_section(source, self.context)
-
-        self.assertDictEqual(test_output, self.test_result['Structure'])
+        section = read_dvh_file.structure_info_section
+        source = BufferedIterator(self.test_source)
+        test_output = section.read(source, **self.context)
+        self.assertDictEqual(test_output, self.test_result['Structures'])
 
 
-    @unittest.skip('Not Working')
     def test_dvh_section(self):
-        dvh_info_section = tp.SectionReader(
-            section_name='DVH',
-            preprocessing_methods=[clean_ascii_text],
-            parsing_rules=[],
-            default_parser=tp.define_fixed_width_parser(widths=10),
-            post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                                     tp.convert_numbers],
-            output_method=tp.to_dataframe
-            )
-        # scan_section
-        source = BufferedIterator(self.test_source['DVH'])
-        test_output = dvh_info_section.scan_section(source, self.context)
-
+        section = read_dvh_file.dvh_data_section
+        source = BufferedIterator(self.test_source)
+        test_output = section.read(source, **self.context)
         self.assertDictEqual(test_output, self.test_result['DVH'])
 
 
