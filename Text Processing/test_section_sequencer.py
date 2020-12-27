@@ -1,5 +1,6 @@
 import unittest
 from pathlib import Path
+from functools import partial
 import re
 from file_utilities import clean_ascii_text
 import Text_Processing as tp
@@ -242,12 +243,20 @@ class TestSectionSequencer(unittest.TestCase):
         self.assertDictEqual(test_output, self.test_result['Plan Info'])
 
     def test_structure_section(self):
-        section = read_dvh_file.structure_info_section
+        section = tp.Section(
+            section_name='Structure Group',
+            boundaries=read_dvh_file.structure_group_break,
+            reader=read_dvh_file.structure_info_section,
+            aggregate=partial(tp.to_dataframe, header=False)
+            )
+
         source = BufferedIterator(self.test_source)
         test_output = section.read(source, **self.context)
-        self.assertDictEqual(test_output, self.test_result['Structures'])
+        self.assertDictEqual(test_output.to_dict(),
+                             self.test_result['Structures'].to_dict())
 
 
+    @unittest.skip("Not Implemented")
     def test_dvh_section(self):
         section = read_dvh_file.dvh_data_section
         source = BufferedIterator(self.test_source)

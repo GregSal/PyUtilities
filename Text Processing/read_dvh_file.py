@@ -141,15 +141,6 @@ def make_default_csv_parser() -> Callable:
 
 
 #%% Line Processing
-def combine_sections(section_dict_list):
-    '''Combine section dictionaries into dictionary of dictionaries.
-    '''
-    output_dict = dict()
-    for section_dict in section_dict_list:
-        section_name = section_dict.get('Section Name')
-        output_dict[section_name] = section_dict
-    return output_dict
-
 def to_plan_info_dict(plan_info_dict_list):
     '''Combine Plan Info dictionaries into dictionary of dictionaries.
     '''
@@ -220,41 +211,60 @@ structure_info_end = tp.SectionBreak(
 
 dvh_info_break = tp.SectionBoundaries(
     start_section=None,
-    end_section=plan_info_start)
+    end_section=plan_info_start
+    )
 plan_info_break = tp.SectionBoundaries(
     start_section=None,
-    end_section=plan_info_end)
+    end_section=plan_info_end
+    )
 plan_group_break = tp.SectionBoundaries(
     start_section=plan_info_start,
-    end_section=structure_info_start)
+    end_section=structure_info_start
+    )
 structure_info_break = tp.SectionBoundaries(
     start_section=structure_info_start,
-    end_section=structure_info_end)
+    end_section=structure_info_end
+    )
+structure_group_break = tp.SectionBoundaries(
+    start_section=structure_info_start,
+    end_section=None
+    )
 dvh_data_break = tp.SectionBoundaries(
     start_section=None,
-    end_section=structure_info_start)
+    end_section=structure_info_start
+    )
 
 #%% Section definitions
 dvh_info_section = tp.Section(
     section_name='DVH Info',
     boundaries=dvh_info_break,
     reader=dvh_info_reader,
-    aggregate=tp.to_dict)
+    aggregate=tp.to_dict
+    )
 plan_info_section = tp.Section(
     section_name='Plan Info',
     boundaries=plan_info_break,
     reader=plan_info_reader,
-    aggregate=tp.to_dict)
+    aggregate=tp.to_dict
+    )
+plan_info_group = tp.Section(
+    section_name='Plan Info Group',
+    boundaries=plan_group_break,
+    reader=plan_info_section,
+    aggregate=to_plan_info_dict
+    )
 structure_info_section = tp.Section(
     section_name='Structure',
     boundaries=structure_info_break,
     reader=structure_info_reader,
-    aggregate=tp.to_dict)
+    aggregate=tp.to_dict
+    )
 dvh_data_section = tp.Section(
     section_name='DVH',
     boundaries=dvh_data_break,
     reader=dvh_data_reader,
-    aggregate=tp.to_dataframe)
+    aggregate=tp.to_dataframe
+    )
 
 
 def date_processing():

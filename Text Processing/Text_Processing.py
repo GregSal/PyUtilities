@@ -473,7 +473,7 @@ def drop_blanks(lines: Source) -> Source:
 # These functions take a sequence of lists and return a the desired output
 #    format.
 def to_dict(processed_lines: ParsedStringSource,
-            default_value: Any = None,
+            default_value: Any = '',
             multi_value: Callable = None,
             dict_type: type = dict) -> Dict[str, Any]:
     '''Build a dictionary from a sequence of length 2 lists.
@@ -487,8 +487,11 @@ def to_dict(processed_lines: ParsedStringSource,
         logger.debug(f'dict_line: {dict_line}.')
         if len(dict_line) == 0:
             continue
-        if len(dict_line) == 1:
-            dict_item = {dict_line[0]: default_value}
+        elif len(dict_line) == 1:
+            if default_value is None:
+                continue
+            else:
+                dict_item = {dict_line[0]: default_value}
         elif len(dict_line) == 2:
             dict_item = {dict_line[0]: dict_line[1]}
         elif multi_value:
@@ -504,13 +507,17 @@ def to_dataframe(processed_lines: ParsedStringSource,
         header: Bool or int if true or positive int, n, use the first 1 or n
             lines as column names.
     '''
-    all_lines = [line for line in processed_lines]
-    header_index = int(header)  # int(True) = 1
-    # TODO add ability to handle Multi Line headers
-    header_lines = all_lines[:header_index][0]
-    data = all_lines[header_index:]
-    dataframe = pd.DataFrame(data, columns=header_lines)
+    all_lines = [line for line in processed_lines if len(line) > 0]
+    if header:
+        header_index = int(header)  # int(True) = 1
+        # TODO add ability to handle Multi Line headers
+        header_lines = all_lines[:header_index][0]
+        data = all_lines[header_index:]
+        dataframe = pd.DataFrame(data, columns=header_lines)
+    else:
+        dataframe = pd.DataFrame(all_lines)
     return dataframe
+
 
 #%% Parsed Line processors
 # These functions take a list of strings and return a processed list of strings.
@@ -864,10 +871,11 @@ class SectionBoundaries():
             self.start_section = [start_section]
         else:
             self.start_section = start_section
+
         if not end_section:
             self.end_section = [SectionBreak(Trigger(False),
                                             name='NeverBreak')]
-        if isinstance(end_section, SectionBreak):
+        elif isinstance(end_section, SectionBreak):
             self.end_section = [end_section]
         else:
             self.end_section = end_section

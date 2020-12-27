@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>f0b75ef5-e1d5-4a3e-978c-9a8dcf445620</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>temp2.py</StartupFile>
+    <StartupFile>temp3.py</StartupFile>
     <SearchPath>..\Ulilities</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -32,7 +32,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="temp.py" />
-    <Compile Include="temp2.py">
+    <Compile Include="test_multi_read.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="temp3.py" />
