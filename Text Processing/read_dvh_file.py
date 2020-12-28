@@ -208,6 +208,11 @@ structure_info_end = tp.SectionBreak(
     trigger=tp.Trigger(['Gradient Measure']),
     offset='After'
     )
+dvh_data_start = tp.SectionBreak(
+    name='Start of DVH Data',
+    trigger=tp.Trigger(['Ratio of Total Structure Volume']),
+    offset='Before'
+    )
 
 dvh_info_break = tp.SectionBoundaries(
     start_section=None,
@@ -230,7 +235,7 @@ structure_group_break = tp.SectionBoundaries(
     end_section=None
     )
 dvh_data_break = tp.SectionBoundaries(
-    start_section=None,
+    start_section=dvh_data_start,
     end_section=structure_info_start
     )
 

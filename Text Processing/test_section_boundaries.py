@@ -1,5 +1,6 @@
 import unittest
 from pathlib import Path
+from functools import partial
 import re
 from file_utilities import clean_ascii_text
 import Text_Processing as tp
@@ -10,7 +11,7 @@ from pprint import pprint
 import pandas as pd
 
 
-##%% Test SectionBoundaries
+#%% Test SectionBoundaries
 class TestSectionBoundaries(unittest.TestCase):
     def setUp(self):
         self.context = {}
@@ -212,6 +213,210 @@ class TestSectionBoundaries(unittest.TestCase):
             self.fail()
 
 
+#%% Test Boundary offsets
+class TestBoundaryOffsets(unittest.TestCase):
+    def setUp(self):
+        self.maxDiff = None
+        # Reader definitions
+        default_parser = tp.define_csv_parser(
+            'test_parser',
+            delimiter=':',
+            skipinitialspace=True
+            )
 
+        self.test_section_multi_line_reader = tp.SectionReader(
+            default_parser=default_parser,
+            post_processing_methods=[tp.trim_items,
+                                     tp.drop_blanks,
+                                     tp.merge_continued_rows
+                                     ]
+            )
+        self.test_section_line_reader = tp.SectionReader(
+            default_parser=default_parser,
+            post_processing_methods=[tp.trim_items,
+                                     tp.drop_blanks
+                                     ]
+            )
+
+        # Test data
+        self.test_source = [
+            'Single Section',
+            'Section Name:         A',
+            'A Content1:  a  ',
+            'A Content Long: The cumulative DVH displays the ',
+            'percentage (relative) or volume (absolute) of structures ',
+            'that receive a dose equal to or greater than a given dose.',
+            'A Content2:b',
+            '',
+            'A Content3:c',
+            'defghijk'
+            '',
+            'End Section',
+
+            'Section With Gap',
+            'Single Section',
+            'Section Name:B',
+            'B Content1:a',
+            'B Content2:b',
+            'B Content3:c',
+            'End Section',
+            'Skip this line',
+            'B Content4:d',
+
+            'Section Reuse',
+            'Section Name:C',
+            'C Content1:d',
+            'C Content2:e',
+            'C Content3:f',
+            'C&D Content1:gg',
+            'End Section',
+
+            'Section D',
+            'Section Name:D',
+            'D Content1:g',
+            'D Content2:h',
+            'D Content3:i',
+            'End Section',
+
+            'Done Multi Section',
+
+            'Single Section',
+            'Section Name:E',
+            'E Content1:1',
+            'E Content2:2',
+            'E Content3:3',
+            'End Section',
+            ]
+
+
+        self.test_result = {
+            'Section A': {
+                'Section Name':'A',
+                'A Content1':'a',
+                'A Content2':'b',
+                'A Content Long': 'The cumulative DVH displays the '
+                    'percentage (relative) or volume (absolute) of structures '
+                    'that receive a dose equal to or greater than a given dose.',
+                'A Content3': 'c defghijk'
+                },
+            'Section B': {
+                    'Section Name':'B',
+                    'B Content1':'a',
+                    'B Content2':'b',
+                    'B Content3':'c',
+                    'B Content4': 'd'
+                    },
+            'Section C': {
+                    'Section Name':'C',
+                    'C Content1':'d',
+                    'C Content2':'e',
+                    'C Content3':'f',
+                    'C&D Content1': 'gg'
+                    },
+            'Section D': {
+                    'Section Name':'D',
+                    'D Content1':'g',
+                    'D Content2':'h',
+                    'D Content3':'i',
+                    'C&D Content1': 'gg'
+                    },
+            'Section E': {
+                'Section Name':'E',
+                'E Content1':'1',
+                'E Content2':'2',
+                'E Content3':'3'
+                }
+            }
+
+        self.context = {}
+
+    def test_section_break_after_before(self):
+        section_start_after = tp.SectionBreak(
+            name='Single Section After',
+            trigger=tp.Trigger('Single Section'),
+            offset='After'
+            )
+        section_end_before = tp.SectionBreak(
+            name='Single Section Before',
+            trigger=tp.Trigger('End'),
+            offset='Before'
+            )
+        section_break_after_before = tp.SectionBoundaries(
+            start_section=section_start_after,
+            end_section=section_end_before
+            )
+        test_section = tp.Section(
+            section_name='Test Section',
+            boundaries=section_break_after_before,
+            reader=self.test_section_multi_line_reader,
+            aggregate=tp.to_dict
+            )
+        source = BufferedIterator(self.test_source)
+        test_output = test_section.read(source, start_search=True,
+                                        **self.context)
+        self.assertDictEqual(test_output, self.test_result['Section A'])
+        get_next = iter(source)
+        next_item = get_next.__next__()
+        self.assertEqual(next_item, 'End Section')
+
+    def test_section_break_gap(self):
+        section_start_gap = tp.SectionBreak(
+            name='Section With Gap',
+            trigger=tp.Trigger('Section With Gap'),
+            offset=1
+            )
+        section_end_skip_line = tp.SectionBreak(
+            name='Section End Skip Line',
+            trigger=tp.Trigger('End'),
+            offset=2
+            )
+        section_break_gap = tp.SectionBoundaries(
+            start_section=section_start_gap,
+            end_section=section_end_skip_line
+            )
+        test_section = tp.Section(
+            section_name='Test Section',
+            boundaries=section_break_gap,
+            reader=self.test_section_line_reader,
+            aggregate=partial(tp.to_dict, default_value=None)
+            )
+        source = BufferedIterator(self.test_source)
+        test_output = test_section.read(source, start_search=True,
+                                        **self.context)
+        self.assertDictEqual(test_output, self.test_result['Section B'])
+        get_next = iter(source)
+        next_item = get_next.__next__()
+        self.assertEqual(next_item, 'Section Reuse')
+
+    def test_section_break_reuse(self):
+        section_start_reuse = tp.SectionBreak(
+            name='Section Start Before',
+            trigger=tp.Trigger('C Content1:d'),
+            offset=-2
+            )
+        section_end_skip_line = tp.SectionBreak(
+            name='Section End Reuse',
+            trigger=tp.Trigger('Section D'),
+            offset=-3
+            )
+        section_break_reuse = tp.SectionBoundaries(
+            start_section=section_start_reuse,
+            end_section=section_end_skip_line
+            )
+
+        test_section = tp.Section(
+            section_name='Test Section',
+            boundaries=section_break_reuse,
+            reader=self.test_section_line_reader,
+            aggregate=partial(tp.to_dict, default_value=None)
+            )
+        source = BufferedIterator(self.test_source)
+
+        test_output = test_section.read(source, start_search=True,
+                                        **self.context)
+        self.assertDictEqual(test_output, self.test_result['Section C'])
+        get_next = iter(source)
+        next_item = get_next.__next__()
+        self.assertEqual(next_item, 'C&D Content1:gg')
 if __name__ == '__main__':
     unittest.main()

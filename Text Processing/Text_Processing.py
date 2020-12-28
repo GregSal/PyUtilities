@@ -1067,20 +1067,25 @@ class Section():
             yield scan_iter
         print(f'Done scanning {self.section_name}')
 
-    def read_gen(self, section_iter):
+    def read_gen(self, reader, section_iter):
         while 'Complete' not in self.scan_status:
-            section_item = self.reader.read(section_iter, **self.context)
+            section_item = reader.read(section_iter, **self.context)
             yield section_item
+
+    def read_section(self, reader, section_iter):
+        if isinstance(reader, list):
+            section_items = [sub_reader.read(section_iter, **self.context)
+                             for sub_reader in reader]
+        elif isgeneratorfunction(reader.read):
+            section_items = reader.read(section_iter, **self.context)
+        else:
+            section_items = self.read_gen(reader, section_iter)
+        return section_items
 
     def read(self, source, start_search=True, **context):
         section_iter = self.initialize_scan(source, start_search, **context)
         self.scan_status = 'Scan Starting'
-
-        if isgeneratorfunction(self.reader.read):
-            section_items = self.reader.read(section_iter, **self.context)
-        else:
-            section_items = self.read_gen(section_iter)
-
+        section_items = self.read_section(self.reader, section_iter)
         section_aggregate = self.aggregate(section_items)
         return section_aggregate
 

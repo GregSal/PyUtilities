@@ -3,14 +3,16 @@
 from pathlib import Path
 from functools import partial
 import re
-from file_utilities import clean_ascii_text
-import Text_Processing as tp
 from typing import List
-from buffered_iterator import BufferedIterator
-import read_dvh_file
 from pprint import pprint
 import pandas as pd
 
+from file_utilities import clean_ascii_text
+from data_utilities import true_iterable
+import logging_tools as lg
+from buffered_iterator import BufferedIterator
+import Text_Processing as tp
+import read_dvh_file
 
 #%% Logging
 logger = lg.config_logger(prefix='Temp3', level='INFO')
@@ -204,11 +206,8 @@ context = {
     'Line Count': 0
     }
 
-#%% Section Definitions
 
-default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
-                                      skipinitialspace=True)
-
+#%% SectionBreak Definitions
 structure_info_break = tp.SectionBoundaries(
     start_section=read_dvh_file.structure_info_start,
     end_section=read_dvh_file.structure_info_end
@@ -218,41 +217,54 @@ structure_group_break = tp.SectionBoundaries(
     end_section=None
     )
 dvh_data_break = tp.SectionBoundaries(
-    start_section=None,
+    start_section=read_dvh_file.dvh_data_start,
     end_section=read_dvh_file.structure_info_start
     )
 
+
+#%% Reader Definitions
+default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
+                                      skipinitialspace=True)
+structure_info_reader = tp.SectionReader(
+    preprocessing_methods=[clean_ascii_text],
+    parsing_rules=[],
+    default_parser=default_parser,
+    post_processing_methods=[tp.trim_items, tp.drop_blanks,
+                             tp.convert_numbers]
+    )
+dvh_data_reader = tp.SectionReader(
+    preprocessing_methods=[clean_ascii_text],
+    default_parser=tp.define_fixed_width_parser(widths=10),
+    post_processing_methods=[tp.trim_items, tp.drop_blanks,
+                             tp.convert_numbers]
+    )
+
+#%% Section Definitions
 structure_info_section = tp.Section(
     section_name='Structure',
     boundaries=structure_info_break,
     reader=read_dvh_file.structure_info_reader,
-    aggregate=partial(tp.to_dict, header=False)
+    aggregate=tp.to_dict
     )
 dvh_data_section = tp.Section(
     section_name='DVH',
     boundaries=dvh_data_break,
     reader=read_dvh_file.dvh_data_reader,
-    aggregate=tp.to_dataframe
-    )
-
-structure_group_section = tp.Section(
-    section_name='Structure Group',
-    boundaries=structure_group_break,
-    reader=structure_info_section,
     aggregate=partial(tp.to_dataframe, header=False)
     )
 
+dvh_group_section = tp.Section(
+    section_name='Structure Group',
+    boundaries=structure_group_break,
+    reader=[structure_info_section, dvh_data_section]
+    )
 
 #%% read
 source = BufferedIterator(test_source)
-test_output = section.read(source, **context)
-
-# FIXME This is the target DVH section test
-def test_dvh_section(self):
-    section = read_dvh_file.dvh_data_section
-    source = BufferedIterator(self.test_source)
-    test_output = section.read(source, **self.context)
-    self.assertDictEqual(test_output, self.test_result['DVH'])
+test_output = dvh_group_section.read(source, **context)
+# FIXME Incorrect header for DVH Data
+# TODO Add appropriate agragate for DVH & Structure data
+pprint(test_output)
 
 
 if __name__ == '__main__':

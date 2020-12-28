@@ -192,7 +192,17 @@ class TestSectionSequencer(unittest.TestCase):
                                                             1.82336e-005,
                                                             9.15003e-006,
                                                             6.6481e-008]
-                    }])
+                    }]),
+            'DVH Data': pd.DataFrame(
+                {
+                    'Dose [cGy]': [0, 1, 2, 3, 4, 5, 3667, 3668, 3669, 3670],
+                    'Ratio of Total Structure Volume [%]': [100, 100, 100, 100,
+                                                            100, 100,
+                                                            4.23876e-005,
+                                                            2.87336e-005,
+                                                            1.50797e-005,
+                                                            1.4257e-006]
+                    })
             }
 
         self.context = {
@@ -254,6 +264,14 @@ class TestSectionSequencer(unittest.TestCase):
         test_output = section.read(source, **self.context)
         self.assertDictEqual(test_output.to_dict(),
                              self.test_result['Structures'].to_dict())
+
+
+    def test_dvh_data_section(self):
+        section = read_dvh_file.dvh_data_section
+        source = BufferedIterator(self.test_source)
+        test_output = section.read(source, **self.context)
+        self.assertDictEqual(test_output.to_dict(),
+                             self.test_result['DVH Data'].to_dict())
 
 
     @unittest.skip("Not Implemented")
