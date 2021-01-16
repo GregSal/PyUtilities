@@ -155,6 +155,26 @@ def to_plan_info_dict(plan_info_dict_list):
         output_dict[plan_name] = plan_info_dict
     return output_dict
 
+def to_structure_data_tuple(structure_data_list):
+    '''Combine Structure and DVH data.
+    '''
+    structures_dict = dict()
+    dvh_data_list = list()
+    for structure_data, dvh_data in structure_data_list:
+        plan_name = structure_data['Plan']
+        course_id = structure_data['Course']
+        structure_id = structure_data['Structure']
+        indx = (course_id, plan_name, structure_id) 
+        structures_dict[indx] = structure_data
+        data_columns = list(dvh_data.columns)
+        indx_d = [indx + (d,) for d in data_columns]
+        indx_names = ['Course', 'Plan', 'Structure', 'Data']
+        index = pd.MultiIndex.from_tuples(indx_d, names=indx_names)
+        dvh_data.columns = index
+        dvh_data_list.append(dvh_data)
+    structures_df = pd.DataFrame(structures_dict)
+    dvh_df = pd.concat(dvh_data_list)
+    return (structures_df, dvh_df)
 
 #%% Reader definitions
 default_parser = tp.define_csv_parser('dvh_info', delimiter=':',

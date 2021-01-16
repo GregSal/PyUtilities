@@ -214,11 +214,17 @@ structure_info_break = tp.SectionBoundaries(
     )
 structure_group_break = tp.SectionBoundaries(
     start_section=read_dvh_file.structure_info_start,
-    end_section=None
+    end_section=tp.SectionBreak(trigger=tp.Trigger(True))
     )
+# FIXME end_section=tp.SectionBreak(trigger=tp.Trigger(True) causes the section to end immediately
 dvh_data_break = tp.SectionBoundaries(
     start_section=read_dvh_file.dvh_data_start,
     end_section=read_dvh_file.structure_info_start
+    )
+
+all_structures_break = tp.SectionBoundaries(
+    start_section=read_dvh_file.structure_info_start,
+    end_section=None
     )
 
 
@@ -250,22 +256,34 @@ dvh_data_section = tp.Section(
     section_name='DVH',
     boundaries=dvh_data_break,
     reader=read_dvh_file.dvh_data_reader,
-    aggregate=partial(tp.to_dataframe, header=False)
+    aggregate=tp.to_dataframe
     )
 
 dvh_group_section = tp.Section(
     section_name='Structure Group',
     boundaries=structure_group_break,
+    reader=[structure_info_section, dvh_data_section],
+    aggregate=read_dvh_file.to_structure_data_tuple
+    )
+
+structure_group_section = tp.Section(
+    section_name='Structure Group',
     reader=[structure_info_section, dvh_data_section]
+    )
+
+all_dvh_section = tp.Section(
+    section_name='DVH Groups',
+    boundaries=all_structures_break,
+    reader=structure_group_section,
+    aggregate=read_dvh_file.to_structure_data_tuple
     )
 
 #%% read
 source = BufferedIterator(test_source)
-test_output = dvh_group_section.read(source, **context)
-# FIXME Incorrect header for DVH Data
-# TODO Add appropriate agragate for DVH & Structure data
-pprint(test_output)
+structures_df, dvh_df = all_dvh_section.read(source, **context)
 
+print(structures_df)
+print(dvh_df)
 
 if __name__ == '__main__':
     main()

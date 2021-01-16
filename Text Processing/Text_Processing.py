@@ -47,7 +47,7 @@ Source = Union[StringSource, ParsedStringSource]
 
 
 #%% Logging
-logger = lg.config_logger(prefix='Text Processing', level='INFO')
+logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
 
 
 #%% Exceptions
@@ -1052,6 +1052,11 @@ class Section():
 
         logger.debug(f'Starting New Section: {self.section_name}.')
         self.context['Current Section'] = self.section_name
+
+    def section_gen(self)->BufferedIterator:
+        '''Create the iterator that will read source until the section ends.
+        '''
+        # FIXME self.boundaries.scan does not appear to work at the Structure Group level
         section_scan = self.boundaries.scan('End', self.source,
                                             section_name=self.section_name,
                                             **self.context)
@@ -1059,6 +1064,7 @@ class Section():
         return section_iter
 
     def scan(self, source, start_search=True, **context):
+        #TODO Check if Section.scan is still used
         section_scan = self.initialize_scan(source, start_search, **context)
         self.scan_status = 'Scan Starting'
         while 'Complete' not in self.scan_status:
@@ -1072,20 +1078,27 @@ class Section():
             section_item = reader.read(section_iter, **self.context)
             yield section_item
 
-    def read_section(self, reader, section_iter):
+    def read_section(self):
+        # FIXME section_iter is being passed empty after the first structure is read
+        reader = self.reader
         if isinstance(reader, list):
-            section_items = [sub_reader.read(section_iter, **self.context)
-                             for sub_reader in reader]
+            section_items = list()
+            for sub_reader in reader:
+                section_iter = BufferedIterator(self.source)
+                section_items.append(
+                    sub_reader.read(section_iter, **self.context))
         elif isgeneratorfunction(reader.read):
+            section_iter = self.section_gen()
             section_items = reader.read(section_iter, **self.context)
         else:
+            section_iter = self.section_gen()
             section_items = self.read_gen(reader, section_iter)
         return section_items
 
     def read(self, source, start_search=True, **context):
-        section_iter = self.initialize_scan(source, start_search, **context)
+        self.initialize_scan(source, start_search, **context)
         self.scan_status = 'Scan Starting'
-        section_items = self.read_section(self.reader, section_iter)
+        section_items = self.read_section()
         section_aggregate = self.aggregate(section_items)
         return section_aggregate
 
