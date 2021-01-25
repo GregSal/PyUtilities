@@ -1079,14 +1079,18 @@ class Section():
             yield section_item
 
     def read_section(self):
-        # FIXME section_iter is being passed empty after the first structure is read
+        # FIXME does not exit cleanly at the end of the source
         reader = self.reader
         if isinstance(reader, list):
             section_items = list()
+            section_iter = self.source
             for sub_reader in reader:
-                section_iter = BufferedIterator(self.source)
-                section_items.append(
-                    sub_reader.read(section_iter, **self.context))
+                logger.debug(f'Starting New Section Reader Next line is: {section_iter.look_ahead()}.')
+                section_items.append(  #  FIXME seems to lose iter after second structure section
+                    sub_reader.read(section_iter, start_search=False, **self.context))
+                logger.debug(f'Done Reading Section Next line is: {section_iter.look_ahead()}.')
+                pass
+
         elif isgeneratorfunction(reader.read):
             section_iter = self.section_gen()
             section_items = reader.read(section_iter, **self.context)

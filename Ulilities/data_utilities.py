@@ -85,24 +85,46 @@ merge_columns(data_table: pd.DataFrame, columns: List[str],
             A Pandas DataFrame or Series with the merged columns and data.
 '''
 from collections.abc import Iterable
+from collections import namedtuple
 from typing import List, Dict, Tuple, Any, Union, Set, NamedTuple
 import pandas as pd
 import re
 
+
 Data = Union[pd.DataFrame, pd.Series]
-Value = Tuple[float, str]
+Value = namedtuple('Value', ['Value', 'Unit'])
 
 
-class DataElement(NamedTuple):
+def unit_patterns(unit_symbols):
+    # Match on one of the unit symbol strings
+    unit_pattern = '(?P<unit>' + '|'.join(unit_symbols) + ')'
+    # Match a float or int value with optional sign
+    number_pattern = '(?P<value>[-+]?\d+[.]?\d*)'
+    # Optional Space between value and unit
+    optional_space = '\s*'
+    number_value_pattern = ''.join([
+        number_pattern,
+        optional_space,
+        unit_pattern
+        ])
+    data_pattern = re.compile(number_value_pattern)
+    return data_pattern
+
+
+class DataElement(Value):  # FIXME DataElement Class is not working
     '''A number containing a corresponding unit.
     Attributes:
         Value {float} -- The number
         Unit {str} -- The corresponding unit.
     '''
     Value: float
-    Unit: str
+    Unit: str = ''
+    unit_symbols = ['%', 'CU', 'cGy', 'Gy', 'deg', 'cm', 'deg', 'MU', 'min',
+                    'cc', 'cm3', 'MU/Gy', 'MU/min', 'cm3', 'cc']
+    data_pattern = unit_patterns(unit_symbols)
 
     def __init___(self, *data):
+        self.set_units()
         if len(data) == 1:
             try:
                 value = float(data[0])
@@ -110,33 +132,13 @@ class DataElement(NamedTuple):
                 data = self.str2data(data[0])
             else:
                 data = (value, '')
-
         super().__init__(*data)
 
-
     @classmethod
-    def set_units(cls):
-        cls.unit_symbols = ['%', 'CU', 'cGy', 'Gy', 'deg', 'cm', 'deg',
-                            'MU', 'min', 'cc', 'cm3', 'MU/Gy', 'MU/min',
-                            'cm3', 'cc']
-        # Match on one of the unit symbol strings
-        unit_pattern = '(?P<unit>' + '|'.join(cls.unit_symbols) + ')'
-        # Match a float or int value with optional sign
-        number_pattern = '(?P<value>[-+]?\d+[.]?\d*)'
-        # Optional Space between value and unit
-        optional_space = '\s*'
-        number_value_pattern = ''.join([
-            number_pattern,
-            optional_space,
-            unit_pattern
-            ])
-        cls.data_pattern = re.compile(number_value_pattern)
-
-
-    def str2data(self, data_string:str):
-        match = self.data_pattern.search(data_string)
+    def str2data(cls, data_string:str):
+        match = cls.data_pattern.search(data_string)
         if match:
-            value, unit = find_num[0]
+            value, unit = match[0]
             return value, unit
         return data_string
 

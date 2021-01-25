@@ -208,79 +208,39 @@ context = {
 
 
 #%% SectionBreak Definitions
-structure_info_break = tp.SectionBoundaries(
-    start_section=read_dvh_file.structure_info_start,
-    end_section=read_dvh_file.structure_info_end
-    )
 structure_group_break = tp.SectionBoundaries(
-    start_section=read_dvh_file.structure_info_start,
-    end_section=tp.SectionBreak(trigger=tp.Trigger(True))
-    )
-# FIXME end_section=tp.SectionBreak(trigger=tp.Trigger(True) causes the section to end immediately
-dvh_data_break = tp.SectionBoundaries(
-    start_section=read_dvh_file.dvh_data_start,
-    end_section=read_dvh_file.structure_info_start
+    start_section=read_dvh_file.structure_info_start
     )
 
-all_structures_break = tp.SectionBoundaries(
-    start_section=read_dvh_file.structure_info_start,
-    end_section=None
-    )
-
-
-#%% Reader Definitions
-default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
-                                      skipinitialspace=True)
-structure_info_reader = tp.SectionReader(
-    preprocessing_methods=[clean_ascii_text],
-    parsing_rules=[],
-    default_parser=default_parser,
-    post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.convert_numbers]
-    )
-dvh_data_reader = tp.SectionReader(
-    preprocessing_methods=[clean_ascii_text],
-    default_parser=tp.define_fixed_width_parser(widths=10),
-    post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.convert_numbers]
-    )
 
 #%% Section Definitions
-structure_info_section = tp.Section(
-    section_name='Structure',
-    boundaries=structure_info_break,
-    reader=read_dvh_file.structure_info_reader,
-    aggregate=tp.to_dict
-    )
-dvh_data_section = tp.Section(
-    section_name='DVH',
-    boundaries=dvh_data_break,
-    reader=read_dvh_file.dvh_data_reader,
-    aggregate=tp.to_dataframe
-    )
-
-dvh_group_section = tp.Section(
-    section_name='Structure Group',
-    boundaries=structure_group_break,
-    reader=[structure_info_section, dvh_data_section],
-    aggregate=read_dvh_file.to_structure_data_tuple
-    )
+dvh_info_section = read_dvh_file.dvh_info_section
+plan_info_group = read_dvh_file.plan_info_group
+structure_info_section = read_dvh_file.structure_info_section
+dvh_data_section = read_dvh_file.dvh_data_section
 
 structure_group_section = tp.Section(
     section_name='Structure Group',
     reader=[structure_info_section, dvh_data_section]
     )
 
+dvh_group_section = tp.Section(
+    section_name='Structure Group',
+    boundaries=structure_group_break,
+    reader=structure_group_section,
+    aggregate=read_dvh_file.to_structure_data_tuple
+    )
+
+
 all_dvh_section = tp.Section(
     section_name='DVH Groups',
-    boundaries=all_structures_break,
-    reader=structure_group_section,
+    reader=dvh_group_section,
     aggregate=read_dvh_file.to_structure_data_tuple
     )
 
 #%% read
 source = BufferedIterator(test_source)
-structures_df, dvh_df = all_dvh_section.read(source, **context)
+structures_df, dvh_df = dvh_group_section.read(source, **context)
 
 print(structures_df)
 print(dvh_df)
