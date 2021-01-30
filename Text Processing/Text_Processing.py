@@ -986,22 +986,23 @@ class Section():
         self.context = dict()
         self.scan_status = 'Not Started'
         self.source = None
-        if boundaries:
-            self.boundaries = boundaries
-        else:
-            self.boundaries = SectionBoundaries()
         if reader:
             self.reader = reader
         else:
             self.reader = SectionReader()
+        if boundaries:
+            self.boundaries = boundaries
+        else:
+            self.boundaries = SectionBoundaries()
         if aggregate:
             self.aggregate = aggregate
         else:
-            self.aggregate = self.list_aggregate
+            self.aggregate = list
 
     def list_aggregate(self, section_lines: ParsedStringSource) -> List[Any]:
         '''Iterate through section.
         '''
+        # TODO list_aggregate is not needed
         list_output = [line for line in section_lines]
         return list_output
 
@@ -1049,14 +1050,12 @@ class Section():
         self.initialize_source(source, context)
         if start_search:
             skipped_lines = self.find_start(self.source)
-
         logger.debug(f'Starting New Section: {self.section_name}.')
         self.context['Current Section'] = self.section_name
 
     def section_gen(self)->BufferedIterator:
         '''Create the iterator that will read source until the section ends.
         '''
-        # FIXME self.boundaries.scan does not appear to work at the Structure Group level
         section_scan = self.boundaries.scan('End', self.source,
                                             section_name=self.section_name,
                                             **self.context)
@@ -1073,30 +1072,31 @@ class Section():
             yield scan_iter
         print(f'Done scanning {self.section_name}')
 
-    def read_gen(self, reader, section_iter):
+    def read_gen(self, read_method, section_iter):
         while 'Complete' not in self.scan_status:
-            section_item = reader.read(section_iter, **self.context)
+            section_item = read_method(section_iter, **self.context)
+            yield section_item
+
+    def group_reader_gen(self, reader_list, section_iter):
+        while 'Complete' not in self.scan_status:
+            group_read = (
+                    sub_rdr.read(section_iter, start_search=False, **self.context)
+                    for sub_rdr in reader_list
+                    )
+            section_item = list(group_read)
             yield section_item
 
     def read_section(self):
-        # FIXME does not exit cleanly at the end of the source
         reader = self.reader
+        section_iter = self.section_gen()
+        # TODO Make the list of readers test more general i.e. any sequence of readers
+        # TODO the test for reader type can be done in Section.__init__
         if isinstance(reader, list):
-            section_items = list()
-            section_iter = self.source
-            for sub_reader in reader:
-                logger.debug(f'Starting New Section Reader Next line is: {section_iter.look_ahead()}.')
-                section_items.append(  #  FIXME seems to lose iter after second structure section
-                    sub_reader.read(section_iter, start_search=False, **self.context))
-                logger.debug(f'Done Reading Section Next line is: {section_iter.look_ahead()}.')
-                pass
-
+            section_items = self.group_reader_gen(reader, section_iter)
         elif isgeneratorfunction(reader.read):
-            section_iter = self.section_gen()
             section_items = reader.read(section_iter, **self.context)
         else:
-            section_iter = self.section_gen()
-            section_items = self.read_gen(reader, section_iter)
+            section_items = self.read_gen(reader.read, section_iter)
         return section_items
 
     def read(self, source, start_search=True, **context):
@@ -1105,4 +1105,3 @@ class Section():
         section_items = self.read_section()
         section_aggregate = self.aggregate(section_items)
         return section_aggregate
-

@@ -158,13 +158,15 @@ def to_plan_info_dict(plan_info_dict_list):
 def to_structure_data_tuple(structure_data_list):
     '''Combine Structure and DVH data.
     '''
-    structures_dict = dict()
+    structures_dict = dict()  # FIXME this assumes a sequence of tuples, but is called with only one
     dvh_data_list = list()
     for structure_data, dvh_data in structure_data_list:
+#    for data in structure_data_list:
+#        structure_data, dvh_data = data
         plan_name = structure_data['Plan']
         course_id = structure_data['Course']
         structure_id = structure_data['Structure']
-        indx = (course_id, plan_name, structure_id) 
+        indx = (course_id, plan_name, structure_id)
         structures_dict[indx] = structure_data
         data_columns = list(dvh_data.columns)
         indx_d = [indx + (d,) for d in data_columns]
@@ -173,7 +175,7 @@ def to_structure_data_tuple(structure_data_list):
         dvh_data.columns = index
         dvh_data_list.append(dvh_data)
     structures_df = pd.DataFrame(structures_dict)
-    dvh_df = pd.concat(dvh_data_list)
+    dvh_df = pd.concat(dvh_data_list, axis='columns')
     return (structures_df, dvh_df)
 
 #%% Reader definitions
@@ -281,7 +283,7 @@ plan_info_group = tp.Section(
 structure_info_section = tp.Section(
     section_name='Structure',
     boundaries=structure_info_break,
-    reader=structure_info_reader,
+    reader=structure_info_reader, # FIXME something wrong with the line parsing here
     aggregate=tp.to_dict
     )
 dvh_data_section = tp.Section(

@@ -6,6 +6,7 @@ import re
 from typing import List
 from pprint import pprint
 import pandas as pd
+import xlwings as xw
 
 from file_utilities import clean_ascii_text
 from data_utilities import true_iterable
@@ -219,18 +220,12 @@ plan_info_group = read_dvh_file.plan_info_group
 structure_info_section = read_dvh_file.structure_info_section
 dvh_data_section = read_dvh_file.dvh_data_section
 
-structure_group_section = tp.Section(
-    section_name='Structure Group',
-    reader=[structure_info_section, dvh_data_section]
-    )
-
 dvh_group_section = tp.Section(
-    section_name='Structure Group',
+    section_name='DVH Groups',
     boundaries=structure_group_break,
-    reader=structure_group_section,
+    reader=[structure_info_section, dvh_data_section],
     aggregate=read_dvh_file.to_structure_data_tuple
     )
-
 
 all_dvh_section = tp.Section(
     section_name='DVH Groups',
@@ -240,10 +235,14 @@ all_dvh_section = tp.Section(
 
 #%% read
 source = BufferedIterator(test_source)
+dvh_info = dvh_info_section.read(source, **context)
+plan_info = plan_info_group.read(source, **context)
+#dvh_data = dvh_group_section.read(source, **context)
+
 structures_df, dvh_df = dvh_group_section.read(source, **context)
 
-print(structures_df)
-print(dvh_df)
+xw.view(structures_df)
+xw.view(dvh_df)
 
-if __name__ == '__main__':
-    main()
+#if __name__ == '__main__':
+#    main()
