@@ -47,7 +47,7 @@ Source = Union[StringSource, ParsedStringSource]
 
 
 #%% Logging
-logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
+logger = lg.config_logger(prefix='Text Processing', level='INFO')
 
 
 #%% Exceptions
@@ -167,15 +167,10 @@ def drop_units(text: str) -> float:
 #%% Iteration Tools
 def file_reader(test_file):
     with open(test_file, newline='') as csvfile:
-        raw_lines = BufferedIterator(csvfile)
-        context = {
-            'File Name': test_file.name,
-            'File Path': test_file.parent,
-            'Line Count': 0,
-            'Source': raw_lines
-            }
-        context, section_lines = section_manager(context)
-    return context, section_lines
+        file_source = BufferedIterator(csvfile)
+        for line in file_source:
+            yield line
+
 
 
 def func_to_iter(source: Iterator, func: Callable) -> Iterator:

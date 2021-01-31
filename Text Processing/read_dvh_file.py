@@ -10,16 +10,19 @@ from itertools import chain
 from typing import List, Callable
 import csv
 import re
+import pandas as pd
+import xlwings as xw
+
 import logging_tools as lg
+from file_utilities import clean_ascii_text
 from buffered_iterator import BufferedIterator
 from buffered_iterator import BufferedIteratorEOF
 from buffered_iterator import BufferOverflowWarning
 import Text_Processing as tp
-import pandas as pd
-from file_utilities import clean_ascii_text
+
 
 #%% Logging
-logger = lg.config_logger(prefix='read_dvh.file', level='DEBUG')
+logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
 
 
 #%% Line Parsing Functions
@@ -158,14 +161,13 @@ def to_plan_info_dict(plan_info_dict_list):
 def to_structure_data_tuple(structure_data_list):
     '''Combine Structure and DVH data.
     '''
-    structures_dict = dict()  # FIXME this assumes a sequence of tuples, but is called with only one
+    structures_dict = dict()
     dvh_data_list = list()
     for structure_data, dvh_data in structure_data_list:
-#    for data in structure_data_list:
-#        structure_data, dvh_data = data
         plan_name = structure_data['Plan']
         course_id = structure_data['Course']
         structure_id = structure_data['Structure']
+        logger.info(f'Reading DVH data for: {structure_id}.')
         indx = (course_id, plan_name, structure_id)
         structures_dict[indx] = structure_data
         data_columns = list(dvh_data.columns)
@@ -254,7 +256,6 @@ structure_info_break = tp.SectionBoundaries(
     )
 structure_group_break = tp.SectionBoundaries(
     start_section=structure_info_start,
-    end_section=None
     )
 dvh_data_break = tp.SectionBoundaries(
     start_section=dvh_data_start,
@@ -283,7 +284,7 @@ plan_info_group = tp.Section(
 structure_info_section = tp.Section(
     section_name='Structure',
     boundaries=structure_info_break,
-    reader=structure_info_reader, # FIXME something wrong with the line parsing here
+    reader=structure_info_reader,
     aggregate=tp.to_dict
     )
 dvh_data_section = tp.Section(
@@ -291,6 +292,12 @@ dvh_data_section = tp.Section(
     boundaries=dvh_data_break,
     reader=dvh_data_reader,
     aggregate=tp.to_dataframe
+    )
+dvh_group_section = tp.Section(
+    section_name='DVH Groups',
+    boundaries=structure_group_break,
+    reader=[structure_info_section, dvh_data_section],
+    aggregate=to_structure_data_tuple
     )
 
 
@@ -305,13 +312,27 @@ def main():
     # Test File
     base_path = Path.cwd()
 
-    #test_file = Path.cwd() / 'PlanSum vs Original.dvh'
-
     test_file_path = r'Text Files'
     test_file = base_path / test_file_path / 'PlanSum vs Original.dvh'
 
     # Call Primary routine
-    section_lines = tp.file_reader(test_file)
+    context = {
+        'File Name': test_file.name,
+        'File Path': test_file.parent,
+        'Line Count': 0,
+        }
+    source = tp.file_reader(test_file)
+    dvh_info = dvh_info_section.read(source, **context)
+    plan_info = plan_info_group.read(source, **context)
+    structures_df, dvh_df = dvh_group_section.read(source, **context)
+
+    # Output DVH Data
+    # TODO create proper spreadsheet output method
+    xw.view(dvh_info)
+    plan_data = pd.DataFrame(plan_info)
+    xw.view(plan_data)
+    xw.view(structures_df)
+    xw.view(dvh_df)
     print('done')
 
 

@@ -11,7 +11,7 @@ import logging_tools as lg
 T = TypeVar('T')
 
 #%% Logging
-logger = lg.config_logger(prefix='Buffered Iterator', level='DEBUG')
+logger = lg.config_logger(prefix='Buffered Iterator', level='INFO')
 
 
 #%% Exceptions
