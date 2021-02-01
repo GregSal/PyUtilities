@@ -265,21 +265,12 @@ class TestSectionSequencer(unittest.TestCase):
         self.assertDictEqual(test_output.to_dict(),
                              self.test_result['Structures'].to_dict())
 
-
     def test_dvh_data_section(self):
         section = read_dvh_file.dvh_data_section
         source = BufferedIterator(self.test_source)
         test_output = section.read(source, **self.context)
         self.assertDictEqual(test_output.to_dict(),
                              self.test_result['DVH Data'].to_dict())
-
-
-    @unittest.skip("Not Implemented")
-    def test_dvh_section(self):
-        section = read_dvh_file.dvh_data_section
-        source = BufferedIterator(self.test_source)
-        test_output = section.read(source, **self.context)
-        self.assertDictEqual(test_output, self.test_result['DVH'])
 
 
 

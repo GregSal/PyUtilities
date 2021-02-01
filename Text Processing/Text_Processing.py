@@ -15,6 +15,7 @@ examples.
 #%% Imports
 import re
 import csv
+from pathlib import Path
 from inspect import isgeneratorfunction
 from functools import partial, partialmethod
 from typing import Dict, List, Sequence, TypeVar, Iterator, Any, Callable, Union
@@ -165,11 +166,13 @@ def drop_units(text: str) -> float:
 
 
 #%% Iteration Tools
-def file_reader(test_file):
-    with open(test_file, newline='') as csvfile:
-        file_source = BufferedIterator(csvfile)
-        for line in file_source:
-            yield line
+def file_reader(file_path: Path)->BufferedIterator:
+    def file_line_gen(file_path):
+        with open(file_path, newline='') as textfile:
+            for line in textfile:
+                yield line
+    source = BufferedIterator(file_line_gen(file_path))
+    return source
 
 
 

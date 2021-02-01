@@ -109,11 +109,11 @@ def make_prescribed_dose_rule() -> tp.Rule:
     def make_prescribed_dose_trigger()->tp.Trigger:
         '''Create a trigger that checks for Prescribed Dose Line.
 
-        Use regular expresion to match:
+        Use regular expression to match:
             Prescribed dose [(unit)]: (dose)
 
         Returns:
-            dose_trigger: A trigger that uses a regular expresion to check for
+            dose_trigger: A trigger that uses a regular expression to check for
             a Prescribed Dose Line.
         '''
         prescribed_dose_pattern = (
@@ -141,6 +141,20 @@ def make_default_csv_parser() -> Callable:
     default_csv = tp.define_csv_parser('dvh_info', delimiter=':',
                                        skipinitialspace=True)
     return default_csv
+
+
+
+#%% Post Processing Methods
+def fix_structure_names(line: tp.ParsedString) -> tp.ParsedString:
+    '''If Structure name starts with "=", add "'" to start of name.
+    '''
+    if len(line) == 2:
+        if 'Structure' in line[0]:
+            structure_name = line[1]
+            if structure_name.startswith('='):
+                structure_name = "'" + structure_name
+                line[1] = structure_name
+    return line
 
 
 #%% Line Processing
@@ -202,7 +216,8 @@ structure_info_reader = tp.SectionReader(
     parsing_rules=[],
     default_parser=default_parser,
     post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.convert_numbers]
+                             tp.convert_numbers,
+                             fix_structure_names]
     )
 dvh_data_reader = tp.SectionReader(
     preprocessing_methods=[clean_ascii_text],
@@ -321,20 +336,29 @@ def main():
         'File Path': test_file.parent,
         'Line Count': 0,
         }
+
     source = tp.file_reader(test_file)
+
     dvh_info = dvh_info_section.read(source, **context)
     plan_info = plan_info_group.read(source, **context)
     structures_df, dvh_df = dvh_group_section.read(source, **context)
 
     # Output DVH Data
-    # TODO create proper spreadsheet output method
-    xw.view(dvh_info)
+    dvh_info_df = pd.Series(dvh_info)
     plan_data = pd.DataFrame(plan_info)
-    xw.view(plan_data)
-    xw.view(structures_df)
-    xw.view(dvh_df)
-    print('done')
+    struct_indx_names = ['Course', 'Plan', 'Structure']
+    dvh_indx_names = ['Course', 'Plan', 'Structure', 'Data']
+    output_file = base_path / 'read_dvh_test_results.xlsx'
 
+    with pd.ExcelWriter(output_file) as writer:
+        dvh_info_df.to_excel(writer, 'DVH Info')
+        plan_data.to_excel(writer, 'Plan Data')
+        structures_df.to_excel(writer, 'Structures Data',
+                               index_label=struct_indx_names)
+        dvh_df.to_excel(writer, 'DVH Data',
+                        index_label=dvh_indx_names)
+
+    print('done')
 
 if __name__ == '__main__':
     main()

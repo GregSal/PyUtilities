@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>f0b75ef5-e1d5-4a3e-978c-9a8dcf445620</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>temp3.py</StartupFile>
+    <StartupFile>read_dvh_file.py</StartupFile>
     <SearchPath>..\Ulilities</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -32,10 +32,12 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="temp.py" />
+    <Compile Include="temp3.py" />
+    <Compile Include="test_group_read.py" />
     <Compile Include="test_multi_read.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="temp3.py" />
+    <Compile Include="test_section_groups.py" />
     <Compile Include="test_buffered_iterator.py" />
     <Compile Include="test_functions.py" />
     <Compile Include="test_section_readers.py" />
