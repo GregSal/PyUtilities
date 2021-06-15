@@ -13,7 +13,7 @@
     <TestFramework>unittest</TestFramework>
     <UnitTestPattern>test*.py</UnitTestPattern>
     <UnitTestRootDirectory>.</UnitTestRootDirectory>
-    <InterpreterId>CondaEnv|CondaEnv|Standard</InterpreterId>
+    <InterpreterId>CondaEnv|CondaEnv|TextProcessing</InterpreterId>
     <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -31,25 +31,27 @@
     <Compile Include="read_dvh_file.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="temp.py" />
-    <Compile Include="temp3.py" />
-    <Compile Include="test_group_read.py" />
-    <Compile Include="test_multi_read.py">
+    <Compile Include="Tests\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="test_section_groups.py" />
-    <Compile Include="test_buffered_iterator.py" />
-    <Compile Include="test_functions.py" />
-    <Compile Include="test_section_readers.py" />
-    <Compile Include="test_rules.py" />
-    <Compile Include="test_section_boundaries.py" />
-    <Compile Include="test_section_sequencer.py" />
-    <Compile Include="test_trigger.py" />
+    <Compile Include="Tests\test_group_read.py" />
+    <Compile Include="Tests\test_multi_read.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\test_section_groups.py" />
+    <Compile Include="Tests\test_buffered_iterator.py" />
+    <Compile Include="Tests\test_functions.py" />
+    <Compile Include="Tests\test_section_readers.py" />
+    <Compile Include="Tests\test_rules.py" />
+    <Compile Include="Tests\test_section_boundaries.py" />
+    <Compile Include="Tests\test_section_sequencer.py" />
+    <Compile Include="Tests\test_trigger.py" />
     <Compile Include="buffered_iterator.py" />
     <Compile Include="Text Files\abreviate_text.py" />
     <Compile Include="Text_Processing.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="requirements.txt" />
     <Content Include="Text Files\Bolus Plancheck Cleaned.txt" />
     <Content Include="Text Files\DIR_test_Data.txt" />
     <Content Include="Text Files\ESOI.dvh" />
@@ -68,10 +70,11 @@
     <Content Include="Text Files\trigger_test_text.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Tests\" />
     <Folder Include="Text Files\" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="CondaEnv|CondaEnv|Standard" />
+    <InterpreterReference Include="CondaEnv|CondaEnv|TextProcessing" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

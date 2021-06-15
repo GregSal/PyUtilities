@@ -190,7 +190,7 @@ class TestSectionGroupRead(unittest.TestCase):
         self.context = {}
 
         # Reader definitions
-        fixed_width_parser=tp.define_fixed_width_parser(widths=17)
+        fixed_width_parser=tp.define_fixed_width_parser(widths=16)
         delimiter_parser = tp.define_csv_parser(
             'delimiter_parser',
             delimiter=':',
@@ -209,17 +209,19 @@ class TestSectionGroupRead(unittest.TestCase):
                                         tp.convert_numbers]
             )
         # SectionBreak definitions
-        section_start = tp.SectionBreak(
-            name='Single Section',
-            trigger=tp.Trigger('Section Name')
+        delimiter_section_start = tp.SectionBreak(
+            name='Delimiter Section',
+            trigger=tp.Trigger('Single Delimiter Section'),
+            offset='After'
+            )
+        fixed_width_section_start = tp.SectionBreak(
+            name='Fixed Width Section',
+            trigger=tp.Trigger('Single Fixed Width Section'),
+            offset='After'
             )
         section_end = tp.SectionBreak(
             name='Single Section',
             trigger=tp.Trigger('End Section')
-            )
-        section_break = tp.SectionBoundaries(
-            start_section=section_start,
-            end_section=section_end
             )
         group_section_start = tp.SectionBreak(
             name='Combined Group Section',
@@ -236,6 +238,14 @@ class TestSectionGroupRead(unittest.TestCase):
             trigger=tp.Trigger('Done Combined Group Section'),
             offset='Before'
             )
+        delimiter_section_break = tp.SectionBoundaries(
+            start_section=delimiter_section_start,
+            end_section=section_end
+            )
+        fixed_width_section_break = tp.SectionBoundaries(
+            start_section=fixed_width_section_start,
+            end_section=section_end
+            )
         group_section_break = tp.SectionBoundaries(
             start_section=group_section_start,
             end_section=group_section_end
@@ -247,25 +257,25 @@ class TestSectionGroupRead(unittest.TestCase):
         # Section definitions
         self.delimiter_section = tp.Section(
             section_name='Delimiter Section',
-            boundaries=section_break,
+            boundaries=delimiter_section_break,
             reader=delimiter_section_reader,
             aggregate=partial(tp.to_dict, default_value=None)
             )
         self.fixed_width_section = tp.Section(
             section_name='Fixed Width Section',
-            boundaries=section_break,
-            reader=fixed_width_section_reader,
+            boundaries=fixed_width_section_break,
+            reader=fixed_width_reader,
             aggregate=partial(tp.to_dict, default_value=None)
             )
         self.group_section = tp.Section(
             section_name='Group Section',
             boundaries=group_section_break,
-            reader=[delimiter_section, fixed_width_section]
+            reader=[self.delimiter_section, self.fixed_width_section]
             )
         self.multi_group_section = tp.Section(
             section_name='Group Section',
             boundaries=multi_group_section_break,
-            reader=[delimiter_section, fixed_width_section]
+            reader=[self.delimiter_section, self.fixed_width_section]
             )
 
     def test_delimiter_sub_section_read(self):
@@ -275,7 +285,7 @@ class TestSectionGroupRead(unittest.TestCase):
                                         **self.context)
         self.assertDictEqual(test_output, self.test_result['Section D1'])
 
-    def test_delimiter_sub_section_read(self):
+    def test_fixed_width_sub_section_read(self):
         test_section = self.fixed_width_section
         source = BufferedIterator(self.test_source)
         test_output = test_section.read(source, start_search=True,

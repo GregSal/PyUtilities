@@ -19,6 +19,7 @@ class DateString(object):
               'JUL': 7, 'AUG': 9, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
     days = ('SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT')
 
+    @staticmethod
     def build_date_re():
         '''Compile a regular expression for parsing a date_string.
         Combines patterns for Date and Time.
@@ -80,6 +81,7 @@ class DateString(object):
             )
         return re.compile(date_pattern + time_pattern + am_pm_pattern)
 
+    @staticmethod
     def build_section_date_re():
         # FIXME I Don't think this method is used for anything.
         date_section_pattern = (

@@ -61,9 +61,12 @@ class TextReadException(Exception): pass
 class TextReadBreaks(GeneratorExit):
     '''Base class for indicating that a Section has changed.'''
 
-    def __init__(self, *args, context=None, **kwargs):
+    def __init__(self, *args, context: Dict[str, Any] = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.context = context
+        if context:
+            self.context = context
+        else:
+            self.context = dict()
 
     def get_context(self):
         '''Return the context that existed when StopSection was raised.'''
@@ -352,8 +355,7 @@ class FixedWidthParser():
             item = remainder[:w]
             remainder = remainder[w:]
             yield item
-        else:
-           if remainder:
+        if remainder:
             yield remainder
 
     def parser(self, line: str, *args, **kwargs) -> ParseResults:
@@ -995,7 +997,7 @@ class Section():
         if aggregate:
             self.aggregate = aggregate
         else:
-            self.aggregate = list
+            self.aggregate = list  # TODO create subclass of list that returns ParsedStringSource
 
     def list_aggregate(self, section_lines: ParsedStringSource) -> List[Any]:
         '''Iterate through section.
@@ -1005,9 +1007,10 @@ class Section():
         return list_output
 
     def catch_break(self, buffered_source):
+        break_context = {'Status': 'No Break Found'}
         try:
-            break_context = {'Status': 'No Break Found'}
             status = 'Scan In Progress'
+            break_context['Status'] = 'No Break Found'
             for item in buffered_source:
                 yield item
         except (RuntimeError) as err:
@@ -1048,8 +1051,11 @@ class Section():
         self.initialize_source(source, context)
         if start_search:
             skipped_lines = self.find_start(self.source)
+        else:
+            skipped_lines = []
         logger.debug(f'Starting New Section: {self.section_name}.')
         self.context['Current Section'] = self.section_name
+        return skipped_lines
 
     def section_gen(self)->BufferedIterator:
         '''Create the iterator that will read source until the section ends.
@@ -1076,7 +1082,7 @@ class Section():
             yield section_item
 
     def group_reader_gen(self, reader_list, section_iter):
-        while 'Complete' not in self.scan_status:
+        while 'Complete' not in self.scan_status:  # FIXME group status not being updated when subgroup completes is catch_break beuing called?
             group_read = (
                     sub_rdr.read(section_iter, start_search=False, **self.context)
                     for sub_rdr in reader_list
@@ -1097,7 +1103,7 @@ class Section():
             section_items = self.read_gen(reader.read, section_iter)
         return section_items
 
-    def read(self, source, start_search=True, **context):
+    def read(self, source, start_search=True, **context)->Any:
         self.initialize_scan(source, start_search, **context)
         self.scan_status = 'Scan Starting'
         section_items = self.read_section()

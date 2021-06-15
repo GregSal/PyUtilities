@@ -227,7 +227,7 @@ class TestSectionSequencer(unittest.TestCase):
         dvh_group_section = read_dvh_file.dvh_group_section
         # scan_section
         source = BufferedIterator(self.test_source)
-        structures_df, dvh_df = dvh_group_section.read(source, **context)
+        structures_df, dvh_df = dvh_group_section.read(source, **self.context)
         self.maxDiff=None
         self.assertDictEqual(structures_df.to_dict(),
                              self.test_result['Structures'].to_dict())
