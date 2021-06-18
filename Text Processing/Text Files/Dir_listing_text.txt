@@ -1,0 +1,192 @@
+ Volume in drive C has no label.
+ Volume Serial Number is 56DB-14A7
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing
+
+2021-06-16  21:29    <DIR>          .
+2021-06-16  21:29    <DIR>          ..
+2020-09-26  09:23    <DIR>          .pylint.d
+2020-09-26  07:19    <DIR>          .spyproject
+2020-09-15  14:15    <DIR>          .vs
+2021-06-16  19:57             14206 buffered_iterator.py
+2021-06-15  19:13              9594 date_processer.py
+2021-01-31  21:52             12265 read_dvh_file.py
+2021-01-31  21:50           2785831 read_dvh_test_results.xlsx
+2021-06-14  21:11               285 requirements.txt
+2020-11-30  23:34             19772 scan  method comparison.docx
+2020-12-24  16:56             14074 Section read.xlsx
+2021-06-16  21:28             10070 section_groups_temp.py
+2020-12-22  16:48              9617 temp.py
+2021-01-30  11:05              8953 temp3.py
+2021-06-17  15:45    <DIR>          Tests
+2021-06-17  15:45    <DIR>          Text Files
+2021-06-16  20:20              4049 Text Processing.pyproj
+2021-06-16  19:59               227 Text Processing.pyproj.user
+2021-06-14  21:37             43947 Text_Processing.py
+2021-06-16  20:42    <DIR>          __pycache__
+              13 File(s)        2932890 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\.pylint.d
+
+2020-09-26  09:23    <DIR>          .
+2020-09-26  09:23    <DIR>          ..
+2020-09-26  09:22              1179 Text_Processing1.stats
+               1 File(s)           1179 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\.spyproject
+
+2020-09-26  07:19    <DIR>          .
+2020-09-26  07:19    <DIR>          ..
+2021-06-16  21:29    <DIR>          config
+               0 File(s)              0 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\.spyproject\config
+
+2021-06-16  21:29    <DIR>          .
+2021-06-16  21:29    <DIR>          ..
+2021-06-16  20:31    <DIR>          backups
+2020-09-26  07:18               104 codestyle.ini
+2020-09-26  07:19    <DIR>          defaults
+2020-09-26  07:18                64 encoding.ini
+2020-09-26  07:18                92 vcs.ini
+2021-06-16  21:28               250 workspace.ini
+               4 File(s)            510 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\.spyproject\config\backups
+
+2021-06-16  20:31    <DIR>          .
+2021-06-16  20:31    <DIR>          ..
+2021-06-16  20:31               104 codestyle.ini.bak
+2021-06-16  20:31                64 encoding.ini.bak
+2021-06-16  20:31                92 vcs.ini.bak
+2021-06-16  20:31               172 workspace.ini.bak
+               4 File(s)            432 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\.spyproject\config\defaults
+
+2020-09-26  07:19    <DIR>          .
+2020-09-26  07:19    <DIR>          ..
+2020-09-26  07:18                77 defaults-codestyle-0.2.0.ini
+2020-09-26  07:18                37 defaults-encoding-0.2.0.ini
+2020-09-26  07:18                65 defaults-vcs-0.2.0.ini
+2020-09-26  07:18               126 defaults-workspace-0.2.0.ini
+               4 File(s)            305 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\.vs
+
+2020-09-15  14:15    <DIR>          .
+2020-09-15  14:15    <DIR>          ..
+2020-09-15  14:15    <DIR>          Text Processing
+               0 File(s)              0 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\.vs\Text Processing
+
+2020-09-15  14:15    <DIR>          .
+2020-09-15  14:15    <DIR>          ..
+2020-09-17  16:05    <DIR>          v16
+               0 File(s)              0 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\.vs\Text Processing\v16
+
+2020-09-17  16:05    <DIR>          .
+2020-09-17  16:05    <DIR>          ..
+2020-08-29  19:27              5632 .suo
+               1 File(s)           5632 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\Tests
+
+2021-06-17  15:45    <DIR>          .
+2021-06-17  15:45    <DIR>          ..
+2020-09-13  08:13              5698 test_buffered_iterator.py
+2020-10-24  20:06             10705 test_functions.py
+2021-06-16  20:01             10967 test_group_read.py
+2020-12-27  10:41              7290 test_multi_read.py
+2020-10-04  20:46              6005 test_rules.py
+2021-06-16  20:07             16433 test_section_boundaries.py
+2021-02-01  20:23             10640 test_section_groups.py
+2020-12-25  08:55             23199 test_section_readers.py
+2021-01-30  20:41             12679 test_section_sequencer.py
+2020-10-04  21:01              4756 test_trigger.py
+2021-06-14  21:03                 2 __init__.py
+2021-06-16  20:08    <DIR>          __pycache__
+              11 File(s)         108374 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\Tests\__pycache__
+
+2021-06-16  20:08    <DIR>          .
+2021-06-16  20:08    <DIR>          ..
+2021-06-14  21:08              5042 test_buffered_iterator.cpython-37.pyc
+2021-06-14  21:08             10888 test_functions.cpython-37.pyc
+2021-06-16  20:01              6398 test_group_read.cpython-37.pyc
+2021-06-14  21:08              4974 test_multi_read.cpython-37.pyc
+2021-06-14  21:08              5544 test_rules.cpython-37.pyc
+2021-06-16  20:07             11777 test_section_boundaries.cpython-37.pyc
+2021-06-14  21:08              6400 test_section_groups.cpython-37.pyc
+2021-06-14  21:08             14994 test_section_readers.cpython-37.pyc
+2021-06-14  21:08              7291 test_section_sequencer.cpython-37.pyc
+2021-06-14  21:08              4254 test_trigger.cpython-37.pyc
+2021-06-14  21:08               196 __init__.cpython-37.pyc
+2021-06-14  21:03               200 __init__.cpython-38.pyc
+              12 File(s)          77958 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\Text Files
+
+2021-06-17  15:45    <DIR>          .
+2021-06-17  15:45    <DIR>          ..
+2020-08-25  14:31              1305 abreviate_text.py
+2020-06-27  07:41              3068 Bolus Plancheck Cleaned.txt
+2020-08-25  14:31              9142 DIR_test_Data.txt
+2020-08-25  14:31           4113511 ESOI.dvh
+2020-08-25  14:31              2465 FIF Calculation Log.txt
+2020-06-27  07:41              1814 IMSURE BREL BH Cleaned.csv
+2020-06-27  07:41              3149 IMSure Report ESOI CRT cleaned.csv
+2020-08-25  14:31          21536738 Old vs new.dvh
+2020-08-25  14:31           6831790 PlanCheck Plan Sum.dvh
+2020-08-25  14:26              7175 PlanCheck; PELB Cleaned.txt
+2020-08-25  14:26             10693 PlanCheck;Plan Sum Cleaned.txt
+2020-08-25  14:31           6011173 PlanSum Only.dvh
+2020-08-25  14:31             38328 PlanSum vs Original Abbreviated.txt
+2020-08-25  14:31          12489028 PlanSum vs Original.dvh
+2020-06-27  07:41          24580360 Test1.dvh
+2020-10-11  08:48              2472 Test_DVH_Sections.txt
+2021-06-17  15:43              6921 test_files.txt
+2020-09-08  21:07              1450 trigger_test_text.txt
+              18 File(s)       75650582 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\__pycache__
+
+2021-06-16  20:42    <DIR>          .
+2021-06-16  20:42    <DIR>          ..
+2021-06-16  19:59             13293 buffered_iterator.cpython-37.pyc
+2021-06-16  20:29             13249 buffered_iterator.cpython-38.pyc
+2021-06-14  21:08              8852 read_dvh_file.cpython-37.pyc
+2021-02-01  08:08              8948 read_dvh_file.cpython-38.pyc
+2020-09-13  08:13              5047 test_buffered_iterator.cpython-37.pyc
+2020-12-11  22:35              4918 test_buffered_iterator.cpython-38.pyc
+2020-10-24  20:06             10893 test_functions.cpython-37.pyc
+2020-12-11  22:35             10136 test_functions.cpython-38.pyc
+2021-02-01  20:12              6269 test_group_read.cpython-38.pyc
+2020-12-27  10:41              4979 test_multi_read.cpython-37.pyc
+2021-01-30  20:33              4863 test_multi_read.cpython-38.pyc
+2020-09-11  13:32              2512 test_rule.cpython-37.pyc
+2020-10-04  20:46              5549 test_rules.cpython-37.pyc
+2020-12-11  22:35              5351 test_rules.cpython-38.pyc
+2020-10-25  11:42             15178 test_sections.cpython-37.pyc
+2020-12-27  14:06             11654 test_section_boundaries.cpython-37.pyc
+2021-01-30  20:33             11407 test_section_boundaries.cpython-38.pyc
+2021-02-01  20:23              6413 test_section_groups.cpython-38.pyc
+2020-12-25  08:55             14999 test_section_readers.cpython-37.pyc
+2021-01-30  20:33             13987 test_section_readers.cpython-38.pyc
+2020-12-26  20:31              7173 test_section_sequencer.cpython-37.pyc
+2021-01-30  20:41              7216 test_section_sequencer.cpython-38.pyc
+2020-10-04  21:01              4259 test_trigger.cpython-37.pyc
+2020-12-11  22:35              4032 test_trigger.cpython-38.pyc
+2020-09-08  21:50              3720 test_triggers.cpython-37.pyc
+2020-09-09  21:55              3701 test_trigger_types.cpython-37.pyc
+2021-06-14  21:37             36211 Text_Processing.cpython-37.pyc
+2021-06-16  20:42             36460 Text_Processing.cpython-38.pyc
+              28 File(s)         281269 bytes
+
+     Total Files Listed:
+              96 File(s)       79059131 bytes
+              38 Dir(s)     65423495168 bytes free

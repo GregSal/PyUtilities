@@ -1,0 +1,134 @@
+ Volume in drive C has no label.
+ Volume Serial Number is 56DB-14A7
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\DirParse\Testing code and Data
+
+2020-09-16  17:38    <DIR>          .
+2020-09-16  17:38    <DIR>          ..
+2018-07-02  11:49              9142 DIR_test_Data.txt
+2018-07-04  22:15              2404 Expected_test_dir_summary.txt
+2018-07-02  16:33              2194 Expected_test_files.txt
+2018-07-04  22:49             42924 Expected_test_files.xlsx
+2018-07-04  22:49              8283 Expected_test_full_files.txt
+2020-09-17  07:04    <DIR>          OneDrive Test Data
+2021-04-26  12:04    <DIR>          pathlib scan tests
+2020-09-17  07:04    <DIR>          Test Dir Structure
+2018-06-30  18:02              4961 test_files.txt
+2018-06-23  16:38                33 __init__.py
+2020-09-17  07:04    <DIR>          __pycache__
+               7 File(s)          69941 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\DirParse\Testing code and Data\OneDrive Test Data
+
+2020-09-17  07:04    <DIR>          .
+2020-09-17  07:04    <DIR>          ..
+2018-06-27  21:18             56269 dir_data.csv
+2018-06-27  21:35            365853 Old OneDrive for Business dir_data test2.csv
+2018-06-15  08:59            365828 Old OneDrive for Business dir_data.csv
+2018-06-15  08:59           5105420 Old OneDrive for Business dir_output.txt
+2018-06-27  21:18           2515481 Old OneDrive for Business file_data test1.csv
+2018-06-27  21:35           6404456 Old OneDrive for Business file_data test2.csv
+2018-06-15  08:59             28766 Old OneDrive for Business file_data.csv
+2018-06-15  08:44            379083 OneDrive - Queen's University dir_data.csv
+2018-06-15  08:44           5118161 OneDrive - Queen's University dir_output.txt
+2018-06-15  08:44             29450 OneDrive - Queen's University file_data.csv
+2018-06-15  12:47           1304871 OneDrive comparison.xlsx
+2018-06-15  09:02            359214 OneDrive for Business 1 dir_data.csv
+2018-06-15  09:02           5098945 OneDrive for Business 1 dir_output.txt
+2018-06-15  09:02             28424 OneDrive for Business 1 file_data.csv
+2018-06-27  22:23           1574372 Test 1 analysis.xlsx
+2018-06-27  22:25           3778139 Test 2 analysis.xlsx
+              16 File(s)       32512732 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\DirParse\Testing code and Data\pathlib scan tests
+
+2021-04-26  12:04    <DIR>          .
+2021-04-26  12:04    <DIR>          ..
+2020-07-05  09:55             34158 Test Dir Structure. Test Info.xlsx
+2020-07-11  09:16             26002 test_output. Trial 1.xlsx
+2020-07-11  13:57             26062 test_output. Trial 2.xlsx
+2021-04-26  11:45             11966 test_output.xlsx
+               4 File(s)          98188 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\DirParse\Testing code and Data\Test Dir Structure
+
+2020-09-17  07:04    <DIR>          .
+2020-09-17  07:04    <DIR>          ..
+2020-09-17  15:55    <DIR>          Dir1
+2020-09-17  16:11    <DIR>          Dir2
+2016-02-25  22:59                 3 TestFile1.txt
+2016-02-15  19:46                 7 TestFile2.rtf
+2016-02-15  19:47                 0 TestFile3.docx
+2016-04-21  14:06              3491 xcopy.txt
+               4 File(s)           3501 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\DirParse\Testing code and Data\Test Dir Structure\Dir1
+
+2020-09-17  15:55    <DIR>          .
+2020-09-17  15:55    <DIR>          ..
+2016-02-15  19:48                 0 File in Dir One.txt
+2020-09-17  15:22    <DIR>          SubFolder1
+2020-09-17  15:22    <DIR>          SubFolder2
+               1 File(s)              0 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\DirParse\Testing code and Data\Test Dir Structure\Dir1\SubFolder1
+
+2020-09-17  15:22    <DIR>          .
+2020-09-17  15:22    <DIR>          ..
+2016-03-19  10:26                 7 File in SubFolder One.rtf
+               1 File(s)              7 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\DirParse\Testing code and Data\Test Dir Structure\Dir1\SubFolder2
+
+2020-09-17  15:22    <DIR>          .
+2020-09-17  15:22    <DIR>          ..
+2016-02-15  19:49              4544 Another File in Sub Folder 2.jnt
+2016-02-15  19:49              4544 File in Sub Folder 2.jnt
+               2 File(s)           9088 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\DirParse\Testing code and Data\Test Dir Structure\Dir2
+
+2020-09-17  16:11    <DIR>          .
+2020-09-17  16:11    <DIR>          ..
+2016-02-15  19:50                 7 File in Dir 2.rtf
+2020-09-15  14:09    <DIR>          Sub Folder in Dir2
+               1 File(s)              7 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\DirParse\Testing code and Data\Test Dir Structure\Dir2\Sub Folder in Dir2
+
+2020-09-15  14:09    <DIR>          .
+2020-09-15  14:09    <DIR>          ..
+2020-09-17  15:35    <DIR>          Sub SubFolder
+               0 File(s)              0 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\DirParse\Testing code and Data\Test Dir Structure\Dir2\Sub Folder in Dir2\Sub SubFolder
+
+2020-09-17  15:35    <DIR>          .
+2020-09-17  15:35    <DIR>          ..
+2016-03-18  22:53                 0 New Text Document.txt
+2020-09-16  17:21    <DIR>          Sub Sub SubFolder
+               1 File(s)              0 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\DirParse\Testing code and Data\Test Dir Structure\Dir2\Sub Folder in Dir2\Sub SubFolder\Sub Sub SubFolder
+
+2020-09-16  17:21    <DIR>          .
+2020-09-16  17:21    <DIR>          ..
+2016-02-15  19:51             59904 Sub Sub Sub File.pub
+               1 File(s)          59904 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\DirParse\Testing code and Data\__pycache__
+
+2020-09-17  07:04    <DIR>          .
+2020-09-17  07:04    <DIR>          ..
+2018-06-30  18:43              3289 DirParseTest.cpython-36.pyc
+2018-07-05  09:46              8320 file_parse_test.cpython-36.pyc
+2019-01-04  17:40              8304 file_parse_test.cpython-37.pyc
+2018-07-07  12:08              5695 parameters_test.cpython-36.pyc
+2019-01-04  17:40              5699 parameters_test.cpython-37.pyc
+2018-06-23  16:48               222 __init__.cpython-36.pyc
+2019-01-04  17:40               226 __init__.cpython-37.pyc
+               7 File(s)          31755 bytes
+
+     Total Files Listed:
+              45 File(s)       32785123 bytes
+              35 Dir(s)     65425842176 bytes free

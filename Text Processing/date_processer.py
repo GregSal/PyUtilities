@@ -1,6 +1,7 @@
 '''Date Conversion Methods.
 '''
 # pylint: disable=anomalous-backslash-in-string
+# pylint: disable=logging-fstring-interpolation
 
 import re
 from typing import Union, Dict, List, TextIO

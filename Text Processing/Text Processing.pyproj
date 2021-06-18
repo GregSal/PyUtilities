@@ -28,6 +28,10 @@
     <Compile Include="date_processer.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="read_dir_file.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tests\test_section_groups.py" />
     <Compile Include="read_dvh_file.py">
       <SubType>Code</SubType>
     </Compile>
@@ -38,7 +42,7 @@
     <Compile Include="Tests\test_multi_read.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Tests\test_section_groups.py" />
+    <Compile Include="section_groups_temp.py" />
     <Compile Include="Tests\test_buffered_iterator.py" />
     <Compile Include="Tests\test_functions.py" />
     <Compile Include="Tests\test_section_readers.py" />

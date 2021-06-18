@@ -1,0 +1,72 @@
+ Volume in drive C has no label.
+ Volume Serial Number is 56DB-14A7
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\Text Files\Test Dir Structure
+
+2021-06-18  14:54    <DIR>          .
+2021-06-18  14:54    <DIR>          ..
+2021-06-18  14:54    <DIR>          Dir1
+2021-06-18  14:54    <DIR>          Dir2
+2016-02-25  22:59                 3 TestFile1.txt
+2016-02-15  19:46                 7 TestFile2.rtf
+2016-02-15  19:47                 0 TestFile3.docx
+2016-04-21  14:06              3491 xcopy.txt
+               4 File(s)           3501 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\Text Files\Test Dir Structure\Dir1
+
+2021-06-18  14:54    <DIR>          .
+2021-06-18  14:54    <DIR>          ..
+2016-02-15  19:48                 0 File in Dir One.txt
+2021-06-18  14:54    <DIR>          SubFolder1
+2021-06-18  14:54    <DIR>          SubFolder2
+               1 File(s)              0 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\Text Files\Test Dir Structure\Dir1\SubFolder1
+
+2021-06-18  14:54    <DIR>          .
+2021-06-18  14:54    <DIR>          ..
+2016-03-19  10:26                 7 File in SubFolder One.rtf
+               1 File(s)              7 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\Text Files\Test Dir Structure\Dir1\SubFolder2
+
+2021-06-18  14:54    <DIR>          .
+2021-06-18  14:54    <DIR>          ..
+2016-02-15  19:49              4544 Another File in Sub Folder 2.jnt
+2016-02-15  19:49              4544 File in Sub Folder 2.jnt
+               2 File(s)           9088 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\Text Files\Test Dir Structure\Dir2
+
+2021-06-18  14:54    <DIR>          .
+2021-06-18  14:54    <DIR>          ..
+2016-02-15  19:50                 7 File in Dir 2.rtf
+2021-06-18  14:54    <DIR>          Sub Folder in Dir2
+               1 File(s)              7 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\Text Files\Test Dir Structure\Dir2\Sub Folder in Dir2
+
+2021-06-18  14:54    <DIR>          .
+2021-06-18  14:54    <DIR>          ..
+2021-06-18  14:54    <DIR>          Sub SubFolder
+               0 File(s)              0 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\Text Files\Test Dir Structure\Dir2\Sub Folder in Dir2\Sub SubFolder
+
+2021-06-18  14:54    <DIR>          .
+2021-06-18  14:54    <DIR>          ..
+2016-03-18  22:53                 0 New Text Document.txt
+2021-06-18  14:54    <DIR>          Sub Sub SubFolder
+               1 File(s)              0 bytes
+
+ Directory of C:\Users\gsalomon\OneDrive - Queen's University\Python\Projects\EclipseRelated\PyUtilities\Text Processing\Text Files\Test Dir Structure\Dir2\Sub Folder in Dir2\Sub SubFolder\Sub Sub SubFolder
+
+2021-06-18  14:54    <DIR>          .
+2021-06-18  14:54    <DIR>          ..
+2016-02-15  19:51             59904 Sub Sub Sub File.pub
+               1 File(s)          59904 bytes
+
+     Total Files Listed:
+              11 File(s)          72507 bytes
+              23 Dir(s)     63927545856 bytes free
