@@ -42,7 +42,6 @@
     <Compile Include="Tests\test_multi_read.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="section_groups_temp.py" />
     <Compile Include="Tests\test_buffered_iterator.py" />
     <Compile Include="Tests\test_functions.py" />
     <Compile Include="Tests\test_section_readers.py" />

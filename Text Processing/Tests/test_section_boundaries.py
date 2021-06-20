@@ -132,7 +132,7 @@ class TestSectionBoundaries(unittest.TestCase):
         try:
             lines = [start_check(row, source) for row in source]
         except tp.StartSection as start_marker:
-            sentinel = end_marker.get_context()['Sentinel']
+            sentinel = start_marker.get_context()['Sentinel']
             self.assertTrue(sentinel)
         else:
             self.fail()

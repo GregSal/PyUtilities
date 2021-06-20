@@ -25,19 +25,19 @@ class TestSectionSequencer(unittest.TestCase):
                 ('                       or volume (absolute) of structures '
                 'that receive a dose'),
                 '                      equal to or greater than a given dose.',
-                ''
+                '',
                 'Plan sum: Plan Sum',
                 'Course: PLAN SUM',
                 'Prescribed dose [cGy]: not defined',
                 '% for dose (%): not defined',
-                ''
+                '',
                 'Plan: PARR',
                 'Course: C1',
                 'Plan Status: Treatment Approved Thursday, January 02, '
                 '2020 12:55:56 by gsal',
                 'Prescribed dose [cGy]: 5000.0',
                 '% for dose (%): 100.0',
-                ''
+                '',
                 'Structure: PRV5 SpinalCanal',
                 'Approval Status: Approved',
                 'Plan: Plan Sum',
@@ -55,7 +55,7 @@ class TestSectionSequencer(unittest.TestCase):
                 'Equiv. Sphere Diam. [cm]: 6.1',
                 'Conformity Index: N/A',
                 'Gradient Measure [cm]: N/A',
-                ''
+                '',
                 'Dose [cGy] Ratio of Total Structure Volume [%]',
                 '         0                       100',
                 '         1                       100',

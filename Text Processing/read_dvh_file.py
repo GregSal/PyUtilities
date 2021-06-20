@@ -163,6 +163,8 @@ def to_plan_info_dict(plan_info_dict_list):
     '''
     output_dict = dict()
     for plan_info_dict in plan_info_dict_list:
+        if len(plan_info_dict) == 0:
+            continue
         plan_name = plan_info_dict.get('Plan')
         if not plan_name:
             plan_name = plan_info_dict.get('Plan sum')

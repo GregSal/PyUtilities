@@ -11,7 +11,15 @@ from pprint import pprint
 import pandas as pd
 from buffered_iterator import BufferedIterator, BufferedIteratorEOF
 
-
+# Aggregate definitions
+def print_list(parsed_lines):
+    '''print items and add then to a list.
+    '''
+    output = list()
+    for line_item in parsed_lines:
+        pprint(line_item)
+        output.append(line_item)
+    return output
 
 
 #%% tests
@@ -27,40 +35,40 @@ class TestSectionGroupRead(unittest.TestCase):
             'D1 Content2:b',
             'D1 Content3:c',
             'End Section',
-
+            '',
             'Single Fixed Width Section',
             'Section Name    F1',
             'F1 Content1     d',
             'F1 Content2     e',
             'F1 Content3     f',
             'End Section',
-
-            'Text to be ignored'
-
+            '',
+            'Text to be ignored',
+            '',
             'Combined Group Section',
-
-            'More Text to be ignored'
-
+            '',
+            'More Text to be ignored',
+            '',
             'Single Delimiter Section',
             'Section Name:D2',
             'D2 Content1:m',
             'D2 Content2:n',
             'D2 Content3:o',
             'End Section',
-
+            '',
             'Even More Text to be ignored',
-
+            '',
             'Single Fixed Width Section',
             'Section Name    F2',
             'F2 Content1     p',
             'F2 Content2     q',
             'F2 Content3     r',
             'End Section',
-
-            'Final Text to be ignored'
-
+            '',
+            'Final Text to be ignored',
+            '',
             'Done Combined Group Section',
-
+            '',
             'Multi Combined Group Section',
             'Single Delimiter Section',
             'Section Name:D3',
@@ -254,6 +262,7 @@ class TestSectionGroupRead(unittest.TestCase):
             start_section=group_section_start,
             end_section=group_section_end
             )
+
         # Section definitions
         self.delimiter_section = tp.Section(
             section_name='Delimiter Section',
@@ -270,7 +279,8 @@ class TestSectionGroupRead(unittest.TestCase):
         self.group_section = tp.Section(
             section_name='Group Section',
             boundaries=group_section_break,
-            reader=[self.delimiter_section, self.fixed_width_section]
+            reader=[self.delimiter_section, self.fixed_width_section],
+            aggregate=print_list
             )
         self.multi_group_section = tp.Section(
             section_name='Group Section',
@@ -292,6 +302,7 @@ class TestSectionGroupRead(unittest.TestCase):
                                         **self.context)
         self.assertDictEqual(test_output, self.test_result['Section F1'])
 
+    # @unittest.SkipTest('Needs Debugging')
     def test_group_section_read(self):
         test_section = self.group_section
         source = BufferedIterator(self.test_source)
@@ -300,6 +311,7 @@ class TestSectionGroupRead(unittest.TestCase):
         self.assertDictEqual(test_output,
                              self.test_result['Test Group Section'])
 
+    #@unittest.SkipTest('Needs Debugging')
     def test_multi_group_section_read(self):
         test_section = self.multi_group_section
         source = BufferedIterator(self.test_source)

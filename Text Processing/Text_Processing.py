@@ -48,7 +48,7 @@ Source = Union[StringSource, ParsedStringSource]
 
 
 #%% Logging
-logger = lg.config_logger(prefix='Text Processing', level='INFO')
+logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
 
 
 #%% Exceptions
