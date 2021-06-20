@@ -285,7 +285,8 @@ class TestSectionGroupRead(unittest.TestCase):
         self.multi_group_section = tp.Section(
             section_name='Group Section',
             boundaries=multi_group_section_break,
-            reader=[self.delimiter_section, self.fixed_width_section]
+            reader=[self.delimiter_section, self.fixed_width_section],
+            aggregate=print_list
             )
 
     def test_delimiter_sub_section_read(self):
@@ -302,25 +303,35 @@ class TestSectionGroupRead(unittest.TestCase):
                                         **self.context)
         self.assertDictEqual(test_output, self.test_result['Section F1'])
 
-    # @unittest.SkipTest('Needs Debugging')
     def test_group_section_read(self):
         test_section = self.group_section
         source = BufferedIterator(self.test_source)
         test_output = test_section.read(source, start_search=True,
                                         **self.context)
-        self.assertDictEqual(test_output,
-                             self.test_result['Test Group Section'])
+        expected_output = self.test_result['Test Group Section']
+        for count, output in enumerate(zip(test_output, expected_output)):
+            with self.subTest(section=count):
+                section_output = output[0]
+                expected_section_output = output[1]
+                self.assertDictEqual(section_output,
+                                     expected_section_output)
 
-    #@unittest.SkipTest('Needs Debugging')
     def test_multi_group_section_read(self):
         test_section = self.multi_group_section
         source = BufferedIterator(self.test_source)
         test_output = test_section.read(source, start_search=True,
                                         **self.context)
-        self.assertDictEqual(test_output,
-                             self.test_result['Test Multi Group Section'])
-
-
+        expected_output = self.test_result['Test Multi Group Section']
+        for section_count, section_output in enumerate(zip(test_output,
+                                                           expected_output)):
+            for count, output in enumerate(zip(section_output[0],
+                                               expected_output[1])):
+                subsection = f'{section_count}.{count}'
+                with self.subTest(subsection=subsection):
+                    section_output = output[0]
+                    expected_section_output = output[1]
+                    self.assertDictEqual(section_output,
+                                         expected_section_output)
 if __name__ == '__main__':
     unittest.main()
 

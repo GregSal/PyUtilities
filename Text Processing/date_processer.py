@@ -156,7 +156,7 @@ class DateString(object):
 
     @staticmethod
     def build_section_date_re():
-        # FIXME I Don't think this method is used for anything.
+        # TODO I Don't think this method is used for anything.
         date_section_pattern = (
             '^'                # beginning of string
             '\s?'              # possible space before the date begins

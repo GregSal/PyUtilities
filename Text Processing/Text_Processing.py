@@ -1015,7 +1015,7 @@ class Section():
                 yield item
         except (RuntimeError) as err:
             break_context['Status'] = 'RuntimeError'
-            logger.debug(f'RuntimeError Encountered: {err}')
+            logger.warning(f'RuntimeError Encountered: {err}')
             status = 'Scan Complete'
         except (BufferedIteratorEOF, IteratorEOF, StopIteration) as eof:
             break_context['Status'] = 'End of Source'
@@ -1028,7 +1028,7 @@ class Section():
         finally:
             self.context.update(break_context)
             self.scan_status = status
-
+            logger.debug(f'break_context:\t{break_context["Status"]}')
     def find_start(self, buffered_source):
         # Skip lines before start
         scan_start = self.boundaries.scan('Start', buffered_source,
@@ -1082,9 +1082,9 @@ class Section():
             yield section_item
 
     def group_reader_gen(self, reader_list, section_iter):
-        while 'Complete' not in self.scan_status:  # FIXME group status not being updated when subgroup completes is catch_break beuing called?
+        while 'Complete' not in self.scan_status:
             group_read = (
-                    sub_rdr.read(section_iter, start_search=False, **self.context)
+                    sub_rdr.read(section_iter, **self.context)
                     for sub_rdr in reader_list
                     )
             section_item = list(group_read)
