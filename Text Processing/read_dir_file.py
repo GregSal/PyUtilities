@@ -23,6 +23,7 @@ from buffered_iterator import BufferedIterator
 from buffered_iterator import BufferedIteratorEOF
 from buffered_iterator import BufferOverflowWarning
 import Text_Processing as tp
+from date_processer import  build_date_re
 
 
 #%% Logging
@@ -43,8 +44,76 @@ folder_summary_pt = re.compile(
     r')'                # end of size string group
     r' bytes'           # "bytes" text
     )
+date_pattern = build_date_re(compile=False)
+file_pt = re.compile(
+    r'(?P<files>'       # beginning of files string group
+    r'[0-9]+'           # Integer number of files
+    r')'                # end of files string group
+    r'[ ]+'             # Arbitrary number of spaces
+    r'(?P<type>'        # beginning of type string group
+    r'File|Dir'         # "File" or " Dir" text
+    r')'                # end of type string group
+    r'\(s\)'            # "(s)" text
+    r'[ ]+'             # Arbitrary number of spaces
+    r'(?P<size>'        # beginning of size string group
+    r'[0-9]+'           # Integer size of folder
+    r')'                # end of size string group
+    r' bytes'           # "bytes" text
+    )
+
 
 #%% Line Parsing Functions
+# skip <DIR>
+def make_skip_dir_rule() -> tp.Rule:
+    '''If " <DIR> " in line, skip line.
+    '''
+    def blank_line(*args, **kwargs) -> tp.ParseResults:
+        return ''
+    skip_dir_rule = tp.Rule(
+        name='Skip <DIR> Rule',
+        trigger=tp.Trigger(' <DIR> ', name='Is Directory'),
+        pass_method=blank_line,
+        default_return='Original'
+        )
+    return skip_dir_rule
+
+def make_parse_dir_header(top_dir: str, tree_name: str = 'Top') -> tp.Rule:
+    '''If  "Directory of " in line, skip line.
+    '''
+    def truncate_dir(line: str, *args, **kwargs) -> tp.ParseResults:
+        truncated_line = line.replace(top_dir, tree_name)
+        return ['Directory', truncated_line]
+
+    dir_header_rule = tp.Rule(
+        name='Dir Header Rule',
+        trigger=tp.Trigger('Directory of ', name='Directory Header'),
+        pass_method=truncate_dir,
+        default_return='Original'
+        )
+    return dir_header_rule
+
+# Regular File Parsing Rule
+
+def make_parse_file_rule() -> tp.Rule:
+    def file_parse(line, sentinel, *args, **kwargs) -> tp.ParseResults:
+        '''Break file data into tuple containing:
+            (Date, Size, File name, Extension).
+        '''
+        date_pattern = build_date_re(compile=False)
+        parsed_line = line.split(':', maxsplit=1)
+        return [parsed_line]
+
+    date_trigger = tp.Trigger('Date', location='START',
+                              name='Starts With Date')
+    date_rule = tp.Rule(date_trigger, date_parse,
+                        name='date_rule')
+    return date_rule
+
+# Line Parsing to do
+#2016-02-25  22:59                 3 TestFile1.txt
+#2016-02-15  19:46                 7 TestFile2.rtf
+
+
 # Files / DIRs Parse
 def make_files_rule() -> tp.Rule:
     '''If  File(s) or  Dir(s) extract # files & size
@@ -79,28 +148,6 @@ def make_files_rule() -> tp.Rule:
                                    name='Files_rule')
     return files_rule
 
-# Date Rule
-def make_date_parse_rule() -> tp.Rule:
-    def date_parse(line: str, *args, **kwargs) -> tp.ParseResults:
-        '''If Date,don't split beyond first :.'''
-        parsed_line = line.split(':', maxsplit=1)
-        return [parsed_line]
-
-    date_trigger = tp.Trigger('Date', location='START',
-                              name='Starts With Date')
-    date_rule = tp.Rule(date_trigger, date_parse,
-                        name='date_rule')
-    return date_rule
-
-# Line Parsing to do
-#2021-06-18  14:54    <DIR>          .
-#2021-06-18  14:54    <DIR>          ..
-#2021-06-18  14:54    <DIR>          Dir1
-#2021-06-18  14:54    <DIR>          Dir2
-#2016-02-25  22:59                 3 TestFile1.txt
-#2016-02-15  19:46                 7 TestFile2.rtf
-
-
 
 # Prescribed Dose Rule
 def make_default_csv_parser() -> Callable:
@@ -124,7 +171,7 @@ def fix_structure_names(line: tp.ParsedString) -> tp.ParsedString:
 
 
 #%% Line Processing
-def to_plan_info_dict(plan_info_dict_list):
+def to_folder_dict(plan_info_dict_list):
     '''Combine Plan Info dictionaries into dictionary of dictionaries.
     '''
     output_dict = dict()
@@ -163,34 +210,18 @@ def to_structure_data_tuple(structure_data_list):
 #%% Reader definitions
 default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
                                       skipinitialspace=True)
-dvh_info_reader = tp.SectionReader(
-    preprocessing_methods=[clean_ascii_text],
-    parsing_rules=[make_date_parse_rule()],
+folder_reader = tp.SectionReader(
+    parsing_rules=[make_skip_dir_rule(),
+                   make_parse_dir_header(),
+                   parse_file, parse_file_count, skip_dir],
     default_parser=default_parser,
-    post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.merge_continued_rows])
-plan_info_reader = tp.SectionReader(
-    preprocessing_methods=[clean_ascii_text],
-    parsing_rules=[make_prescribed_dose_rule(),
-                   make_approved_status_rule()],
+    post_processing_methods=[tp.drop_blanks])
+summary_break = tp.SectionReader(
+    parsing_rules=[parse_file_count],
     default_parser=default_parser,
-    post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.convert_numbers]
+    post_processing_methods=[tp.drop_blanks]
     )
-structure_info_reader = tp.SectionReader(
-    preprocessing_methods=[clean_ascii_text],
-    parsing_rules=[],
-    default_parser=default_parser,
-    post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.convert_numbers,
-                             fix_structure_names]
-    )
-dvh_data_reader = tp.SectionReader(
-    preprocessing_methods=[clean_ascii_text],
-    default_parser=tp.define_fixed_width_parser(widths=10),
-    post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.convert_numbers]
-    )
+
 
 #%% SectionBreak definitions
 folder_start = tp.SectionBreak(
@@ -219,41 +250,17 @@ summary_break = tp.SectionBoundaries(
 
 
 #%% Section definitions
-dvh_info_section = tp.Section(
-    section_name='DVH Info',
-    boundaries=dvh_info_break,
-    reader=dvh_info_reader,
+folder_section = tp.Section(
+    section_name='Folder',
+    boundaries=folder_break,
+    reader=folder_reader,
+    aggregate=to_folder_dict
+    )
+summary_section = tp.Section(
+    section_name='Summary',
+    boundaries=summary_break,
+    reader=summary_reader,
     aggregate=tp.to_dict
-    )
-plan_info_section = tp.Section(
-    section_name='Plan Info',
-    boundaries=plan_info_break,
-    reader=plan_info_reader,
-    aggregate=tp.to_dict
-    )
-plan_info_group = tp.Section(
-    section_name='Plan Info Group',
-    boundaries=plan_group_break,
-    reader=plan_info_section,
-    aggregate=to_plan_info_dict
-    )
-structure_info_section = tp.Section(
-    section_name='Structure',
-    boundaries=structure_info_break,
-    reader=structure_info_reader,
-    aggregate=tp.to_dict
-    )
-dvh_data_section = tp.Section(
-    section_name='DVH',
-    boundaries=dvh_data_break,
-    reader=dvh_data_reader,
-    aggregate=tp.to_dataframe
-    )
-dvh_group_section = tp.Section(
-    section_name='DVH Groups',
-    boundaries=structure_group_break,
-    reader=[structure_info_section, dvh_data_section],
-    aggregate=to_structure_data_tuple
     )
 
 
@@ -303,4 +310,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

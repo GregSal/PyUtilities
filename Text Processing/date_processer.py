@@ -6,6 +6,77 @@
 import re
 from typing import Union, Dict, List, TextIO
 
+# TODO extract funtions to module level so that they can be accessed seperately
+
+
+def build_date_re(compile=True, include_time=True):
+    '''Compile a regular expression for parsing a date_string.
+    Combines patterns for Date and Time.
+    Allows for the following date and time formats
+    Short date
+        yyyy-MM-dd
+        dd/MM/yyyy
+        dd/MM/yy
+        d/M/yy
+        yy-MM-dd
+        M/dd/yy
+        dd-MMM-yy
+        dd-MMM-yy
+    Long date
+        MMMM d, yyyy
+        dddd, MMMM dd, yyyy
+        MMMM-dd-yy
+        d-MMM-yy
+    Long time
+        h:mm:ss tt
+        hh:mm:ss tt
+        HH:mm:ss
+        H:mm:ss
+    Short Time
+        h:mm tt
+        hh:mm tt
+        HH:mm tt
+        H:mm
+    '''
+    date_pattern = (
+        '^'                # beginning of string
+        '\s?'              # possible space before the date begins
+        '(?P<date>'        # beginning of date string group
+        '[a-zA-Z0-9]+'     # Month Day or year as a number or text
+        '[\s,-/]{1,2}'     # Date delimiter one of '-' '/' or ', '
+        '[a-zA-Z0-9]+'     # Month Day or year as a number or text
+        '[\s,-/]{1,2}'     # Date delimiter one of '-' '/' or ', '
+        '\d{2,4}'          # day or year as a number
+        '((?<=, )\d{2,4})?'# Additional year section if the day name was included
+        ')'                # end of date string group
+        )
+    time_pattern = (
+        '\s+'              # gap between date and time
+        '(?P<time>'        # beginning of time string group
+        '\d{1,2}'          # Hour as 1 or 2 digits
+        ':'                # Time delimiter
+        '\d{1,2}'          # Minutes as 1 or 2 digits
+        ':?'               # Time delimiter
+        '\d{0,2}'          # Seconds (optional) as 0,  1 or 2 digits
+        ')'                # end of time string group
+        )
+    am_pm_pattern = (
+        '\s?'              # possible space separating time from AM/PM indicator
+        '(?P<am_pm>'       # beginning of possible AM/PM (group)
+        '[aApP][mM]'       # am or pm in upper or lower case
+        ')?'               # end of am/pm string group
+        '\s?'              # possible space after the date and time ends
+        '$'                # end of string
+        )
+    if include_time:
+        full_pattern = ''.join([date_pattern, time_pattern, am_pm_pattern])
+    else:
+        full_pattern = date_pattern
+    if compile:
+        return re.compile(full_pattern)
+    return full_pattern
+
+
 
 class DateString(object):
     '''Parsing results for a string containing a date and time.
@@ -16,6 +87,7 @@ class DateString(object):
         time (str): The time portion of the input string
     '''
     default_date_order = ('day', 'month', 'year')
+    # TODO make months and days global variables to add language options
     months = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
               'JUL': 7, 'AUG': 9, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
     days = ('SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT')
@@ -222,5 +294,3 @@ class DateString(object):
             time_str += am_pm_str.strip()
         self.date = date_str
         self.time = time_str
-
-
