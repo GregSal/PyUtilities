@@ -4,12 +4,14 @@
 # pylint: disable=logging-fstring-interpolation
 
 import re
+from datetime import datetime
+from itertools import chain
 from typing import Union, Dict, List, TextIO
 
-# TODO extract funtions to module level so that they can be accessed seperately
+# TODO extract functions to module level so that they can be accessed separately
 
 
-def build_date_re(compile=True, include_time=True):
+def build_date_re(compile_re=True, include_time=True):
     '''Compile a regular expression for parsing a date_string.
     Combines patterns for Date and Time.
     Allows for the following date and time formats
@@ -39,16 +41,24 @@ def build_date_re(compile=True, include_time=True):
         H:mm
     '''
     date_pattern = (
-        '^'                # beginning of string
-        '\s?'              # possible space before the date begins
-        '(?P<date>'        # beginning of date string group
+        '(?P<date1>'       # beginning of date1 string group
         '[a-zA-Z0-9]+'     # Month Day or year as a number or text
+        ')'                # end of date1 string group
+        '(?P<delimeter1>'  # beginning of delimeter1 string group
         '[\s,-/]{1,2}'     # Date delimiter one of '-' '/' or ', '
+        ')'                # end of delimeter1 string group
+        '(?P<date2>'       # beginning of date2 string group
         '[a-zA-Z0-9]+'     # Month Day or year as a number or text
+        ')'                # end of date2 string group
+        '(?P<delimeter2>'  # beginning of delimeter2 string group
         '[\s,-/]{1,2}'     # Date delimiter one of '-' '/' or ', '
+        ')'                # end of delimeter2 string group
+        '(?P<date3>'       # beginning of date3 string group
         '\d{2,4}'          # day or year as a number
-        '((?<=, )\d{2,4})?'# Additional year section if the day name was included
-        ')'                # end of date string group
+        ')'                # end of date3 string group
+        '(?P<date4>'       # beginning of possible date4 string group
+        '((?<=, )\d{2,4})?'# Additional year section if date1 is the day name
+        ')'                # end of date4 string group
         )
     time_pattern = (
         '\s+'              # gap between date and time
@@ -66,16 +76,54 @@ def build_date_re(compile=True, include_time=True):
         '[aApP][mM]'       # am or pm in upper or lower case
         ')?'               # end of am/pm string group
         '\s?'              # possible space after the date and time ends
-        '$'                # end of string
         )
     if include_time:
         full_pattern = ''.join([date_pattern, time_pattern, am_pm_pattern])
     else:
         full_pattern = date_pattern
-    if compile:
+    if compile_re:
         return re.compile(full_pattern)
     return full_pattern
 
+def make_date_time_string(date_match: re.match,
+                          include_time: bool = True)->str:
+    '''Extract date and time strings.
+    Combine time and am/pm strings.
+    '''
+    if date_match:
+        date_match_groups = date_match.groups(default='')
+        if include_time:
+            date_parameters = [
+                date_part for date_part in chain(
+                    date_match_groups[0:6],
+                    [' '],
+                    date_match_groups[6:8]
+                    )
+                ]
+        else:
+            date_parameters = date_match_groups[0:6]
+        date_string = ''.join(date_parameters)
+    else:
+        date_string = ''
+    return date_string
+
+
+def get_date_time(date_match: re.match):
+    '''Extract date and time strings.
+    Combine time and am/pm strings.
+    '''
+    raise NotImplementedError('get_date_time is not yet implemented')
+    if date_match:
+        date_parameters = date_match.groupdict()
+
+    else:
+        return None
+    date_str = date_parameters['date'].strip()
+    time_str = date_parameters['time'].strip()
+    am_pm_str = date_parameters['am_pm']
+    if am_pm_str:
+        time_str += ' '
+        time_str += am_pm_str.strip()
 
 
 class DateString(object):
@@ -91,68 +139,6 @@ class DateString(object):
     months = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
               'JUL': 7, 'AUG': 9, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
     days = ('SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT')
-
-    @staticmethod
-    def build_date_re():
-        '''Compile a regular expression for parsing a date_string.
-        Combines patterns for Date and Time.
-        Allows for the following date and time formats
-        Short date
-            yyyy-MM-dd
-            dd/MM/yyyy
-            dd/MM/yy
-            d/M/yy
-            yy-MM-dd
-            M/dd/yy
-            dd-MMM-yy
-            dd-MMM-yy
-        Long date
-            MMMM d, yyyy
-            dddd, MMMM dd, yyyy
-            MMMM-dd-yy
-            d-MMM-yy
-        Long time
-            h:mm:ss tt
-            hh:mm:ss tt
-            HH:mm:ss
-            H:mm:ss
-        Short Time
-            h:mm tt
-            hh:mm tt
-            HH:mm tt
-            H:mm
-        '''
-        date_pattern = (
-            '^'                # beginning of string
-            '\s?'              # possible space before the date begins
-            '(?P<date>'        # beginning of date string group
-            '[a-zA-Z0-9]+'     # Month Day or year as a number or text
-            '[\s,-/]{1,2}'     # Date delimiter one of '-' '/' or ', '
-            '[a-zA-Z0-9]+'     # Month Day or year as a number or text
-            '[\s,-/]{1,2}'     # Date delimiter one of '-' '/' or ', '
-            '\d{2,4}'          # day or year as a number
-            '((?<=, )\d{2,4})?'# Additional year section if the day name was included
-            ')'                # end of date string group
-            )
-        time_pattern = (
-            '\s+'              # gap between date and time
-            '(?P<time>'        # beginning of time string group
-            '\d{1,2}'          # Hour as 1 or 2 digits
-            ':'                # Time delimiter
-            '\d{1,2}'          # Minutes as 1 or 2 digits
-            ':?'               # Time delimiter
-            '\d{0,2}'          # Seconds (optional) as 0,  1 or 2 digits
-            ')'                # end of time string group
-            )
-        am_pm_pattern = (
-            '\s?'              # possible space separating time from AM/PM indicator
-            '(?P<am_pm>'       # beginning of possible AM/PM (group)
-            '[aApP][mM]'       # am or pm in upper or lower case
-            ')?'               # end of am/pm string group
-            '\s?'              # possible space after the date and time ends
-            '$'                # end of string
-            )
-        return re.compile(date_pattern + time_pattern + am_pm_pattern)
 
     @staticmethod
     def build_section_date_re():
@@ -200,45 +186,7 @@ class DateString(object):
         return re.compile(date_section_pattern + time_section_pattern +
                           am_pm_pattern)
 
-    __date_re = build_date_re()
-    __date_section_re = build_section_date_re()
-
-    def __init__(self, line: str):
-        '''Scan a string for date and time elements
-        '''
-        self.date_delimeter = '-'
-        self.date_format = r'dd/mm/yy'
-        self.raw_text = line
-        self.is_datetime = False
-        self.date = ''
-        self.time = ''
-
-        self.parse_date_string()
-
-    def parse_date_string(self):
-        '''Parse a single line to extract date parameters.
-        '''
-        found = self.__date_re.search(self.raw_text)
-        if found:
-            date_parameters = found.groupdict()
-            self.get_date_time(date_parameters)
-            self.is_datetime = True
-        else:
-            self.is_datetime = False
-
-    def test_date_num(self, date_num: int, num_type: List[str]) -> str:
-        '''Identify the date number if possible.
-        Returns one of 'year', 'month', 'day' or '?'
-        '''
-        if date_num > 31:
-            date_type = 'year'
-        elif ('year' in num_type) and (date_num > 12):
-            date_type = 'month'
-        elif ('year' in num_type) and ('month' in num_type):
-            date_type = 'day'
-        else:
-            date_type = '?'
-        return date_type
+    __date_re = build_date_re(compile_re=True, include_time=True)
 
     def find_date_pattern(self, date_num_list: List[int],
                           num_type_list: List[str]) -> str:
@@ -256,6 +204,9 @@ class DateString(object):
                 num_type = self.test_date_num(date_num, num_type_list)
                 num_type_list[i] = num_type
         return num_type_list
+
+    def test_date_num(self, date_num, num_type_list):
+        raise NotImplementedError('test_date_num is not implemented')
 
     def build_date_string(self, date_parameters: Dict[str, str]):
         '''Extract date and time strings.

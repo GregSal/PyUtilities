@@ -32,7 +32,25 @@ from buffered_iterator import BufferedIteratorEOF
 T = TypeVar('T')
 # TODO create more type definitions: Line, ...
 # TODO more explicit generic type definitions
-
+# TODO DIstinguish between Sentinal and sentinal output
+'''
+    Trigger Types:
+    None
+    bool
+    List[str]
+    Regex
+    Callable   -- Not Yet Implemented
+    n          -- Not Yet Implemented
+    If None, the test will never pass
+    If bool, the test will always return the boolean value
+    If list of strings, a match with any string in the list will be a pass
+    The matched string will be added to the Context dict.
+    If Regex the re.match object will be added to the Context dict.
+    If Callable, a non-None return value will be a pass -- Not Yet Implemented
+    The return value will be added to the Context dict.
+    If n skip n lines then trigger                      -- Not Yet Implemented
+    If Repeating sub-sections, can be number of repetitions
+    '''
 ParsedString = List[str]
 Strings = Union[str, ParsedString]
 OptStrings = Union[Strings, None]

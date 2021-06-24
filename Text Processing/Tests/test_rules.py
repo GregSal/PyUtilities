@@ -165,5 +165,42 @@ class TestApprovalParse(unittest.TestCase):
         self.assertListEqual(parsed_lines, expected_results)
 
 
+#%%  Parse with single line
+def parse_use(line, *args, **kwargs):
+    line_break = line.split('-')
+    clean_line = [part.strip() for part in line_break]
+    return [[clean_line]]
+
+
+@unittest.expectedFailure('not working yet')
+class TestApprovalParse(unittest.TestCase):
+    self.test_source = '\n'.join([
+        'Text Processing      - Ignore'
+        'Text Processing      - Use'
+        'Text Processing      - Ignore'
+        ])
+
+    self.test_result = ['Text Processing',      - 'Use']
+
+    self.context = {
+        'top_dir': 'Text',
+        'tree_name': 'Tree Top'
+        }
+    self.default_parser = tp.define_csv_parser('comma')
+    use_trigger = Trigger('Use', location='IN', name='Use')
+    self.rule = Rule(use_trigger, pass_method=parse_use, name='use_rule')
+
+    def test_use_parse(self):
+        line = ('Plan Status: Treatment Approved Thursday, January 02, 2020 '
+                '12:55:56 by gsal')
+        expected_results = [
+            ['Plan Status', 'Treatment Approved'],
+            ['Approved on', ' Thursday, January 02, 2020 12:55:56 '],
+            ['Approved by', 'gsal']
+            ]
+        parsed_lines = self.rule.apply(line, self.context)
+        self.assertListEqual(parsed_lines, expected_results)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -352,7 +352,7 @@ def main():
     dvh_indx_names = ['Course', 'Plan', 'Structure', 'Data']
     output_file = base_path / 'read_dvh_test_results.xlsx'
 
-    with pd.ExcelWriter(output_file) as writer:
+    with pd.ExcelWriter(output_file) as writer:  # pylint: disable=abstract-class-instantiated
         dvh_info_df.to_excel(writer, 'DVH Info')
         plan_data.to_excel(writer, 'Plan Data')
         structures_df.to_excel(writer, 'Structures Data',
