@@ -728,11 +728,12 @@ class Rule():
         '''default_method to be set using partial.
         '''
         if 'Original' in default_return:
-            return test_object
+            return [test_object]
         if 'Sentinel' in default_return:
-            return sentinel
+            return sentinel  # TODO The format for sentinel should depend on its type
         if 'None' in default_return:
             return None
+        # TODO Add option for Rule default method to be a blank line
         return None
 
     def __init__(self, trigger: Trigger = None,
@@ -752,6 +753,7 @@ class Rule():
         '''
         self.name = name
         self.trigger = trigger
+        # TODO in Rule __init__ get rid of default and have pass & fail methods check for string.
         default_method = partial(self.default_template,
                                  default_return=default)
         if pass_method:
@@ -971,6 +973,9 @@ class SectionReader():
         # Check for End of Section Break -> break_triggers
         # Call Line Parser, passing Context & Lines -> Dialect, Special Lines
         # Apply Line Processing Rules -> trim_lines
+        # TODO want line_parser and post processing to access context,
+        # but preprocessing_methods only expect 1 argument; the text line to
+        # process, Separate stages into successive iterators
         self.section_stages = list()
         self.section_stages.extend(self.preprocessing_methods)
         self.section_stages.append(self.set_line_parser())

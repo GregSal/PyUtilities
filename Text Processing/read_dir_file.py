@@ -30,19 +30,10 @@ Each Folder section has the following line types:
 #%% Imports
 from pathlib import Path
 from pprint import pprint
-from functools import partial
-from itertools import chain
-from typing import List, Callable
-import csv
 import re
 import pandas as pd
-import xlwings as xw
 
 import logging_tools as lg
-from file_utilities import clean_ascii_text
-from buffered_iterator import BufferedIterator
-from buffered_iterator import BufferedIteratorEOF
-from buffered_iterator import BufferOverflowWarning
 import Text_Processing as tp
 from date_processer import  build_date_re, make_date_time_string
 
@@ -88,28 +79,26 @@ file_listing_pt = re.compile(
 #%% Line Parsing Functions
 # Directory Label Rule
 
-def truncate_dir(line: str, sentinel, *args,
+def extract_directory(line: str, sentinel, *args,
                     context=None, **kwargs) -> tp.ParseResults:
-    ''' Remove Top Directory from folder header.
+    '''Extract Directory path from folder header.
     '''
     full_dir = line.replace('Directory of', '').strip()
-    if context:
-        top_dir = context.get('top_dir', '')
-        tree_name = context.get('tree_name', 'top')
-        truncated_line = full_dir.replace(top_dir, tree_name)
-    else:
-        truncated_line = full_dir
-    return [['Directory', truncated_line]]
+    return [[full_dir]]
+
 
 dir_header_rule = tp.Rule(
     name='Dir Header Rule',
     trigger=tp.Trigger('Directory of ', name='Directory Header'),
-    pass_method=truncate_dir
+    pass_method=extract_directory
     )
+
 
 # skip <DIR>
 def blank_line(*args, **kwargs) -> tp.ParseResults:
     return [['']]
+
+
 skip_dir_rule = tp.Rule(
     name='Skip <DIR> Rule',
     trigger=tp.Trigger(' <DIR> ', name='Is Directory'),
@@ -124,16 +113,13 @@ skip_totals_rule = tp.Rule(
 
 # Regular file listings
 def file_parse(line: str, sentinel, *args, **kwargs) -> tp.ParseResults:
-    '''Break file data into three rows containing Date, Size & Filename.
-
-    Output has the following format:
-        ['Date', date value: str ]
-        ['Size', file size value: int]
-        ['Filename', filename value: str].
+    '''Break file data into three columns containing Filename, Date, Size.
 
     Typical file is:
         2016-02-25  22:59     3 TestFile1.txt
     File line is parsed using a regular expression with 3 named groups.
+    Output for the example above is:
+        [[TestFile1.txt , 2016-02-25  22:59, 3]]
 
     Args:
         line (str): The text line to be parsed.
@@ -142,29 +128,23 @@ def file_parse(line: str, sentinel, *args, **kwargs) -> tp.ParseResults:
         *args & **kwargs: Catch unused extra parameters passed to file_parse.
 
     Returns:
-        tp.ParseResults: The parsed file information.
-            The parsed file information consists of three lines with the
-            following format:
-                'Date', date value: datetime
-                'Size', file size value: int
-                'Filename', filename value: str.
+        tp.ParseResults: A one-item list containing the parsed file
+            information as a 3-item tuple:
+                [(filename: str, date: str, file size: int)].
     '''
-    parsed_line_template = ''.join([
-        'Filename, {filename}\n',
-        'Date, {date}\n',
-        'Size, {size}'
-        ])
-    date_str = {'date': make_date_time_string(sentinel)}
     file_line_parts = sentinel.groupdict(default='')
-    file_line_parts.update(date_str)
-    parsed_line_str = parsed_line_template.format(**file_line_parts)
-    parsed_line = [new_line.split(',')
-                for new_line in parsed_line_str.splitlines()]
+    parsed_line = tuple([
+        file_line_parts['filename'],
+        make_date_time_string(sentinel),
+        int(file_line_parts['size'])
+        ])
     return [parsed_line]
+
 
 # Regular File Parsing Rule
 file_info_trigger = tp.Trigger(file_listing_pt, name='Files')
 file_listing_rule = tp.Rule(file_info_trigger, file_parse, name='Files_rule')
+
 
 # File Count Parsing Rule
 def file_count_parse(line: str, sentinel, *args, **kwargs) -> tp.ParseResults:
@@ -212,37 +192,48 @@ file_count_rule = tp.Rule(file_count_trigger, file_count_parse,
                           name='Files_rule')
 
 
+skip_file_count_rule = tp.Rule(
+    name='Skip File(s) Rule',
+    trigger=file_count_trigger,
+    pass_method=blank_line
+    )
+
+
 # Files / DIRs Parse
 def make_files_rule() -> tp.Rule:
     '''If  File(s) or  Dir(s) extract # files & size
         '''
     def files_total_parse(line, sentinel, *args, **kwargs) -> tp.ParseResults:
-        '''Return two lines containing:
-        'Number of File(s) / Dir(s)"
+        '''Break file counts into three columns containing:
+           Type (File or Dir), Count, Size.
 
-        Return two rows for a line containing:
-            ### [File|Dir](s)          ### bytes
         The line:
                11 File(s)          72507 bytes
         Results in:
-            [['Number of File(s)', 11],
-             ['Size', 3501]]
+            [('File', 11, 3501)]
         The line:
            23 Dir(s)     63927545856 bytes free
         Results in:
-            [['Number of Dir(s)', 23],
-             ['Size', 3501]]
+            [('Dir', 23, 3501)]
+
+    Args:
+        line (str): The text line to be parsed.
+        sentinel (re.match): The results of the trigger test on the line.
+            Contains 3 named groups: ['type', 'files', 'size'].
+        *args & **kwargs: Catch unused extra parameters passed to file_parse.
+
+    Returns:
+        tp.ParseResults: A one-item list containing the parsed file count
+            information as a 3-item tuple:
+                [(Type: str (File or Dir), Count: int, Size: int)].
         '''
         files_dict = sentinel.groupdict(default='')
-        parsed_line_template = ''.join([
-            f'Number of {files_dict["type"]}(s),',
-            f'{files_dict["files"]}\n',
-            f'Size,',
-            f'{files_dict["size"]}'
+        parsed_line = tuple([
+            files_dict["type"],
+            files_dict["files"],
+            files_dict["size"]
             ])
-        parsed_line = [new_line.split(',')
-                       for new_line in parsed_line_str.splitlines()]
-        return parsed_line
+        return [parsed_line]
 
     files_total_trigger = tp.Trigger(folder_summary_pt, name='Files')
     files_total_rule = tp.Rule(files_total_trigger, files_total_parse,
@@ -254,8 +245,6 @@ default_csv = tp.define_csv_parser('dir_files', delimiter=':',
                                        skipinitialspace=True)
 
 
-
-
 #%% Line Processing
 def print_lines(parsed_list):
     output = list()
@@ -265,22 +254,39 @@ def print_lines(parsed_list):
     return output
 
 
-def to_folder_dict(folder_list):
-    '''Combine folder Info dictionaries into dictionary of dictionaries.
+def to_folder_dict(folder_gen):
+    '''Combine folder info into dictionary.
     '''
-    # TODO remove top dir here
-    # TODO create full path
     # TODO separate directory info from file info
-    output_dict = dict()
-    for folder_dict in folder_list:
-        plan_name = plan_info_dict.get('Plan')
-        if not plan_name:
-            plan_name = plan_info_dict.get('Plan sum')
-            if not plan_name:
-                plan_name = 'Plan'
-        plan_info_dict['Plan'] = plan_name
-        output_dict[plan_name] = plan_info_dict
-    return output_dict
+    #The first line in the folder list is the directory path
+    directory = folder_gen.__next__()[0]
+    folder_dict = {'Directory': directory}
+    for folder_info in folder_gen:
+        filename, date, file_size = folder_info
+        full_path = '\\'.join([directory, filename])
+        file_parts = filename.rsplit('.', 1)
+        if len(file_parts) > 1:
+            extension = file_parts[1]
+        else:
+            extension = ''
+        folder_dict = {
+            'Path': full_path,
+            'Directory': directory,
+            'Filename': filename,
+            'Extension': extension,
+            'Date': date,
+            'Size': file_size
+            }
+    return folder_dict
+
+
+def make_files_table(dir_gen):
+    '''Combine folder info dictionaries into Pandas DataFrame.
+    '''
+    list_of_folders = list(dir_gen)
+    files_table = pd.DataFrame(list_of_folders)
+    files_table.set_index('Path')
+    return files_table
 
 
 #%% Reader definitions
@@ -292,7 +298,7 @@ heading_reader = tp.SectionReader(
     post_processing_methods=[tp.trim_items])
 folder_reader = tp.SectionReader(
     parsing_rules=[skip_dir_rule, file_listing_rule, dir_header_rule,
-                   file_count_rule],
+                   skip_file_count_rule],
     default_parser=default_parser,
     post_processing_methods=[tp.drop_blanks])
 summary_reader = tp.SectionReader(
@@ -300,6 +306,7 @@ summary_reader = tp.SectionReader(
     default_parser=default_parser,
     post_processing_methods=[tp.drop_blanks]
     )
+
 
 #%% SectionBreak definitions
 folder_start = tp.SectionBreak(
@@ -338,7 +345,6 @@ summary_break = tp.SectionBoundaries(
     )
 
 
-
 #%% Section definitions
 header_section = tp.Section(
     section_name='Header',
@@ -350,13 +356,13 @@ folder_section = tp.Section(
     section_name='Folder',
     boundaries=folder_break,
     reader=folder_reader,
-    aggregate=tp.to_dict
+    aggregate=to_folder_dict
     )
 all_folder_section = tp.Section(
     section_name='All Folders',
     boundaries=all_folders_break,
     reader=[folder_section],
-    aggregate=print_lines
+    aggregate=make_files_table
     )
 summary_section = tp.Section(
     section_name='Summary',
@@ -383,10 +389,8 @@ def main():
         }
 
     source = tp.file_reader(test_file)
-
-    #dir_info = header_section.read(source, **context)
     file_info = all_folder_section.read(source, **context)
-    summary = summary_section.read(source, **context)
+    #summary = summary_section.read(source, **context)
 
     # Output  Data
 

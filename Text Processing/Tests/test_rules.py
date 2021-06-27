@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Dict, List, Sequence, TypeVar, Pattern, Match, Iterator, Any,Callable
 import re
 from Text_Processing import Rule, Trigger
+import Text_Processing as tp
 
 #%% Test Text
 from pprint import pprint
@@ -173,32 +174,23 @@ def parse_use(line, *args, **kwargs):
 
 
 @unittest.expectedFailure('not working yet')
-class TestApprovalParse(unittest.TestCase):
-    self.test_source = '\n'.join([
-        'Text Processing      - Ignore'
-        'Text Processing      - Use'
-        'Text Processing      - Ignore'
-        ])
+class TestSingleLineParse(unittest.TestCase):
+    def setUp(self):
+        self.test_source = '\n'.join([
+            'Text Processing      - Ignore'
+            'Text Processing      - Use'
+            'Text Processing      - Ignore'
+            ])
 
-    self.test_result = ['Text Processing',      - 'Use']
+        self.test_result = ['Text Processing','Use']
 
-    self.context = {
-        'top_dir': 'Text',
-        'tree_name': 'Tree Top'
-        }
-    self.default_parser = tp.define_csv_parser('comma')
-    use_trigger = Trigger('Use', location='IN', name='Use')
-    self.rule = Rule(use_trigger, pass_method=parse_use, name='use_rule')
+        self.default_parser = tp.define_csv_parser('comma')
+        use_trigger = Trigger('Use', location='IN', name='Use')
+        self.rule = Rule(Trigger('Use'), pass_method=parse_use)
 
     def test_use_parse(self):
-        line = ('Plan Status: Treatment Approved Thursday, January 02, 2020 '
-                '12:55:56 by gsal')
-        expected_results = [
-            ['Plan Status', 'Treatment Approved'],
-            ['Approved on', ' Thursday, January 02, 2020 12:55:56 '],
-            ['Approved by', 'gsal']
-            ]
-        parsed_lines = self.rule.apply(line, self.context)
+        expected_results = self.test_result
+        parsed_lines = self.rule.apply(self.test_source)
         self.assertListEqual(parsed_lines, expected_results)
 
 
