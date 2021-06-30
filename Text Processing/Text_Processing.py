@@ -449,6 +449,10 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
             or, the result of joining the next parsed line item to the end of
             the second item in the current line with ". For example:
     '''
+        #if completed_section:
+        #    # If StopSection was raised by look_ahead, re-raise it after
+        #    # yielding the current line.
+        #    raise completed_section
     parsed_line_iter = BufferedIterator(parsed_lines, buffer_size=max_lines)
     for parsed_line in parsed_line_iter:
         completed_line = False
@@ -473,10 +477,6 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
                 else:
                     completed_line = True
         yield parsed_line
-        #if completed_section:
-        #    # If StopSection was raised by look_ahead, re-raise it after
-        #    # yielding the current line.
-        #    raise completed_section
 
 
 def drop_blanks(lines: Source) -> Source:
@@ -721,7 +721,7 @@ class Trigger():
         return is_pass, sentinel_output
 
 
-class Rule():
+class ParsingRule():
     @staticmethod
     def default_template(test_object, sentinel, *args,
                          default_return=None, **kwargs):
@@ -776,11 +776,11 @@ class Rule():
         return result
 
 
-class LineParser():
-    def __init__(self, parsing_rules: List[Rule],
+class LineParser():  # TODO LineParser should merge with SectionReader
+    def __init__(self, parsing_rules: List[ParsingRule],
                  default_parser: Callable = None):
         self.parsing_rules = parsing_rules
-        default_rule = Rule(Trigger(True), default_parser, name='Default')
+        default_rule = ParsingRule(Trigger(True), default_parser, name='Default')
         self.parsing_rules.append(default_rule)
 
     def parse(self, source, *args, **kwargs):
@@ -878,7 +878,7 @@ class SectionBreak():
         return is_break
 
 
-class SectionBoundaries():
+class SectionBoundaries():  # TODO SectionBoundaries should merge with Section
     def __init__(self,
                  start_section: List[SectionBreak] = None,
                  end_section: List[SectionBreak] = None):
@@ -1052,6 +1052,7 @@ class Section():
             self.context.update(break_context)
             self.scan_status = status
             logger.debug(f'break_context:\t{break_context["Status"]}')
+
     def find_start(self, buffered_source):
         # Skip lines before start
         scan_start = self.boundaries.scan('Start', buffered_source,
@@ -1106,12 +1107,9 @@ class Section():
 
     def group_reader_gen(self, reader_list, section_iter):
         while 'Complete' not in self.scan_status:
-            group_read = (
-                    sub_rdr.read(section_iter, **self.context)
-                    for sub_rdr in reader_list
-                    )
-            section_item = list(group_read)
-            yield section_item
+            for sub_rdr in reader_list:
+                logger.debug(f'Reading from Sub-Reader: {sub_rdr.section_name}.')
+                yield from sub_rdr.read(section_iter, **self.context)
 
     def read_section(self):
         reader = self.reader

@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from typing import Dict, List, Sequence, TypeVar, Pattern, Match, Iterator, Any,Callable
 import re
-from Text_Processing import Rule, Trigger
+from Text_Processing import ParsingRule, Trigger
 import Text_Processing as tp
 
 #%% Test Text
@@ -65,7 +65,7 @@ class TestPrescribedDoseParse(unittest.TestCase):
             )
         re_pattern = re.compile(prescribed_dose_pattern)
         dose_trigger = Trigger(re_pattern, name='Prescribed Dose')
-        self.rule = Rule(dose_trigger, pass_method=parse_prescribed_dose,
+        self.rule = ParsingRule(dose_trigger, pass_method=parse_prescribed_dose,
                          name = 'prescribed_dose_rule')
 
     def test_prescribed_dose_parse(self):
@@ -108,7 +108,7 @@ class TestDateParse(unittest.TestCase):
             }
 
         date_trigger = Trigger('Date', name='Starts With Date', location='START')
-        self.rule = Rule(date_trigger, pass_method=date_parse,
+        self.rule = ParsingRule(date_trigger, pass_method=date_parse,
                          name = 'date_rule')
 
     def test_date_parse(self):
@@ -151,7 +151,7 @@ class TestApprovalParse(unittest.TestCase):
 
         status_trigger = Trigger('Treatment Approved', location='IN',
                                  name='Treatment Approved')
-        self.rule = Rule(status_trigger, pass_method=approved_status_parse,
+        self.rule = ParsingRule(status_trigger, pass_method=approved_status_parse,
                          name = 'date_rule')
 
     def test_approval_parse(self):
@@ -186,7 +186,7 @@ class TestSingleLineParse(unittest.TestCase):
 
         self.default_parser = tp.define_csv_parser('comma')
         use_trigger = Trigger('Use', location='IN', name='Use')
-        self.rule = Rule(Trigger('Use'), pass_method=parse_use)
+        self.rule = ParsingRule(Trigger('Use'), pass_method=parse_use)
 
     def test_use_parse(self):
         expected_results = self.test_result

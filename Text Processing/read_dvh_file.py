@@ -27,7 +27,7 @@ logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
 
 #%% Line Parsing Functions
 # Date Rule
-def make_date_parse_rule() -> tp.Rule:
+def make_date_parse_rule() -> tp.ParsingRule:
     def date_parse(line: str, *args, **kwargs) -> tp.ParseResults:
         '''If Date,don't split beyond first :.'''
         parsed_line = line.split(':', maxsplit=1)
@@ -35,13 +35,13 @@ def make_date_parse_rule() -> tp.Rule:
 
     date_trigger = tp.Trigger('Date', location='START',
                               name='Starts With Date')
-    date_rule = tp.Rule(date_trigger, date_parse,
+    date_rule = tp.ParsingRule(date_trigger, date_parse,
                         name='date_rule')
     return date_rule
 
 
 # Approved Status
-def make_approved_status_rule() -> tp.Rule:
+def make_approved_status_rule() -> tp.ParsingRule:
     '''If Treatment Approved, Split "Plan Status" into 3 lines:
         Plan Status
         Approved on
@@ -71,14 +71,14 @@ def make_approved_status_rule() -> tp.Rule:
     approved_status_trigger = tp.Trigger('Treatment Approved',
                                          location='IN',
                                          name='Treatment Approved')
-    approved_status_rule = tp.Rule(approved_status_trigger,
+    approved_status_rule = tp.ParsingRule(approved_status_trigger,
                                    approved_status_parse,
                                    name='approved_status_rule')
     return approved_status_rule
 
 
 # Prescribed Dose Rule
-def make_prescribed_dose_rule() -> tp.Rule:
+def make_prescribed_dose_rule() -> tp.ParsingRule:
     def parse_prescribed_dose(line, sentinel,
                               *args, **kwargs) -> tp.ParseResults:
         '''Split "Prescribed dose [cGy]" into 2 lines.
@@ -131,7 +131,7 @@ def make_prescribed_dose_rule() -> tp.Rule:
         dose_trigger = tp.Trigger(re_pattern, name='Prescribed Dose')
         return dose_trigger
 
-    dose_rule = tp.Rule(make_prescribed_dose_trigger(),
+    dose_rule = tp.ParsingRule(make_prescribed_dose_trigger(),
                      parse_prescribed_dose,
                      name='prescribed_dose_rule')
     return dose_rule

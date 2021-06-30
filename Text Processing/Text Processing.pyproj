@@ -15,6 +15,7 @@
     <UnitTestRootDirectory>.</UnitTestRootDirectory>
     <InterpreterId>CondaEnv|CondaEnv|TextProcessing</InterpreterId>
     <IsWindowsApplication>False</IsWindowsApplication>
+    <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
