@@ -42,9 +42,6 @@
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="CondaEnv|CondaEnv|standard" />
-  </ItemGroup>
-  <ItemGroup>
     <Folder Include="Testing\" />
     <Folder Include="Testing\misc_testing\" />
     <Folder Include="Testing\misc_testing\__pycache__\" />

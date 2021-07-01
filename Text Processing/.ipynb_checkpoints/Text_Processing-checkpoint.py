@@ -969,7 +969,7 @@ class SectionReader():
         if default_parser:
             self.default_parser = default_parser
         else:
-            self.default_parser = define_csv_parser()  # TODO SectionReader should use an internally defined parser as default
+            self.default_parser = define_csv_parser()
         if post_processing_methods:
             self.post_processing_methods = post_processing_methods
         else:
@@ -1001,64 +1001,15 @@ class SectionReader():
 
 #%% Section
 class Section():
-    '''Defines a continuous portion of a text stream to be processed.
-
-    A section is defined by:
-        ○ The starting and ending break points.
-        ○ The reading instructions.
-        ○ The aggregation method.
-    A Section instance is created by defining these components.  Once a
-    section has been defined, it can be applied to a text iterator using:
-        section.read(source, **context)
-    Where
-        source is any iterable supplying the text lines to be parsed.
-        context is any additional information to be utilized for identifying
-            the break points, parsing or aggregating the text.
-    section.read, the primary method has the following steps:
-        1. Iterate through the text source, checking for the start of the
-            section (optional).
-        2. Continue to iterate through the text source, applying the defined
-            parsing rules to each line, while checking for the end of the
-            section.
-        3. Apply an aggregating function to the parsed text to convert it to
-            the desired output format.
-    '''
-    # TODO Use property methods to update context
+        # check for start
+        # read section while checking for end
+        # Apply Section Formatting ->
+        # TODO Use property methods to update context
     def __init__(self,
                  section_name = 'Section',
-                 boundaries = None,
-                 #start_section: List[SectionBreak] = None,
-                 end_section: List[SectionBreak] = None,
+                 boundaries: SectionBoundaries = None,
                  reader: SectionReader = None,
                  aggregate: Callable = None):
-
-        '''Creates an Section instance that defines a continuous portion of a
-        text stream to be processed in a specific way.
-
-        Args:
-            section_name (str, optional): A label to be applied to the section.
-                Defaults to 'Section'.
-            start_section (List[SectionBreak], optional): The SectionBreak used
-                to identify the location of the start of the section. Defaults
-                to None, indicating the section begins with the first text
-                line in the iterator.
-            end_section (List[SectionBreak], optional): The SectionBreak used
-                to identify the location of the end of the section. Defaults
-                to None, indicating the section ends with the last text line
-                in the iterator.
-            reader (SectionReader, optional): Instructions for processing and
-                parsing the supplied text. A SectionReader has a .read method
-                which is a generator function, accepting a source text stream
-                and yielding the processed text. Defaults to None, which sets
-                a basic csv parser.
-            aggregate (Callable, optional): A function used to collect and
-                format, the reader output.  It should step through the iterator
-                or generator function, passed as its first argument, combining
-                the reader output into a single object. Defaults to None,
-                which returns a list of the reader output.
-        Returns:
-            New Section.
-        '''
         self.section_name = section_name
         self.context = dict()
         self.scan_status = 'Not Started'
@@ -1161,12 +1112,9 @@ class Section():
 
     def group_reader_gen(self, reader_list, section_iter):
         while 'Complete' not in self.scan_status:
-            group_read = (
-                    sub_rdr.read(section_iter, **self.context)
-                    for sub_rdr in reader_list
-                    )
-            section_item = list(group_read)
-            yield section_item
+            for sub_rdr in reader_list:
+                logger.debug(f'Reading from Sub-Reader: {sub_rdr.section_name}.')
+                yield from sub_rdr.read(section_iter, **self.context)
 
     def read_section(self):
         reader = self.reader
@@ -1182,11 +1130,6 @@ class Section():
         return section_items
 
     def read(self, source, start_search=True, **context)->Any:
-
-       # check for start
-        # read section while checking for end
-        # Apply Section Formatting ->
-        # TODO Use property methods to update context
         self.initialize_scan(source, start_search, **context)
         self.scan_status = 'Scan Starting'
         section_items = self.read_section()

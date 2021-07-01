@@ -13,7 +13,7 @@
     <TestFramework>unittest</TestFramework>
     <UnitTestPattern>test*.py</UnitTestPattern>
     <UnitTestRootDirectory>.</UnitTestRootDirectory>
-    <InterpreterId>CondaEnv|CondaEnv|TextProcessing</InterpreterId>
+    <InterpreterId>CondaEnv|CondaEnv|Standard</InterpreterId>
     <IsWindowsApplication>False</IsWindowsApplication>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
   </PropertyGroup>
@@ -26,9 +26,11 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="data_utilities.py" />
     <Compile Include="date_processer.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="file_utilities.py" />
     <Compile Include="read_dir_file.py">
       <SubType>Code</SubType>
     </Compile>
@@ -57,6 +59,7 @@
   <ItemGroup>
     <Content Include="requirements.txt" />
     <Content Include="Text Files\Bolus Plancheck Cleaned.txt" />
+    <Content Include="Text Files\Dir_listing_text.txt" />
     <Content Include="Text Files\DIR_test_Data.txt" />
     <Content Include="Text Files\ESOI.dvh" />
     <Content Include="Text Files\FIF Calculation Log.txt" />
@@ -69,15 +72,37 @@
     <Content Include="Text Files\PlanSum Only.dvh" />
     <Content Include="Text Files\PlanSum vs Original Abbreviated.txt" />
     <Content Include="Text Files\PlanSum vs Original.dvh" />
+    <Content Include="Text Files\Test Dir Structure\Dir1\File in Dir One.txt" />
+    <Content Include="Text Files\Test Dir Structure\Dir1\SubFolder1\File in SubFolder One.rtf" />
+    <Content Include="Text Files\Test Dir Structure\Dir1\SubFolder2\Another File in Sub Folder 2.jnt" />
+    <Content Include="Text Files\Test Dir Structure\Dir1\SubFolder2\File in Sub Folder 2.jnt" />
+    <Content Include="Text Files\Test Dir Structure\Dir2\File in Dir 2.rtf" />
+    <Content Include="Text Files\Test Dir Structure\Dir2\Sub Folder in Dir2\Sub SubFolder\New Text Document.txt" />
+    <Content Include="Text Files\Test Dir Structure\Dir2\Sub Folder in Dir2\Sub SubFolder\Sub Sub SubFolder\Sub Sub Sub File.pub" />
+    <Content Include="Text Files\Test Dir Structure\TestFile1.txt" />
+    <Content Include="Text Files\Test Dir Structure\TestFile2.rtf" />
+    <Content Include="Text Files\Test Dir Structure\TestFile3.docx" />
+    <Content Include="Text Files\Test Dir Structure\xcopy.txt" />
     <Content Include="Text Files\Test1.dvh" />
+    <Content Include="Text Files\test_DIR_Data.txt" />
     <Content Include="Text Files\Test_DVH_Sections.txt" />
+    <Content Include="Text Files\test_files.txt" />
     <Content Include="Text Files\trigger_test_text.txt" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Tests\" />
     <Folder Include="Text Files\" />
+    <Folder Include="Text Files\Test Dir Structure\" />
+    <Folder Include="Text Files\Test Dir Structure\Dir1\" />
+    <Folder Include="Text Files\Test Dir Structure\Dir1\SubFolder1\" />
+    <Folder Include="Text Files\Test Dir Structure\Dir1\SubFolder2\" />
+    <Folder Include="Text Files\Test Dir Structure\Dir2\" />
+    <Folder Include="Text Files\Test Dir Structure\Dir2\Sub Folder in Dir2\" />
+    <Folder Include="Text Files\Test Dir Structure\Dir2\Sub Folder in Dir2\Sub SubFolder\" />
+    <Folder Include="Text Files\Test Dir Structure\Dir2\Sub Folder in Dir2\Sub SubFolder\Sub Sub SubFolder\" />
   </ItemGroup>
   <ItemGroup>
+    <InterpreterReference Include="CondaEnv|CondaEnv|Standard" />
     <InterpreterReference Include="CondaEnv|CondaEnv|TextProcessing" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
