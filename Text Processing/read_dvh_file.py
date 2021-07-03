@@ -1,23 +1,19 @@
+# pylint: disable=anomalous-backslash-in-string
+# pylint: disable=unused-argument
+# pylint: disable=logging-fstring-interpolation
+
 '''Initial testing of DVH read
 '''
-# pylint: disable=anomalous-backslash-in-string
 
 #%% Imports
 from pathlib import Path
-from pprint import pprint
-from functools import partial
-from itertools import chain
-from typing import List, Callable
-import csv
+
+from typing import Callable
 import re
 import pandas as pd
-import xlwings as xw
 
 import logging_tools as lg
 from file_utilities import clean_ascii_text
-from buffered_iterator import BufferedIterator
-from buffered_iterator import BufferedIteratorEOF
-from buffered_iterator import BufferOverflowWarning
 import Text_Processing as tp
 
 
@@ -255,64 +251,45 @@ dvh_data_start = tp.SectionBreak(
     offset='Before'
     )
 
-dvh_info_break = tp.SectionBoundaries(
-    start_section=None,
-    end_section=plan_info_start
-    )
-plan_info_break = tp.SectionBoundaries(
-    start_section=None,
-    end_section=plan_info_end
-    )
-plan_group_break = tp.SectionBoundaries(
-    start_section=plan_info_start,
-    end_section=structure_info_start
-    )
-structure_info_break = tp.SectionBoundaries(
-    start_section=structure_info_start,
-    end_section=structure_info_end
-    )
-structure_group_break = tp.SectionBoundaries(
-    start_section=structure_info_start,
-    )
-dvh_data_break = tp.SectionBoundaries(
-    start_section=dvh_data_start,
-    end_section=structure_info_start
-    )
-
 #%% Section definitions
 dvh_info_section = tp.Section(
     section_name='DVH Info',
-    boundaries=dvh_info_break,
+    start_section=None,
+    end_section=plan_info_start,
     reader=dvh_info_reader,
     aggregate=tp.to_dict
     )
 plan_info_section = tp.Section(
     section_name='Plan Info',
-    boundaries=plan_info_break,
+    start_section=None,
+    end_section=plan_info_end,
     reader=plan_info_reader,
     aggregate=tp.to_dict
     )
 plan_info_group = tp.Section(
     section_name='Plan Info Group',
-    boundaries=plan_group_break,
+    start_section=plan_info_start,
+    end_section=structure_info_start,
     reader=plan_info_section,
     aggregate=to_plan_info_dict
     )
 structure_info_section = tp.Section(
     section_name='Structure',
-    boundaries=structure_info_break,
+    start_section=structure_info_start,
+    end_section=structure_info_end,
     reader=structure_info_reader,
     aggregate=tp.to_dict
     )
 dvh_data_section = tp.Section(
     section_name='DVH',
-    boundaries=dvh_data_break,
+    start_section=dvh_data_start,
+    end_section=structure_info_start,
     reader=dvh_data_reader,
     aggregate=tp.to_dataframe
     )
 dvh_group_section = tp.Section(
     section_name='DVH Groups',
-    boundaries=structure_group_break,
+    start_section=structure_info_start,
     reader=[structure_info_section, dvh_data_section],
     aggregate=to_structure_data_tuple
     )

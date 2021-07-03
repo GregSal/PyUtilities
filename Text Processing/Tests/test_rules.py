@@ -1,12 +1,11 @@
 import unittest
 from pathlib import Path
-from typing import Dict, List, Sequence, TypeVar, Pattern, Match, Iterator, Any,Callable
+from typing import List
 import re
 from Text_Processing import ParsingRule, Trigger
 import Text_Processing as tp
 
 #%% Test Text
-from pprint import pprint
 test_lines = '''
 Prescribed dose [cGy]: 5000.0
 Prescribed dose [cGy]: not defined
@@ -19,7 +18,7 @@ Plan Status: Treatment Approved Thursday, January 02, 2020 12:55:56 by gsal
 '''
 
 #%%  Prescribed dose parse tests
-def parse_prescribed_dose(line, sentinel, context)->List[List[str]]:
+def parse_prescribed_dose(line, sentinel, context)->List[List[str]]:# pylint: disable=unused-argument
     '''Split "Prescribed dose [cGy]" into 2 lines:
         Prescribed dose
         Prescribed dose Unit
@@ -88,7 +87,7 @@ class TestPrescribedDoseParse(unittest.TestCase):
 
 
 #%%  Date parse tests
-def date_parse(line, sentinel, context)->List[List[str]]:
+def date_parse(line, sentinel, context)->List[List[str]]:  # pylint: disable=unused-argument
     '''If Date,don't split beyond first :'''
     parsed_lines = [
         [sentinel, line.split(':',maxsplit=1)[1]]
@@ -119,7 +118,7 @@ class TestDateParse(unittest.TestCase):
 
 
 #%% Line Parsing
-def approved_status_parse(line, sentinel, context)->List[List[str]]:
+def approved_status_parse(line, sentinel, context)->List[List[str]]:  # pylint: disable=unused-argument
     '''If Treatment Approved, Split "Plan Status" into 3 lines:
         Plan Status
         Approved on
@@ -167,7 +166,7 @@ class TestApprovalParse(unittest.TestCase):
 
 
 #%%  Parse with single line
-def parse_use(line, *args, **kwargs):
+def parse_use(line, *args, **kwargs):# pylint: disable=unused-argument
     line_break = line.split('-')
     clean_line = [part.strip() for part in line_break]
     return [[clean_line]]
@@ -185,7 +184,7 @@ class TestSingleLineParse(unittest.TestCase):
         self.test_result = ['Text Processing','Use']
 
         self.default_parser = tp.define_csv_parser('comma')
-        use_trigger = Trigger('Use', location='IN', name='Use')
+        #use_trigger = Trigger('Use', location='IN', name='Use')
         self.rule = ParsingRule(Trigger('Use'), pass_method=parse_use)
 
     def test_use_parse(self):

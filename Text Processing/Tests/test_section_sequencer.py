@@ -1,13 +1,9 @@
 import unittest
 from pathlib import Path
 from functools import partial
-import re
-from file_utilities import clean_ascii_text
 import Text_Processing as tp
-from typing import List
 from buffered_iterator import BufferedIterator
 import read_dvh_file
-from pprint import pprint
 import pandas as pd
 
 
@@ -216,7 +212,8 @@ class TestSectionSequencer(unittest.TestCase):
     def test_dvh_info_section(self):
         section = tp.Section(
             section_name='DVH Info',
-            boundaries=read_dvh_file.dvh_info_break,
+            start_section=None,
+            end_section=read_dvh_file.plan_info_start,
             reader=read_dvh_file.dvh_info_reader,
             aggregate=tp.to_dict)
         # scan_section
@@ -227,23 +224,17 @@ class TestSectionSequencer(unittest.TestCase):
 
 
     def test_plan_info_group(self):
-        plan_info_break = tp.SectionBoundaries(
-            start_section=None,
-            end_section=read_dvh_file.plan_info_end)
-
-        plan_group_break = tp.SectionBoundaries(
-            start_section=read_dvh_file.plan_info_start,
-            end_section=read_dvh_file.structure_info_start)
-
         plan_info_section = tp.Section(
             section_name='Plan Info',
-            boundaries=plan_info_break,
+            start_section=None,
+            end_section=read_dvh_file.plan_info_end,
             reader=read_dvh_file.plan_info_reader,
             aggregate=tp.to_dict)
 
         section = tp.Section(
             section_name='Plan Info Group',
-            boundaries=plan_group_break,
+            start_section=read_dvh_file.plan_info_start,
+            end_section=read_dvh_file.structure_info_start,
             reader=plan_info_section,
             aggregate=read_dvh_file.to_plan_info_dict)
         # scan_section
@@ -255,7 +246,7 @@ class TestSectionSequencer(unittest.TestCase):
     def test_structure_section(self):
         section = tp.Section(
             section_name='Structure Group',
-            boundaries=read_dvh_file.structure_group_break,
+            start_section=read_dvh_file.structure_info_start,
             reader=read_dvh_file.structure_info_section,
             aggregate=partial(tp.to_dataframe, header=False)
             )

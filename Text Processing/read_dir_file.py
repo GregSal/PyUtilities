@@ -1,5 +1,7 @@
+# pylint: disable=anomalous-backslash-in-string
+# pylint: disable=unused-argument
 '''Initial testing of Dir output parsing
-Using test file  '.\Text Files\test_DIR_Data.txt'
+Using test file  .\Text Files\test_DIR_Data.txt
 Test file created with command:
      DIR ".\Text Files\Test Dir Structure" /S /N /-C /T:W >  ".\Text Files\test_DIR_Data.txt"
 
@@ -25,13 +27,14 @@ Each Folder section has the following line types:
     File Count:
                4 File(s)           3501 bytes
 '''
-# pylint: disable=anomalous-backslash-in-string
+
 
 #%% Imports
 from pathlib import Path
 from pprint import pprint
 import re
 import pandas as pd
+import xlwings as xw
 
 import logging_tools as lg
 import Text_Processing as tp
@@ -326,47 +329,32 @@ summary_start = tp.SectionBreak(
     )
 
 
-#%% SectionBoundaries definitions
-header_break = tp.SectionBoundaries(
-    start_section=None,
-    end_section=folder_start
-    )
-folder_break = tp.SectionBoundaries(
-    start_section=folder_start,
-    end_section=folder_end
-    )
-all_folders_break = tp.SectionBoundaries(
-    start_section=folder_start,
-    end_section=summary_start
-    )
-summary_break = tp.SectionBoundaries(
-    start_section=summary_start,
-    end_section=None
-    )
-
-
 #%% Section definitions
 header_section = tp.Section(
     section_name='Header',
-    boundaries=header_break,
+    start_section=None,
+    end_section=folder_start,
     reader=heading_reader,
     aggregate=print_lines
     )
 folder_section = tp.Section(
     section_name='Folder',
-    boundaries=folder_break,
+    start_section=folder_start,
+    end_section=folder_end,
     reader=folder_reader,
     aggregate=to_folder_dict
     )
 all_folder_section = tp.Section(
     section_name='All Folders',
-    boundaries=all_folders_break,
+    start_section=folder_start,
+    end_section=summary_start,
     reader=[folder_section],
     aggregate=make_files_table
     )
 summary_section = tp.Section(
     section_name='Summary',
-    boundaries=summary_break,
+    start_section=summary_start,
+    end_section=None,
     reader=summary_reader,
     aggregate=tp.to_dict
     )
@@ -393,7 +381,7 @@ def main():
     #summary = summary_section.read(source, **context)
 
     # Output  Data
-
+    xw.view(file_info)
     print('done')
 
 if __name__ == '__main__':

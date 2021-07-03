@@ -1,3 +1,4 @@
+# pylint: disable=anomalous-backslash-in-string
 '''
 Created on Oct 19 2018
 @author: Greg Salomons
@@ -86,7 +87,8 @@ merge_columns(data_table: pd.DataFrame, columns: List[str],
 '''
 from collections.abc import Iterable
 from collections import namedtuple
-from typing import List, Dict, Tuple, Any, Union, Set, NamedTuple
+from typing import List, Dict, Any, Union, Set
+from operator import attrgetter
 import pandas as pd
 import re
 
@@ -111,71 +113,6 @@ def unit_patterns(unit_symbols):
     return data_pattern
 
 
-class DataElement(Value):  # FIXME DataElement Class is not working
-    '''A number containing a corresponding unit.
-    Attributes:
-        Value {float} -- The number
-        Unit {str} -- The corresponding unit.
-    '''
-    Value: float
-    Unit: str = ''
-    unit_symbols = ['%', 'CU', 'cGy', 'Gy', 'deg', 'cm', 'deg', 'MU', 'min',
-                    'cc', 'cm3', 'MU/Gy', 'MU/min', 'cm3', 'cc']
-    data_pattern = unit_patterns(unit_symbols)
-
-    def __init___(self, *data):
-        self.set_units()
-        if len(data) == 1:
-            try:
-                value = float(data[0])
-            except ValueError:
-                data = self.str2data(data[0])
-            else:
-                data = (value, '')
-        super().__init__(*data)
-
-    @classmethod
-    def str2data(cls, data_string:str):
-        match = cls.data_pattern.search(data_string)
-        if match:
-            value, unit = match[0]
-            return value, unit
-        return data_string
-
-    def convert_units(self, target_units: str):
-        '''Take value in starting_units and convert to target_units.
-        Arguments:
-            target_units {str} -- The unit to convert starting_value to. Must
-                be of the same unit type as starting_units.
-        Returns:
-            DataElement -- The initial value converted to the new units.
-        '''
-        conversion_table = {'cGy': {'cGy': 1.0,
-                                    'Gy': 0.01
-                                    },
-                            'Gy':  {'Gy': 1.0,
-                                    'cGy': 100},
-                            'cc':  {'cc': 1.0,
-                                    'ml': 1.0,
-                                    'l': 0.01,
-                                    },
-                            'cm':  {'cm': 1.0,
-                                    'mm': 10,
-                                    'm': 0.01,
-                                    },
-                            'mm':  {'cm': 0.1,
-                                    'mm': 1.0,
-                                    'm': 0.001,
-                                    }
-                           }
-        try:
-            conversion_factor = conversion_table[self.Unit][target_units]
-        except KeyError as err:
-            raise ValueError('Unknown units') from err
-        new_value = float(self.Value)*conversion_factor
-        return DataElement(new_value, target_units)
-
-
 def drop_units(text: str)->float:
     number_value_pattern = (
         '^'                # beginning of string
@@ -196,7 +133,7 @@ def drop_units(text: str)->float:
     #find_num = re.compile(number_value_pattern)
     find_num = re.findall(number_value_pattern, text)
     if find_num:
-        value, unit = find_num[0]
+        value = find_num[0][0]
         return value
     return text
 

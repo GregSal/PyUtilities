@@ -39,7 +39,6 @@ class TestSimpleTriggers(unittest.TestCase):
 
     def test_not_trigger(self):
         plan_trigger = Trigger(['Plan:', 'Plan sum:'])
-        info_trigger = Trigger(['% for dose (%):'])
         line = 'Comment              : DVHs for a plan sum'
         is_break, sentinel = plan_trigger.apply(line, self.context)
         self.assertFalse(is_break)

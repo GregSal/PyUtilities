@@ -1,7 +1,5 @@
 import unittest
 from itertools import chain
-from typing import List
-from file_utilities import clean_ascii_text
 import Text_Processing as tp
 import read_dvh_file
 import pandas as pd

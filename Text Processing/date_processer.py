@@ -4,11 +4,14 @@
 # pylint: disable=logging-fstring-interpolation
 
 import re
-from datetime import datetime
 from itertools import chain
-from typing import Union, Dict, List, TextIO
+from typing import Dict, List
 
-# TODO extract functions to module level so that they can be accessed separately
+
+# Day and Monthe Text in English
+MONTHS = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
+          'JUL': 7, 'AUG': 9, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
+DAYS = ('SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT')
 
 
 def build_date_re(compile_re=True, include_time=True):
@@ -112,18 +115,19 @@ def get_date_time(date_match: re.match):
     '''Extract date and time strings.
     Combine time and am/pm strings.
     '''
-    raise NotImplementedError('get_date_time is not yet implemented')
-    if date_match:
-        date_parameters = date_match.groupdict()
+    #if date_match:
+    #    date_parameters = date_match.groupdict()
 
-    else:
-        return None
-    date_str = date_parameters['date'].strip()
-    time_str = date_parameters['time'].strip()
-    am_pm_str = date_parameters['am_pm']
-    if am_pm_str:
-        time_str += ' '
-        time_str += am_pm_str.strip()
+    #else:
+    #    return None
+    #date_str = date_parameters['date'].strip()
+    #time_str = date_parameters['time'].strip()
+    #am_pm_str = date_parameters['am_pm']
+    #if am_pm_str:
+    #    time_str += ' '
+    #    time_str += am_pm_str.strip()
+    raise NotImplementedError('get_date_time is not yet implemented')
+
 
 
 class DateString(object):
@@ -135,58 +139,12 @@ class DateString(object):
         time (str): The time portion of the input string
     '''
     default_date_order = ('day', 'month', 'year')
-    # TODO make months and days global variables to add language options
-    months = {'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
-              'JUL': 7, 'AUG': 9, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12}
-    days = ('SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT')
-
-    @staticmethod
-    def build_section_date_re():
-        # TODO I Don't think this method is used for anything.
-        date_section_pattern = (
-            '^'                # beginning of string
-            '\s?'              # possible space before the date begins
-            '(?P<date1>'       # beginning of date1 string group
-            '[a-zA-Z0-9]+'     # Month Day or year as a number or text
-            ')'                # end of date1 string group
-            '[\s,-/]{1,2}'     # Date delimiter one of '-' '/' or ', '
-            '(?P<date2>'       # beginning of date2 string group
-            '[a-zA-Z0-9]+'     # Month Day or year as a number or text
-            ')'                # end of date2 string group
-            '[\s,-/]{1,2}'     # Date delimiter one of '-' '/' or ', '
-            '(?P<date3>'       # beginning of date3 string group
-            '\d{2,4}'          # day or year as a number
-            ')'                # end of date3 string group
-            '(?P<date4>'       # beginning of possible date4 string group
-            '((?<=, )\d{2,4})?'# Additional year section if the day name was included
-            ')'                # end of date4 string group
-            )
-        time_section_pattern = (
-            '\s+'              # gap between date and time
-            '(?P<hour>'        # beginning of hour string group
-            '\d{1,2}'          # Hour as 1 or 2 digits
-            ')'                # end of hour string group
-            ':'                # Time delimiter
-            '(?P<minutes>'     # beginning of minutes string group
-            '\d{1,2}'          # Minutes as 1 or 2 digits
-            ')'                # end of minutes string group
-            ':?'               # Time delimiter
-            '(?P<seconds>'     # beginning of seconds string group
-            '\d{0,2}'          # Seconds (optional) as 0,  1 or 2 digits
-            ')'                # end of seconds string group
-            )
-        am_pm_pattern = (
-            '\s?'              # possible space separating time from AM/PM indicator
-            '(?P<am_pm>'       # beginning of possible AM/PM (group)
-            '[aApP][mM]'       # am or pm in upper or lower case
-            ')?'               # end of am/pm string group
-            '\s?'              # possible space after the date and time ends
-            '$'                # end of string
-            )
-        return re.compile(date_section_pattern + time_section_pattern +
-                          am_pm_pattern)
-
-    __date_re = build_date_re(compile_re=True, include_time=True)
+    _date_re = build_date_re(compile_re=True, include_time=True)
+    def __init__(self):
+        #self.date = ''
+        #self.time = ''
+        #self.date_order = ('day', 'month', 'year')
+        raise NotImplementedError('test_date_num is not implemented')
 
     def find_date_pattern(self, date_num_list: List[int],
                           num_type_list: List[str]) -> str:
@@ -194,16 +152,17 @@ class DateString(object):
         continue until all '?' are replaced or until no more replacements cane be
         made.
         '''
-        done = False
-        while not done:  # FIXME  Iteration does not close
-            if '?' not in num_type_list:
-                done = True
-            else:
-                i = num_type_list.index('?')  # FIXME need to iterate here
-                date_num = date_num_list[i]
-                num_type = self.test_date_num(date_num, num_type_list)
-                num_type_list[i] = num_type
-        return num_type_list
+        #done = False
+        #while not done:  # FIXME  Iteration does not close
+        #    if '?' not in num_type_list:
+        #        done = True
+        #    else:
+        #        i = num_type_list.index('?')  # FIXME need to iterate here
+        #        date_num = date_num_list[i]
+        #        num_type = self.test_date_num(date_num, num_type_list)
+        #        num_type_list[i] = num_type
+        #return num_type_list
+        raise NotImplementedError('test_date_num is not implemented')
 
     def test_date_num(self, date_num, num_type_list):
         raise NotImplementedError('test_date_num is not implemented')
@@ -211,37 +170,40 @@ class DateString(object):
     def build_date_string(self, date_parameters: Dict[str, str]):
         '''Extract date and time strings.
         Combine time and am/pm strings
-        '''
+
         # TODO check each date group for string or number
         # TODO check strings for 1st 3 letters in months
         # TODO check numbers for valid day (1-31) month (1-12) year (0-9999)
         # TODO if order is apparent from text and numbers set default date order
         # TODO if not use default date order to assign values
         # TODO Build output date string
-        date_keys = [key for key in date_parameters.keys() if 'date' in key]
-        date_num_list = list()
-        num_type_list = list()
-        for key in date_keys:
-            date_str = date_parameters['date1'].strip()
-            try:
-                date_num_list.append(int(date_str))
-            except ValueError:
-                month_num = self.months.get(date_str[0:2].lower())
-                if month_num:
-                    date_num_list.append(month_num)
-                    num_type_list.append('month')
-            else:
-                num_type_list.append('?')
+        '''
+        #date_keys = [key for key in date_parameters.keys() if 'date' in key]
+        #date_num_list = list()
+        #num_type_list = list()
+        #for key in date_keys:
+        #    date_str = date_parameters['date1'].strip()
+        #    try:
+        #        date_num_list.append(int(date_str))
+        #    except ValueError:
+        #        month_num = MONTHS.get(date_str[0:2].lower())
+        #        if month_num:
+        #            date_num_list.append(month_num)
+        #            num_type_list.append('month')
+        #    else:
+        #        num_type_list.append('?')
+        raise NotImplementedError('test_date_num is not implemented')
 
     def get_date_time(self, date_parameters: Dict[str, str]):
         '''Extract date and time strings.
         Combine time and am/pm strings
         '''
-        date_str = date_parameters['date'].strip()
-        time_str = date_parameters['time'].strip()
-        am_pm_str = date_parameters['am_pm']
-        if am_pm_str:
-            time_str += ' '
-            time_str += am_pm_str.strip()
-        self.date = date_str
-        self.time = time_str
+        #date_str = date_parameters['date'].strip()
+        #time_str = date_parameters['time'].strip()
+        #am_pm_str = date_parameters['am_pm']
+        #if am_pm_str:
+        #    time_str += ' '
+        #    time_str += am_pm_str.strip()
+        #self.date = date_str
+        #self.time = time_str
+        raise NotImplementedError('test_date_num is not implemented')

@@ -17,16 +17,14 @@ import re
 import csv
 from pathlib import Path
 from inspect import isgeneratorfunction
-from functools import partial, partialmethod
+from functools import partial
 from typing import Dict, List, Sequence, TypeVar, Iterator, Iterable, Any, Callable, Union, Generator
 import pandas as pd
 
-from file_utilities import clean_ascii_text
 from data_utilities import true_iterable
 import logging_tools as lg
 
 from buffered_iterator import BufferedIterator
-from buffered_iterator import BufferedIteratorValueError
 from buffered_iterator import BufferOverflowWarning
 from buffered_iterator import BufferedIteratorEOF
 T = TypeVar('T')
@@ -98,12 +96,10 @@ class TextReadBreaks(GeneratorExit):
 
 class StartSection(TextReadBreaks):
     '''A Section has started through activation of a trigger.'''
-    pass
 
 
 class StopSection(TextReadBreaks):
     '''A Section has ended through activation of a trigger.'''
-    pass
 
 
 class IteratorEOF(TextReadBreaks):
@@ -186,7 +182,7 @@ def drop_units(text: str) -> float:
     #find_num = re.compile(number_value_pattern)
     find_num = re.findall(number_value_pattern, text)
     if find_num:
-        value, unit = find_num[0]
+        value, unit = find_num[0]  # pylint: disable=unused-variable
         return value
     return text
 
@@ -263,8 +259,8 @@ def cascading_iterators(source: Iterator, func_list: List[Callable])->Iterator:
 
 
 # CSV parser
-def csv_parser(line: str, *args, dialect_name='excel',
-               **kwargs) -> ParseResults:
+def csv_parser(line: str, *args, dialect_name='excel',    # pylint: disable=unused-argument
+               **kwargs) -> ParseResults:                 # pylint: disable=unused-argument
     '''Convert a single text line into one or more rows of parsed text.
 
     Uses the pre-defined csv Dialect for the line parsing rules.
@@ -381,7 +377,7 @@ class FixedWidthParser():
         if remainder:
             yield remainder
 
-    def parser(self, line: str, *args, **kwargs) -> ParseResults:
+    def parser(self, line: str, *args, **kwargs) -> ParseResults:  # pylint: disable=unused-argument
         '''Convert a single text line into a single text line into parsed
         text items of fixed widths.
 
@@ -461,7 +457,7 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
     parsed_line_iter = BufferedIterator(parsed_lines, buffer_size=max_lines)
     for parsed_line in parsed_line_iter:
         completed_line = False
-        completed_section = None  # Stores raised StopSection exceptions
+        # completed_section = None  # Stores raised StopSection exceptions
         # If the first line doesn't not have exactly 2 parts don't join
         # subsequent lines to it.
         if len(parsed_line) != 2:
@@ -471,7 +467,7 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
             # the section break is raised
             try:
                 next_line = parsed_line_iter.look_ahead()
-            except (StopSection, BufferOverflowWarning) as eol:
+            except (StopSection, BufferOverflowWarning):
                 completed_line = True
                 #completed_section = eol
             else:
@@ -728,8 +724,8 @@ class Trigger():
 
 class ParsingRule():
     @staticmethod
-    def default_template(test_object, sentinel, *args,
-                         default_return=None, **kwargs):
+    def default_template(test_object, sentinel, *args,    # pylint: disable=unused-argument
+                         default_return=None, **kwargs):  # pylint: disable=unused-argument
         '''default_method to be set using partial.
         '''
         if 'Original' in default_return:
@@ -881,71 +877,6 @@ class SectionBreak():
             self.count_down = self.offset  # Begin Active Count Down
             is_break = False
         return is_break
-
-
-class SectionBoundaries():  # TODO SectionBoundaries should merge with Section
-    def __init__(self,
-                 start_section: List[SectionBreak] = None,
-                 end_section: List[SectionBreak] = None):
-        # start_section = None -> Always Break
-        # end_section = None -> Never Break
-        if not start_section:
-            self.start_section = [SectionBreak(Trigger(True),
-                                              name='AlwaysBreak')]
-        elif isinstance(start_section, SectionBreak):
-            self.start_section = [start_section]
-        else:
-            self.start_section = start_section
-
-        if not end_section:
-            self.end_section = [SectionBreak(Trigger(False),
-                                            name='NeverBreak')]
-        elif isinstance(end_section, SectionBreak):
-            self.end_section = [end_section]
-        else:
-            self.end_section = end_section
-
-    def check(self, line, source: BufferedIterator, location='End',
-              **context):
-        logger.debug(f'In SectionBoundaries.check, received line: {line}')
-        if 'Start' in location:
-            break_triggers = self.start_section
-            trigger_exception = StartSection
-        else:
-            break_triggers = self.end_section
-            trigger_exception = StopSection
-        for break_trigger in break_triggers:
-            logger.debug(f'Checking Trigger: {break_trigger.name}')
-            is_break = break_trigger.check(line, source, **context)
-            if is_break:
-                logger.debug('Section Break Detected')
-                break_context = {
-                    'Sentinel': break_trigger.active_sentinel,
-                    'Break': break_trigger.name,
-                    'Location': location
-                    }
-                #raise BufferError('STOP')
-                raise trigger_exception(context=break_context)
-        logger.debug('No Break Triggered')
-        return line
-
-    def scan(self, location, source, section_name='Boundary', **context):
-        for line in source:
-            yield self.check(line, source, location, **context)
-        break_context = {
-            'Sentinel': 'End of Source',
-            'Break': 'EOF',
-            'Location': location
-            }
-        raise IteratorEOF(context=break_context)
-
-    def check_start(self, **context):
-        # TODO Is check_start Necessary?
-        return partial(self.check, location='Start', **context)
-
-    def check_end(self, **context):
-        # TODO Is check_end Necessary?
-        return partial(self.check, location='End', **context)
 
 
 #%% Reader
@@ -1102,14 +1033,9 @@ class Section():
             break_context['Status'] = 'RuntimeError'
             logger.warning(f'RuntimeError Encountered: {err}')
             status = 'Scan Complete'
-        except (BufferedIteratorEOF, IteratorEOF, StopIteration) as eof:
+        except (BufferedIteratorEOF, IteratorEOF, StopIteration):
             break_context['Status'] = 'End of Source'
             status = 'Scan Complete'
-        #except (StartSection, StopSection) as marker:  # TODO Check if this is raised anywhere
-        #    break_context = marker.get_context()
-        #    location = break_context['Location']
-        #    break_context['Status'] = f'{location} of {self.section_name}'
-        #    status = 'Scan Complete'
         finally:
             self.context.update(break_context)
             self.scan_status = status
@@ -1127,6 +1053,7 @@ class Section():
         return is_break
 
     def section_scan(self, boundary_type: str)->Generator[str, None, None]:
+        source = self.catch_break(self.source)
         if 'Start' in boundary_type:
             boundary = self.start_section
         else:
@@ -1134,7 +1061,7 @@ class Section():
         done_scanning = False
         while not done_scanning:
             # Get the next line from source
-            line = next(self.source)
+            line = next(source)
             logger.debug(f'In Section Scan {boundary_type},'
                          f' received line: {line}')
 
@@ -1156,9 +1083,9 @@ class Section():
                         start_search: bool = True)->List[str]:
         # Initialize the source
         if isinstance(source, BufferedIterator):
-            self.source = self.catch_break(source)
+            self.source = source
         else:
-            self.source = self.catch_break(BufferedIterator(source))
+            self.source = BufferedIterator(source)
 
         # Find the section start
         if start_search:

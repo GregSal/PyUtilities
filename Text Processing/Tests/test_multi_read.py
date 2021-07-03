@@ -1,15 +1,9 @@
 #%% Imports
 import unittest
-from pathlib import Path
 from functools import partial
-from itertools import chain
-from typing import List
-from file_utilities import clean_ascii_text
 import Text_Processing as tp
-import read_dvh_file
-from pprint import pprint
-import pandas as pd
-from buffered_iterator import BufferedIterator, BufferedIteratorEOF
+
+from buffered_iterator import BufferedIterator
 
 
 #%% Reader definitions
@@ -39,11 +33,6 @@ section_end = tp.SectionBreak(
     trigger=tp.Trigger('End Section')
     )
 
-section_break = tp.SectionBoundaries(
-    start_section=section_start,
-    end_section=section_end
-    )
-
 multi_section_start = tp.SectionBreak(
     name='Multi Section',
     trigger=tp.Trigger('Multi Section'),
@@ -54,11 +43,6 @@ multi_section_end = tp.SectionBreak(
     name='End Multi Section',
     trigger=tp.Trigger('Done Multi Section'),
     offset='Before'
-    )
-
-multi_section_break = tp.SectionBoundaries(
-    start_section=multi_section_start,
-    end_section=multi_section_end
     )
 
 
@@ -156,7 +140,8 @@ class TestSectionRead(unittest.TestCase):
     def test_section_read(self):
         test_section = tp.Section(
             section_name='Test Section',
-            boundaries=section_break,
+            start_section=section_start,
+            end_section=section_end,
             reader=test_section_reader,
             aggregate=partial(tp.to_dict, default_value=None)
             )
@@ -179,13 +164,15 @@ class TestSectionRead(unittest.TestCase):
 
         test_section = tp.Section(
             section_name='Test Section',
-            boundaries=section_break,
+            start_section=section_start,
+            end_section=section_end,
             reader=test_section_reader,
             aggregate=partial(tp.to_dict, default_value=None)
             )
         test_multi_section = tp.Section(
             section_name='Test Multi Section',
-            boundaries=multi_section_break,
+            start_section=multi_section_start,
+            end_section=multi_section_end,
             reader=test_section,
             aggregate=combine_sections
             )
@@ -207,14 +194,10 @@ class TestSectionRead(unittest.TestCase):
                              self.test_result['Section E'])
 
     def test_end_section_read(self):
-        end_section_break = tp.SectionBoundaries(
-            start_section=multi_section_end,
-            end_section=section_end
-            )
-
         test_section = tp.Section(
             section_name='Test Section',
-            boundaries=end_section_break,
+            start_section=multi_section_end,
+            end_section=section_end,
             reader=test_section_reader,
             aggregate=partial(tp.to_dict, default_value=None)
             )

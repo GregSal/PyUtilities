@@ -1,15 +1,10 @@
 #%% Imports
 import unittest
-from pathlib import Path
 from functools import partial
-from itertools import chain
-from typing import List
-from file_utilities import clean_ascii_text
 import Text_Processing as tp
-import read_dvh_file
 from pprint import pprint
-import pandas as pd
-from buffered_iterator import BufferedIterator, BufferedIteratorEOF
+
+from buffered_iterator import BufferedIterator
 
 # Aggregate definitions
 def print_list(parsed_lines):
@@ -246,45 +241,33 @@ class TestSectionGroupRead(unittest.TestCase):
             trigger=tp.Trigger('Done Combined Group Section'),
             offset='Before'
             )
-        delimiter_section_break = tp.SectionBoundaries(
-            start_section=delimiter_section_start,
-            end_section=section_end
-            )
-        fixed_width_section_break = tp.SectionBoundaries(
-            start_section=fixed_width_section_start,
-            end_section=section_end
-            )
-        group_section_break = tp.SectionBoundaries(
-            start_section=group_section_start,
-            end_section=group_section_end
-            )
-        multi_group_section_break = tp.SectionBoundaries(
-            start_section=group_section_start,
-            end_section=group_section_end
-            )
 
         # Section definitions
         self.delimiter_section = tp.Section(
             section_name='Delimiter Section',
-            boundaries=delimiter_section_break,
+            start_section=delimiter_section_start,
+            end_section=section_end,
             reader=delimiter_section_reader,
             aggregate=partial(tp.to_dict, default_value=None)
             )
         self.fixed_width_section = tp.Section(
             section_name='Fixed Width Section',
-            boundaries=fixed_width_section_break,
+            start_section=fixed_width_section_start,
+            end_section=section_end,
             reader=fixed_width_reader,
             aggregate=partial(tp.to_dict, default_value=None)
             )
         self.group_section = tp.Section(
             section_name='Group Section',
-            boundaries=group_section_break,
+            start_section=group_section_start,
+            end_section=group_section_end,
             reader=[self.delimiter_section, self.fixed_width_section],
             aggregate=print_list
             )
         self.multi_group_section = tp.Section(
             section_name='Group Section',
-            boundaries=multi_group_section_break,
+            start_section=group_section_start,
+            end_section=group_section_end,
             reader=[self.delimiter_section, self.fixed_width_section],
             aggregate=print_list
             )

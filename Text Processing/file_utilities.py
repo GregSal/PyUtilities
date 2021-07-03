@@ -66,7 +66,6 @@ def set_base_dir(sub_dir: str = None,
 class FileTypeError(FileNotFoundError):
     '''The file extension is not the appropriate type.
     '''
-    pass
 
 
 class FileTypes(list):
@@ -172,7 +171,7 @@ class FileTypes(list):
             str -- a formatted multi-line string listing the available file
                 types.
         '''
-        pass
+
 
 
 def get_file_path(file_name: PathInput, sub_dir: str = None,
@@ -254,7 +253,8 @@ def replace_top_dir(dir_path: Path, file_path: Path, new_name: str)-> str:
         msg_str = ' The top directory path will not be removed.'
         msg = msg_str.format(dir_str=str(dir_path),
                              file_str=str(file_path))
-        # TODO output warning message
+        raise ValueError(msg)
+        # TODO raise warning message instead of ValueError
     file_str_sup = str(file_path).replace(remove_str, new_name)
     return file_str_sup
 
