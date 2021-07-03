@@ -18,7 +18,7 @@ import csv
 from pathlib import Path
 from inspect import isgeneratorfunction
 from functools import partial, partialmethod
-from typing import Dict, List, Sequence, TypeVar, Iterator, Any, Callable, Union
+from typing import Dict, List, Sequence, TypeVar, Iterator, Iterable, Any, Callable, Union, Generator
 import pandas as pd
 
 from file_utilities import clean_ascii_text
@@ -1023,11 +1023,9 @@ class Section():
         3. Apply an aggregating function to the parsed text to convert it to
             the desired output format.
     '''
-    # TODO Use property methods to update context
     def __init__(self,
-                 section_name = 'Section',
-                 boundaries = None,
-                 #start_section: List[SectionBreak] = None,
+                 section_name: str = 'Section',
+                 start_section: List[SectionBreak] = None,
                  end_section: List[SectionBreak] = None,
                  reader: SectionReader = None,
                  aggregate: Callable = None):
@@ -1063,18 +1061,118 @@ class Section():
         self.context = dict()
         self.scan_status = 'Not Started'
         self.source = None
+
+        # Set the start and end section breaks
+        if not start_section:
+            self.start_section = [SectionBreak(Trigger(True),
+                                              name='AlwaysBreak')]
+        elif isinstance(start_section, SectionBreak):
+            self.start_section = [start_section]
+        else:
+            self.start_section = start_section
+        if not end_section:
+            self.end_section = [SectionBreak(Trigger(False),
+                                            name='NeverBreak')]
+        elif isinstance(end_section, SectionBreak):
+            self.end_section = [end_section]
+        else:
+            self.end_section = end_section
+
+        # Set the Reader
         if reader:
             self.reader = reader
         else:
             self.reader = SectionReader()
-        if boundaries:
-            self.boundaries = boundaries
-        else:
-            self.boundaries = SectionBoundaries()
         if aggregate:
             self.aggregate = aggregate
         else:
-            self.aggregate = list  # TODO create subclass of list that returns ParsedStringSource
+            self.aggregate = list
+
+    def catch_break(self, source: BufferedIterator)->Generator[str, None, None]:
+        break_context = {'Status': 'No Break Found'}
+        try:
+            status = 'Scan In Progress'
+            break_context['Status'] = 'No Break Found'
+            for item in source:
+                yield item
+            break_context['Status'] = 'End of Source in catch_break'
+            status = 'Scan Complete'
+            # TODO Test for graceful end to catch_break
+        except (RuntimeError) as err:
+            break_context['Status'] = 'RuntimeError'
+            logger.warning(f'RuntimeError Encountered: {err}')
+            status = 'Scan Complete'
+        except (BufferedIteratorEOF, IteratorEOF, StopIteration) as eof:
+            break_context['Status'] = 'End of Source'
+            status = 'Scan Complete'
+        #except (StartSection, StopSection) as marker:  # TODO Check if this is raised anywhere
+        #    break_context = marker.get_context()
+        #    location = break_context['Location']
+        #    break_context['Status'] = f'{location} of {self.section_name}'
+        #    status = 'Scan Complete'
+        finally:
+            self.context.update(break_context)
+            self.scan_status = status
+            logger.debug(f'break_context:\t{break_context["Status"]}')
+
+    def is_boundary(self, line: str, break_triggers: List[SectionBreak])->bool:
+        for break_trigger in break_triggers:
+            logger.debug(f'Checking Trigger: {break_trigger.name}')
+            is_break = break_trigger.check(line, self.source, **self.context)
+            if is_break:
+                logger.debug('Section Break Detected')
+                self.scan_status = 'Break Triggered'
+                self.context['Sentinel'] = break_trigger.active_sentinel
+                self.context['Break']= break_trigger.name
+        return is_break
+
+    def section_scan(self, boundary_type: str)->Generator[str, None, None]:
+        if 'Start' in boundary_type:
+            boundary = self.start_section
+        else:
+            boundary = self.end_section
+        done_scanning = False
+        while not done_scanning:
+            # Get the next line from source
+            line = next(self.source)
+            logger.debug(f'In Section Scan {boundary_type},'
+                         f' received line: {line}')
+
+            # Check for end of source
+            if 'Complete' in self.scan_status:
+                done_scanning = True
+
+            # Check for section boundary
+            elif self.is_boundary(line, boundary):
+                status = f'{boundary_type} of {self.section_name}'
+                self.scan_status = status
+                self.context['Location'] = boundary_type
+                self.context['Status'] = status
+                done_scanning = True
+            else:
+                yield line
+
+    def initialize_scan(self, source: Iterable[str],
+                        start_search: bool = True)->List[str]:
+        # Initialize the source
+        if isinstance(source, BufferedIterator):
+            self.source = self.catch_break(source)
+        else:
+            self.source = self.catch_break(BufferedIterator(source))
+
+        # Find the section start
+        if start_search:
+            self.scan_status = 'Not Started'
+            skipped_lines = [row for row in self.section_scan('Start')]
+        else:
+            skipped_lines = []
+        # Set Status
+        logger.debug(f'Starting New Section: {self.section_name}.')
+        self.context['Current Section'] = self.section_name
+        self.scan_status = f'At the start of section {self.section_name}'
+        return skipped_lines
+
+
 
     def list_aggregate(self, section_lines: ParsedStringSource) -> List[Any]:
         '''Iterate through section.
@@ -1083,76 +1181,16 @@ class Section():
         list_output = [line for line in section_lines]
         return list_output
 
-    def catch_break(self, buffered_source):
-        break_context = {'Status': 'No Break Found'}
-        try:
-            status = 'Scan In Progress'
-            break_context['Status'] = 'No Break Found'
-            for item in buffered_source:
-                yield item
-        except (RuntimeError) as err:
-            break_context['Status'] = 'RuntimeError'
-            logger.warning(f'RuntimeError Encountered: {err}')
-            status = 'Scan Complete'
-        except (BufferedIteratorEOF, IteratorEOF, StopIteration) as eof:
-            break_context['Status'] = 'End of Source'
-            status = 'Scan Complete'
-        except (StartSection, StopSection) as marker:
-            break_context = marker.get_context()
-            location = break_context['Location']
-            break_context['Status'] = f'{location} of {self.section_name}'
-            status = 'Scan Complete'
-        finally:
-            self.context.update(break_context)
-            self.scan_status = status
-            logger.debug(f'break_context:\t{break_context["Status"]}')
+    #def scan(self, source, start_search=True, **context):
+    #    #TODO Check if Section.scan is still used
 
-    def find_start(self, buffered_source):
-        # Skip lines before start
-        scan_start = self.boundaries.scan('Start', buffered_source,
-                                          section_name=self.section_name,
-                                          **self.context)
-        skipped_lines = [row for row in self.catch_break(scan_start)]
-        self.scan_status = 'Not Started'
-        return skipped_lines
-
-    def initialize_source(self, source, context):
-        if isinstance(source, BufferedIterator):
-            buffered_source = source
-        else:
-            buffered_source = BufferedIterator(source)
-        self.source = buffered_source
-
-    def initialize_scan(self, source, start_search=True,
-                        **context)->BufferedIterator:
-        self.context.update(context)
-        self.initialize_source(source, context)
-        if start_search:
-            skipped_lines = self.find_start(self.source)
-        else:
-            skipped_lines = []
-        logger.debug(f'Starting New Section: {self.section_name}.')
-        self.context['Current Section'] = self.section_name
-        return skipped_lines
-
-    def section_gen(self)->BufferedIterator:
-        '''Create the iterator that will read source until the section ends.
-        '''
-        section_scan = self.boundaries.scan('End', self.source,
-                                            section_name=self.section_name,
-                                            **self.context)
-        section_iter = BufferedIterator(self.catch_break(section_scan))
-        return section_iter
-
-    def scan(self, source, start_search=True, **context):
-        #TODO Check if Section.scan is still used
-        section_scan = self.initialize_scan(source, start_search, **context)
-        self.scan_status = 'Scan Starting'
-        while 'Complete' not in self.scan_status:
-            scan_iter = self.reader.read(self.catch_break(section_scan),
-                                         **self.context)
-            yield scan_iter
-        print(f'Done scanning {self.section_name}')
+    #    section_scan = self.initialize_scan(source, start_search, **context)
+    #    self.scan_status = 'Scan Starting'
+    #    while 'Complete' not in self.scan_status:
+    #        scan_iter = self.reader.read(self.catch_break(section_scan),
+    #                                     **self.context)
+    #        yield scan_iter
+    #    print(f'Done scanning {self.section_name}')
 
     def read_gen(self, read_method, section_iter):
         while 'Complete' not in self.scan_status:
@@ -1170,7 +1208,7 @@ class Section():
 
     def read_section(self):
         reader = self.reader
-        section_iter = self.section_gen()
+        section_iter = self.section_scan('End')
         # TODO Make the list of readers test more general i.e. any sequence of readers
         # TODO the test for reader type can be done in Section.__init__
         if isinstance(reader, list):
@@ -1182,13 +1220,12 @@ class Section():
         return section_items
 
     def read(self, source, start_search=True, **context)->Any:
-
-       # check for start
-        # read section while checking for end
-        # Apply Section Formatting ->
-        # TODO Use property methods to update context
-        self.initialize_scan(source, start_search, **context)
+        self.context.update(context)
+        # check for start
+        self.initialize_scan(source, start_search)
         self.scan_status = 'Scan Starting'
+        # read section while checking for end
         section_items = self.read_section()
+        # Apply Section Formatting ->
         section_aggregate = self.aggregate(section_items)
         return section_aggregate
