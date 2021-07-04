@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>f0b75ef5-e1d5-4a3e-978c-9a8dcf445620</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>read_dir_file.py</StartupFile>
+    <StartupFile>plan_info_test.py</StartupFile>
     <SearchPath>..\Ulilities</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -31,6 +31,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="file_utilities.py" />
+    <Compile Include="plan_info_test.py" />
     <Compile Include="read_dir_file.py">
       <SubType>Code</SubType>
     </Compile>

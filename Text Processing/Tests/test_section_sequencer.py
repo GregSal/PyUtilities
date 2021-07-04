@@ -222,11 +222,10 @@ class TestSectionSequencer(unittest.TestCase):
 
         self.assertDictEqual(test_output, self.test_result['DVH Info'])
 
-
     def test_plan_info_group(self):
         plan_info_section = tp.Section(
             section_name='Plan Info',
-            start_section=None,
+            start_section=read_dvh_file.plan_info_start,
             end_section=read_dvh_file.plan_info_end,
             reader=read_dvh_file.plan_info_reader,
             aggregate=tp.to_dict)

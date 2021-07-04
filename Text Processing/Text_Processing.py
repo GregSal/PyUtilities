@@ -1028,7 +1028,7 @@ class Section():
                 yield item
             break_context['Status'] = 'End of Source in catch_break'
             status = 'Scan Complete'
-            # TODO Test for graceful end to catch_break
+
         except (RuntimeError) as err:
             break_context['Status'] = 'RuntimeError'
             logger.warning(f'RuntimeError Encountered: {err}')
@@ -1059,15 +1059,16 @@ class Section():
         else:
             boundary = self.end_section
         done_scanning = False
-        while not done_scanning:
+        for line in source:
+        #while not done_scanning:
             # Get the next line from source
-            line = next(source)
+            #line = next(source)
             logger.debug(f'In Section Scan {boundary_type},'
                          f' received line: {line}')
 
             # Check for end of source
             if 'Complete' in self.scan_status:
-                done_scanning = True
+                break
 
             # Check for section boundary
             elif self.is_boundary(line, boundary):
@@ -1075,9 +1076,13 @@ class Section():
                 self.scan_status = status
                 self.context['Location'] = boundary_type
                 self.context['Status'] = status
-                done_scanning = True
+                break
             else:
                 yield line
+                #try:
+
+                #except: #StopIteration
+                #    return
 
     def initialize_scan(self, source: Iterable[str],
                         start_search: bool = True)->List[str]:
@@ -1124,26 +1129,33 @@ class Section():
             section_item = read_method(section_iter, **self.context)
             yield section_item
 
-    def group_reader_gen(self, reader_list, section_iter):
-        while 'Complete' not in self.scan_status:
-            group_read = (
-                    sub_rdr.read(section_iter, **self.context)
-                    for sub_rdr in reader_list
-                    )
-            section_item = list(group_read)
-            yield section_item
-
+    #def group_reader_gen(self, reader_list, section_iter):
+    #    #while 'Complete' not in self.scan_status:
+    #    #    group_read = (
+    #    #            sub_rdr.read(section_iter, **self.context)
+    #    #            for sub_rdr in reader_list
+    #    #            )
+    #        section_items = [sub_rdr.read(section_iter, **self.context)
+    #                        for sub_rdr in reader_list]
+    #        yield section_item
+    # FIXME Clarify expectations of generators, iterators, lists
     def read_section(self):
         reader = self.reader
         section_iter = self.section_scan('End')
         # TODO Make the list of readers test more general i.e. any sequence of readers
         # TODO the test for reader type can be done in Section.__init__
-        if isinstance(reader, list):
-            section_items = self.group_reader_gen(reader, section_iter)
+        if isinstance(self.reader, list):
+            section_items = (sub_rdr.read(section_iter, **self.context)
+                             for sub_rdr in self.reader)
+            #section_items = [item for item in reader]
         elif isgeneratorfunction(reader.read):
-            section_items = reader.read(section_iter, **self.context)
+            section_items = self.reader.read(section_iter, **self.context)
+            #section_items = [item for item in reader]
         else:
-            section_items = self.read_gen(reader.read, section_iter)
+            reader = self.reader.read(section_iter, **self.context)
+            section_items = (item for item in reader)
+            #section_items = self.read_gen(reader.read, section_iter)
+
         return section_items
 
     def read(self, source, start_search=True, **context)->Any:

@@ -1,4 +1,5 @@
 import unittest
+from functools import partial
 import Text_Processing as tp
 from buffered_iterator import BufferedIterator
 
@@ -182,7 +183,7 @@ GENERIC_TEST_RESULTS = {
     }
 
 
-#%% Test SectionBoundaries
+#%% Test Section Boundaries
 class Test_DVH_Info_SectionBoundaries(unittest.TestCase):
     def setUp(self):
         self.context = {}
@@ -373,7 +374,7 @@ class TestBoundaryOffsets(unittest.TestCase):
                                      ]
             )
     def test_section_break_after_before(self):
-        section_start_after = tp.Section(
+        section_start_after = tp.SectionBreak(
             name='Single Section After',
             trigger=tp.Trigger('Single Section'),
             offset='After'
@@ -391,8 +392,7 @@ class TestBoundaryOffsets(unittest.TestCase):
             aggregate=tp.to_dict
             )
         source = BufferedIterator(GENERIC_TEST_TEXT)
-        test_output = test_section.read(source, start_search=True,
-                                        **self.context)
+        test_output = test_section.read(source, start_search=True)
         self.assertDictEqual(test_output, GENERIC_TEST_RESULTS['Section A'])
         get_next = iter(source)
         next_item = get_next.__next__()
@@ -417,8 +417,7 @@ class TestBoundaryOffsets(unittest.TestCase):
             aggregate=partial(tp.to_dict, default_value=None)
             )
         source = BufferedIterator(GENERIC_TEST_TEXT)
-        test_output = test_section.read(source, start_search=True,
-                                        **self.context)
+        test_output = test_section.read(source, start_search=True)
         self.assertDictEqual(test_output, GENERIC_TEST_RESULTS['Section B'])
         get_next = iter(source)
         next_item = get_next.__next__()
@@ -444,8 +443,7 @@ class TestBoundaryOffsets(unittest.TestCase):
             )
         source = BufferedIterator(GENERIC_TEST_TEXT)
 
-        test_output = test_section.read(source, start_search=True,
-                                        **self.context)
+        test_output = test_section.read(source, start_search=True)
         self.assertDictEqual(test_output, GENERIC_TEST_RESULTS['Section C'])
         get_next = iter(source)
         next_item = get_next.__next__()
