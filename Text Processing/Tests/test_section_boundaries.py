@@ -21,14 +21,14 @@ DVH_TEST_TEXT = [
         'Course: PLAN SUM',
         'Prescribed dose [cGy]: not defined',
         '% for dose (%): not defined',
-        ''
+        '',
         'Plan: PARR',
         'Course: C1',
         'Plan Status: Treatment Approved Thursday, January 02, '
         '2020 12:55:56 by gsal',
         'Prescribed dose [cGy]: 5000.0',
         '% for dose (%): 100.0',
-        ''
+        '',
         'Structure: PRV5 SpinalCanal',
         'Approval Status: Approved',
         'Plan: Plan Sum',
@@ -46,7 +46,7 @@ DVH_TEST_TEXT = [
         'Equiv. Sphere Diam. [cm]: 6.1',
         'Conformity Index: N/A',
         'Gradient Measure [cm]: N/A',
-        ''
+        '',
         'Dose [cGy] Ratio of Total Structure Volume [%]',
         '         0                       100',
         '         1                       100',
@@ -142,6 +142,44 @@ GENERIC_TEST_TEXT = [
     'End Section',
     ]
 
+GENERIC_TEST_RESULTS = {
+    'Section A': {
+        'Section Name':'A',
+        'A Content1':'a',
+        'A Content2':'b',
+        'A Content Long': 'The cumulative DVH displays the '
+            'percentage (relative) or volume (absolute) of structures '
+            'that receive a dose equal to or greater than a given dose.',
+        'A Content3': 'c defghijk'
+        },
+    'Section B': {
+            'Section Name':'B',
+            'B Content1':'a',
+            'B Content2':'b',
+            'B Content3':'c',
+            'B Content4': 'd'
+            },
+    'Section C': {
+            'Section Name':'C',
+            'C Content1':'d',
+            'C Content2':'e',
+            'C Content3':'f',
+            'C&D Content1': 'gg'
+            },
+    'Section D': {
+            'Section Name':'D',
+            'D Content1':'g',
+            'D Content2':'h',
+            'D Content3':'i',
+            'C&D Content1': 'gg'
+            },
+    'Section E': {
+        'Section Name':'E',
+        'E Content1':'1',
+        'E Content2':'2',
+        'E Content3':'3'
+        }
+    }
 
 
 #%% Test SectionBoundaries
@@ -206,7 +244,7 @@ class Test_Plan_Info_SectionBoundaries(unittest.TestCase):
 
     def test_plan_info_section_start_skipped_lines(self):
         start_check = self.test_section.section_scan('Start')
-        skipped_lines = [row for row in start_check]  # pylint: disable=unused-variable
+        skipped_lines = [row for row in start_check]
         self.assertListEqual(DVH_TEST_TEXT[:10], skipped_lines)
 
     def test_plan_info_section_end_sentinel(self):
@@ -223,47 +261,194 @@ class Test_Plan_Info_SectionBoundaries(unittest.TestCase):
         self.assertListEqual(DVH_TEST_TEXT[10:14], scanned_lines)
 
 
-class Test_Plan_Info_SectionBoundaries(unittest.TestCase):
+class Test_structure_Info_SectionBoundaries(unittest.TestCase):
     def setUp(self):
-        self.context = {}
-        dvh_info_end = tp.SectionBreak(
-            name='End of DVH Info',
-            trigger=tp.Trigger(['Plan:', 'Plan sum:'])
+        structure_info_start = tp.SectionBreak(
+            name='Start of Structure Info',
+            trigger=tp.Trigger(['Structure:']),
+            offset='Before'
             )
-        plan_info_end = tp.SectionBreak(
-            name='End of Plan Info',
-            trigger=tp.Trigger(['% for dose (%):']),
+        structure_info_end = tp.SectionBreak(
+            name='End of Structure Info',
+            trigger=tp.Trigger(['Gradient Measure']),
             offset='After'
             )
-        plan_info_section = tp.Section(
-            start_section=dvh_info_end,
-            end_section=plan_info_end)
-        plan_info_section.source = BufferedIterator(DVH_TEST_TEXT)
-        self.test_section = plan_info_section
+        structure_info_section = tp.Section(start_section=structure_info_start,
+                                            end_section=structure_info_end)
+        structure_info_section.source = BufferedIterator(DVH_TEST_TEXT)
+        self.test_section = structure_info_section
+
+    def test_structure_info_break_start_sentinal(self):
+        start_check = self.test_section.section_scan('Start')
+        skipped_lines = [row for row in start_check]  # pylint: disable=unused-variable
+        sentinel = self.test_section.context['Sentinel']
+        self.assertEqual(sentinel, 'Structure:')
+
+    def test_structure_info_break_start_skipped_lines(self):
+        start_check = self.test_section.section_scan('Start')
+        skipped_lines = [row for row in start_check]
+        self.assertListEqual(DVH_TEST_TEXT[:21], skipped_lines)
+
+    def test_structure_info_break_end_sentinal(self):
+        start_check = self.test_section.section_scan('Start')
+        skipped_lines = [row for row in start_check]  # pylint: disable=unused-variable
+        end_check = self.test_section.section_scan('End')
+        scanned_lines = [row for row in end_check]
+        sentinel = self.test_section.context['Sentinel']
+        self.assertEqual(sentinel, 'Gradient Measure')
+
+    def test_structure_info_break_end_skipped_lines(self):
+        start_check = self.test_section.section_scan('Start')
+        skipped_lines = [row for row in start_check]  # pylint: disable=unused-variable
+        end_check = self.test_section.section_scan('End')
+        scanned_lines = [row for row in end_check]
+        self.assertListEqual(DVH_TEST_TEXT[21:38], scanned_lines)
 
 
-    def test_structure_info_break_sentinal(self):
-        structure_info_break = tp.SectionBoundaries(
-             start_section=self.structure_info_start,
-             end_section=self.structure_info_end)
-        source = BufferedIterator(self.test_text)
-        start_check = structure_info_break.check_start(**self.context)
-        try:
-            lines = [start_check(row, source) for row in source]
-        except tp.StartSection as start_marker:
-            sentinel = start_marker.get_context()['Sentinel']
-            self.assertEqual(sentinel, 'Structure:')
-        else:
-            self.fail()
-        end_check = structure_info_break.check_end(**self.context)
-        try:
-            lines = [end_check(row, source) for row in source]
-        except tp.StopSection as end_marker:
-            sentinel = end_marker.get_context()['Sentinel']
-            self.assertEqual(sentinel, 'Gradient Measure')
-        else:
-            self.fail()
+class Test_dvh_data_SectionBoundaries(unittest.TestCase):
+    def setUp(self):
+        structure_info_start = tp.SectionBreak(
+            name='Start of Structure Info',
+            trigger=tp.Trigger(['Structure:']),
+            offset='Before'
+            )
+        structure_info_end = tp.SectionBreak(
+            name='End of Structure Info',
+            trigger=tp.Trigger(['Gradient Measure']),
+            offset='After'
+            )
+        dvh_data_section = tp.Section(start_section=structure_info_end,
+                                      end_section=structure_info_start)
+        dvh_data_section.source = BufferedIterator(DVH_TEST_TEXT)
+        self.test_section = dvh_data_section
 
+    def test_dvh_data_break_start_sentinal(self):
+        start_check = self.test_section.section_scan('Start')
+        skipped_lines = [row for row in start_check]  # pylint: disable=unused-variable
+        sentinel = self.test_section.context['Sentinel']
+        self.assertEqual(sentinel, 'Gradient Measure')
 
+    def test_dvh_data_break_start_skipped_lines(self):
+        start_check = self.test_section.section_scan('Start')
+        skipped_lines = [row for row in start_check]
+        self.assertListEqual(DVH_TEST_TEXT[:38], skipped_lines)
+
+    def test_dvh_data_break_end_sentinal(self):
+        start_check = self.test_section.section_scan('Start')
+        skipped_lines = [row for row in start_check]  # pylint: disable=unused-variable
+        end_check = self.test_section.section_scan('End')
+        scanned_lines = [row for row in end_check]
+        sentinel = self.test_section.context['Sentinel']
+        self.assertEqual(sentinel, 'Structure:')
+
+    def test_dvh_data_break_end_skipped_lines(self):
+        start_check = self.test_section.section_scan('Start')
+        skipped_lines = [row for row in start_check]  # pylint: disable=unused-variable
+        end_check = self.test_section.section_scan('End')
+        scanned_lines = [row for row in end_check]
+        self.assertListEqual(DVH_TEST_TEXT[38:51], scanned_lines)
+
+#%% Test Boundary offsets
+class TestBoundaryOffsets(unittest.TestCase):
+    def setUp(self):
+        self.maxDiff = None
+        # Reader definitions
+        default_parser = tp.define_csv_parser(
+            'test_parser',
+            delimiter=':',
+            skipinitialspace=True
+            )
+
+        self.test_section_multi_line_reader = tp.SectionReader(
+            default_parser=default_parser,
+            post_processing_methods=[tp.trim_items,
+                                     tp.drop_blanks,
+                                     tp.merge_continued_rows
+                                     ]
+            )
+        self.test_section_line_reader = tp.SectionReader(
+            default_parser=default_parser,
+            post_processing_methods=[tp.trim_items,
+                                     tp.drop_blanks
+                                     ]
+            )
+    def test_section_break_after_before(self):
+        section_start_after = tp.Section(
+            name='Single Section After',
+            trigger=tp.Trigger('Single Section'),
+            offset='After'
+            )
+        section_end_before = tp.SectionBreak(
+            name='Single Section Before',
+            trigger=tp.Trigger('End'),
+            offset='Before'
+            )
+        test_section = tp.Section(
+            section_name='Test Section',
+            start_section=section_start_after,
+            end_section=section_end_before,
+            reader=self.test_section_multi_line_reader,
+            aggregate=tp.to_dict
+            )
+        source = BufferedIterator(GENERIC_TEST_TEXT)
+        test_output = test_section.read(source, start_search=True,
+                                        **self.context)
+        self.assertDictEqual(test_output, GENERIC_TEST_RESULTS['Section A'])
+        get_next = iter(source)
+        next_item = get_next.__next__()
+        self.assertEqual(next_item, 'End Section')
+
+    def test_section_break_gap(self):
+        section_start_gap = tp.SectionBreak(
+            name='Section With Gap',
+            trigger=tp.Trigger('Section With Gap'),
+            offset=1
+            )
+        section_end_skip_line = tp.SectionBreak(
+            name='Section End Skip Line',
+            trigger=tp.Trigger('End'),
+            offset=2
+            )
+        test_section = tp.Section(
+            section_name='Test Section',
+            start_section=section_start_gap,
+            end_section=section_end_skip_line,
+            reader=self.test_section_line_reader,
+            aggregate=partial(tp.to_dict, default_value=None)
+            )
+        source = BufferedIterator(GENERIC_TEST_TEXT)
+        test_output = test_section.read(source, start_search=True,
+                                        **self.context)
+        self.assertDictEqual(test_output, GENERIC_TEST_RESULTS['Section B'])
+        get_next = iter(source)
+        next_item = get_next.__next__()
+        self.assertEqual(next_item, 'Section Reuse')
+
+    def test_section_break_reuse(self):
+        section_start_reuse = tp.SectionBreak(
+            name='Section Start Before',
+            trigger=tp.Trigger('C Content1:d'),
+            offset=-2
+            )
+        section_end_skip_line = tp.SectionBreak(
+            name='Section End Reuse',
+            trigger=tp.Trigger('Section D'),
+            offset=-3
+            )
+        test_section = tp.Section(
+            section_name='Test Section',
+            start_section=section_start_reuse,
+            end_section=section_end_skip_line,
+            reader=self.test_section_line_reader,
+            aggregate=partial(tp.to_dict, default_value=None)
+            )
+        source = BufferedIterator(GENERIC_TEST_TEXT)
+
+        test_output = test_section.read(source, start_search=True,
+                                        **self.context)
+        self.assertDictEqual(test_output, GENERIC_TEST_RESULTS['Section C'])
+        get_next = iter(source)
+        next_item = get_next.__next__()
+        self.assertEqual(next_item, 'C&D Content1:gg')
 if __name__ == '__main__':
     unittest.main()
