@@ -190,7 +190,7 @@ def value2num(value_string: str)->float:
 
 
 
-def sort_dict(dict_data: Dict[str, Any],# FIXME Use Generic typing for Dict Value
+def sort_dict(dict_data: Dict[str, Any],# TODO Use Generic typing for Dict Value
               sort_list: List[str] = None
               )->List[Any]:
     '''Generate a sorted list of from dictionary values.
