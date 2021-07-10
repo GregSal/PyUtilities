@@ -457,7 +457,7 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
     parsed_line_iter = BufferedIterator(parsed_lines, buffer_size=max_lines)
     for parsed_line in parsed_line_iter:
         completed_line = False
-        # completed_section = None  # Stores raised StopSection exceptions
+        completed_section = None  # Stores raised StopSection exceptions
         # If the first line doesn't not have exactly 2 parts don't join
         # subsequent lines to it.
         if len(parsed_line) != 2:
@@ -467,9 +467,9 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
             # the section break is raised
             try:
                 next_line = parsed_line_iter.look_ahead()
-            except (StopSection, BufferOverflowWarning):
+            except (StopSection, BufferOverflowWarning) as eol:
                 completed_line = True
-                #completed_section = eol
+                completed_section = eol
             else:
                 if len(next_line) == 1:
                     parsed_line[1] = join_strings(parsed_line[1], next_line[0],
@@ -954,6 +954,7 @@ class Section():
         3. Apply an aggregating function to the parsed text to convert it to
             the desired output format.
     '''
+    # TODO Use property methods to update context
     def __init__(self,
                  section_name: str = 'Section',
                  start_section: List[SectionBreak] = None,
@@ -1019,27 +1020,40 @@ class Section():
         else:
             self.aggregate = list
 
-    def catch_break(self, source: BufferedIterator)->Generator[str, None, None]:
+    def catch_break(self, buffered_source: BufferedIterator)->Generator[str, None, None]:
         break_context = {'Status': 'No Break Found'}
         try:
             status = 'Scan In Progress'
             break_context['Status'] = 'No Break Found'
-            for item in source:
+            for item in buffered_source:
                 yield item
             break_context['Status'] = 'End of Source in catch_break'
             status = 'Scan Complete'
-
         except (RuntimeError) as err:
             break_context['Status'] = 'RuntimeError'
             logger.warning(f'RuntimeError Encountered: {err}')
             status = 'Scan Complete'
-        except (BufferedIteratorEOF, IteratorEOF, StopIteration):
+        except (BufferedIteratorEOF, IteratorEOF, StopIteration) as eof:
             break_context['Status'] = 'End of Source'
+            status = 'Scan Complete'
+        except (StartSection, StopSection) as marker:
+            break_context = marker.get_context()
+            location = break_context['Location']
+            break_context['Status'] = f'{location} of {self.section_name}'
             status = 'Scan Complete'
         finally:
             self.context.update(break_context)
             self.scan_status = status
             logger.debug(f'break_context:\t{break_context["Status"]}')
+
+    def find_start(self, buffered_source):
+        # Skip lines before start
+        scan_start = self.boundaries.scan('Start', buffered_source,
+                                          section_name=self.section_name,
+                                          **self.context)
+        skipped_lines = [row for row in self.catch_break(scan_start)]
+        self.scan_status = 'Not Started'
+        return skipped_lines
 
     def is_boundary(self, line: str, break_triggers: List[SectionBreak])->bool:
         for break_trigger in break_triggers:
@@ -1052,15 +1066,34 @@ class Section():
                 self.context['Break']= break_trigger.name
         return is_break
 
+    def section_gen(self)->BufferedIterator:
+        '''Create the iterator that will read source until the section ends.'''
+        section_scan = self.boundaries.scan('End', self.source,
+                                            section_name=self.section_name,
+                                            **self.context)
+        section_iter = BufferedIterator(self.catch_break(section_scan))
+        return section_iter
+
+    def group_reader_gen(self, reader_list, section_iter):
+        while 'Complete' not in self.scan_status:
+            group_read = (
+                    sub_rdr.read(section_iter, **self.context)
+                    for sub_rdr in reader_list
+                    )
+            section_item = list(group_read)
+            yield section_item
+
+
     def section_scan(self, boundary_type: str)->Generator[str, None, None]:
         source = self.catch_break(self.source)
         if 'Start' in boundary_type:
             boundary = self.start_section
+            trigger_exception = StartSection
         else:
             boundary = self.end_section
+            trigger_exception = StopSection
         done_scanning = False
-        for line in source:
-        #while not done_scanning:
+        while not done_scanning:
             # Get the next line from source
             #line = next(source)
             logger.debug(f'In Section Scan {boundary_type},'
@@ -1076,7 +1109,7 @@ class Section():
                 self.scan_status = status
                 self.context['Location'] = boundary_type
                 self.context['Status'] = status
-                break
+                raise trigger_exception(context=break_context)
             else:
                 yield line
                 #try:
@@ -1088,9 +1121,9 @@ class Section():
                         start_search: bool = True)->List[str]:
         # Initialize the source
         if isinstance(source, BufferedIterator):
-            self.source = source
+            buffered_source = source
         else:
-            self.source = BufferedIterator(source)
+            buffered_source = BufferedIterator(source)
 
         # Find the section start
         if start_search:
@@ -1141,6 +1174,7 @@ class Section():
     # FIXME Clarify expectations of generators, iterators, lists
     def read_section(self):
         reader = self.reader
+        #section_iter = self.section_gen()
         section_iter = self.section_scan('End')
         # TODO Make the list of readers test more general i.e. any sequence of readers
         # TODO the test for reader type can be done in Section.__init__
@@ -1149,9 +1183,11 @@ class Section():
                              for sub_rdr in self.reader)
             #section_items = [item for item in reader]
         elif isgeneratorfunction(reader.read):
+            #section_items = reader.read(section_iter, **self.context)
             section_items = self.reader.read(section_iter, **self.context)
             #section_items = [item for item in reader]
         else:
+            #section_items = self.read_gen(reader.read, section_iter)
             reader = self.reader.read(section_iter, **self.context)
             section_items = (item for item in reader)
             #section_items = self.read_gen(reader.read, section_iter)
