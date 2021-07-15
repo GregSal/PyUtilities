@@ -13,7 +13,7 @@
     <TestFramework>unittest</TestFramework>
     <UnitTestPattern>test*.py</UnitTestPattern>
     <UnitTestRootDirectory>.</UnitTestRootDirectory>
-    <InterpreterId>CondaEnv|CondaEnv|TextProcessing</InterpreterId>
+    <InterpreterId>CondaEnv|CondaEnv|TextProcessing3.8</InterpreterId>
     <IsWindowsApplication>False</IsWindowsApplication>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
   </PropertyGroup>
@@ -103,7 +103,9 @@
     <Folder Include="Text Files\Test Dir Structure\Dir2\Sub Folder in Dir2\Sub SubFolder\Sub Sub SubFolder\" />
   </ItemGroup>
   <ItemGroup>
+    <InterpreterReference Include="CondaEnv|CondaEnv|Standard" />
     <InterpreterReference Include="CondaEnv|CondaEnv|TextProcessing" />
+    <InterpreterReference Include="CondaEnv|CondaEnv|TextProcessing3.8" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
