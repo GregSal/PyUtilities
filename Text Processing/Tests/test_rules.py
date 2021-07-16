@@ -174,18 +174,19 @@ def parse_use(line, *args, **kwargs):# pylint: disable=unused-argument
 
 class TestSingleLineParse(unittest.TestCase):
     def setUp(self):
-        self.test_source = '\n'.join([
+        test_text = '\n'.join([
             'Text Processing      - Ignore'
             'Text Processing      - Use'
             'Text Processing      - Ignore'
             ])
-
+        self.test_source = test_text.splitlines()
         self.test_result = ['Text Processing','Use']
 
         self.default_parser = tp.define_csv_parser('comma')
         #use_trigger = Trigger('Use', location='IN', name='Use')
         self.rule = ParsingRule(Trigger('Use'), pass_method=parse_use)
 
+    @unittest.skip('Not Done')
     def test_use_parse(self):
         expected_results = self.test_result
         parsed_lines = self.rule.apply(self.test_source)

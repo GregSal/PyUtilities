@@ -31,9 +31,8 @@ class TestBufferedIterator(unittest.TestCase):
     def setUp(self):
         self.test_lines = TEST_LINES.splitlines()
         self.buffer_size = 5
-        self.test_gen = BufferedIterator(self.test_lines,
+        self.test_iter = BufferedIterator(self.test_lines,
                                          buffer_size=self.buffer_size)
-        self.test_iter = (line for line in self.test_gen)
 
     def test_backup(self):
         # Step through 1st 3 lines
@@ -41,7 +40,7 @@ class TestBufferedIterator(unittest.TestCase):
         for i in range(3):  # pylint: disable=unused-variable
             yielded_lines.append(self.test_iter.__next__())
         #Backup 2 lines
-        self.test_gen.step_back = 2
+        self.test_iter.step_back = 2
         next_line = self.test_iter.__next__()
         self.assertEqual(next_line, yielded_lines[-2])
 
@@ -52,7 +51,7 @@ class TestBufferedIterator(unittest.TestCase):
             yielded_lines.append(self.test_iter.__next__())
         #Try to Backup 2 lines
         with self.assertRaises(ValueError):
-            self.test_gen.step_back = 2
+            self.test_iter.step_back = 2
 
     def test_backup_beyond_buffer_error(self):
         #  Step through more lines than buffer size
@@ -61,7 +60,7 @@ class TestBufferedIterator(unittest.TestCase):
             yielded_lines.append(self.test_iter.__next__())
         #Try to Backup 2 lines
         with self.assertRaises(ValueError):
-            self.test_gen.step_back = self.buffer_size+1
+            self.test_iter.step_back = self.buffer_size+1
 
     def test_backup_method(self):
         # Step through 1st 3 lines
@@ -69,7 +68,7 @@ class TestBufferedIterator(unittest.TestCase):
         for i in range(3):  # pylint: disable=unused-variable
             yielded_lines.append(self.test_iter.__next__())
         #Backup 2 lines
-        self.test_gen.backup(2)
+        self.test_iter.backup(2)
         next_line = self.test_iter.__next__()
         self.assertEqual(next_line, yielded_lines[-2])
 
@@ -79,7 +78,7 @@ class TestBufferedIterator(unittest.TestCase):
         for i in range(3):  # pylint: disable=unused-variable
             yielded_lines.append(self.test_iter.__next__())
         #Backup 2 lines
-        previous_line = self.test_gen.look_back(2)
+        previous_line = self.test_iter.look_back(2)
         self.assertEqual(previous_line, yielded_lines[-2])
         next_line = self.test_iter.__next__()
         self.assertEqual(next_line, self.test_lines[3])
@@ -90,7 +89,7 @@ class TestBufferedIterator(unittest.TestCase):
         for i in range(3):  # pylint: disable=unused-variable
             yielded_lines.append(self.test_iter.__next__())
         #Look 2 lines ahead
-        future_line = self.test_gen.look_ahead(2)
+        future_line = self.test_iter.look_ahead(2)
         # Step through 2 more lines
         for i in range(2):
             yielded_lines.append(self.test_iter.__next__())
@@ -103,11 +102,11 @@ class TestBufferedIterator(unittest.TestCase):
             yielded_lines.append(self.test_iter.__next__())
         previous_line = yielded_lines[-1]
         #Skip 3 lines ahead
-        self.test_gen.skip(3)
+        self.test_iter.skip(3)
         next_line = self.test_iter.__next__()
         self.assertEqual(next_line, self.test_lines[3+3])
         #Backup 2 lines
-        self.test_gen.backup(2)
+        self.test_iter.backup(2)
         next_line = self.test_iter.__next__()
         self.assertEqual(next_line, previous_line)
 
@@ -119,11 +118,11 @@ class TestBufferedIterator(unittest.TestCase):
             yielded_lines.append(self.test_iter.__next__())
         previous_line = yielded_lines[-1]
         #Advance 3 lines ahead
-        self.test_gen.advance(3)
+        self.test_iter.advance(3)
         next_line = self.test_iter.__next__()
         self.assertEqual(next_line, self.test_lines[3+3])
         #Backup 3+2 lines
-        self.test_gen.backup(3+2)
+        self.test_iter.backup(3+2)
         next_line = self.test_iter.__next__()
         self.assertEqual(next_line, previous_line)
 
@@ -133,7 +132,7 @@ class TestBufferedIterator(unittest.TestCase):
         for i in range(self.buffer_size):  # pylint: disable=unused-variable
             yielded_lines.append(self.test_iter.__next__())
         #Backup the entire buffer
-        self.test_gen.backup(self.buffer_size)
+        self.test_iter.backup(self.buffer_size)
         next_line = self.test_iter.__next__()
         self.assertEqual(next_line, yielded_lines[-self.buffer_size])
 
@@ -152,7 +151,7 @@ class TestBufferedIterator(unittest.TestCase):
         for i in range(num_items):  # pylint: disable=unused-variable
             yielded_lines.append(self.test_iter.__next__())
         with self.assertRaises(BufferOverflowWarning):
-            self.test_gen.advance(1)
+            self.test_iter.advance(1)
 
     def test_look_back_overun(self):
         # Advance to fill the buffer
@@ -160,7 +159,7 @@ class TestBufferedIterator(unittest.TestCase):
         for i in range(1):  # pylint: disable=unused-variable
             yielded_lines.append(self.test_iter.__next__())
         with self.assertRaises(BufferedIteratorValueError):
-            previous_line = self.test_gen.look_back(2)  # pylint: disable=unused-variable
+            previous_line = self.test_iter.look_back(2)  # pylint: disable=unused-variable
 
 
 if __name__ == '__main__':
