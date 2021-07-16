@@ -194,28 +194,25 @@ class Test_DVH_Info_SectionBoundaries(unittest.TestCase):
         dvh_info_section = tp.Section(
             start_section=None,
             end_section=dvh_info_end)
-        dvh_info_section.source = BufferedIterator(DVH_TEST_TEXT)
         self.test_section = dvh_info_section
 
     def test_dvh_info_section_start_sentinel(self):
-        start_check = self.test_section.section_scan('Start')
-        output = [row for row in start_check]  # pylint: disable=unused-variable
+        self.test_section.initialize_scan(DVH_TEST_TEXT)
         sentinel = self.test_section.context['Sentinel']
         self.assertTrue(sentinel)
 
     def test_dvh_info_section_start_empty_list(self):
-        start_check = self.test_section.section_scan('Start')
-        skipped_lines = [row for row in start_check]
+        skipped_lines = self.test_section.initialize_scan(DVH_TEST_TEXT)
         self.assertListEqual(skipped_lines, [])
 
     def test_dvh_info_section_end_sentinel(self):
-        end_check = self.test_section.section_scan('End')
+        end_check = self.test_section.scan(DVH_TEST_TEXT)
         output = [row for row in end_check]  # pylint: disable=unused-variable
         sentinel = self.test_section.context['Sentinel']
         self.assertEqual(sentinel, 'Plan sum:')
 
     def test_dvh_info_section_end_lines(self):
-        end_check = self.test_section.section_scan('End')
+        end_check = self.test_section.scan(DVH_TEST_TEXT)
         scanned_lines = [row for row in end_check]
         self.assertListEqual(DVH_TEST_TEXT[:10], scanned_lines)
 
@@ -234,30 +231,25 @@ class Test_Plan_Info_SectionBoundaries(unittest.TestCase):
         plan_info_section = tp.Section(
             start_section=dvh_info_end,
             end_section=plan_info_end)
-        plan_info_section.source = BufferedIterator(DVH_TEST_TEXT)
         self.test_section = plan_info_section
 
     def test_plan_info_section_start_sentinel(self):
-        start_check = self.test_section.section_scan('Start')
-        output = [row for row in start_check]  # pylint: disable=unused-variable
+        self.test_section.initialize_scan(DVH_TEST_TEXT)
         sentinel = self.test_section.context['Sentinel']
         self.assertEqual(sentinel, 'Plan sum:')
 
     def test_plan_info_section_start_skipped_lines(self):
-        start_check = self.test_section.section_scan('Start')
-        skipped_lines = [row for row in start_check]
+        skipped_lines = self.test_section.initialize_scan(DVH_TEST_TEXT)
         self.assertListEqual(DVH_TEST_TEXT[:10], skipped_lines)
 
     def test_plan_info_section_end_sentinel(self):
-        end_check = self.test_section.section_scan('End')
+        end_check = self.test_section.scan(DVH_TEST_TEXT)
         output = [row for row in end_check]  # pylint: disable=unused-variable
         sentinel = self.test_section.context['Sentinel']
         self.assertEqual(sentinel, '% for dose (%):')
 
     def test_dvh_info_section_end_lines(self):
-        start_check = self.test_section.section_scan('Start')
-        skipped_lines = [row for row in start_check]  # pylint: disable=unused-variable
-        end_check = self.test_section.section_scan('End')
+        end_check = self.test_section.scan(DVH_TEST_TEXT)
         scanned_lines = [row for row in end_check]
         self.assertListEqual(DVH_TEST_TEXT[10:14], scanned_lines)
 
@@ -276,32 +268,25 @@ class Test_structure_Info_SectionBoundaries(unittest.TestCase):
             )
         structure_info_section = tp.Section(start_section=structure_info_start,
                                             end_section=structure_info_end)
-        structure_info_section.source = BufferedIterator(DVH_TEST_TEXT)
         self.test_section = structure_info_section
 
     def test_structure_info_break_start_sentinal(self):
-        start_check = self.test_section.section_scan('Start')
-        skipped_lines = [row for row in start_check]  # pylint: disable=unused-variable
+        self.test_section.initialize_scan(DVH_TEST_TEXT)
         sentinel = self.test_section.context['Sentinel']
         self.assertEqual(sentinel, 'Structure:')
 
     def test_structure_info_break_start_skipped_lines(self):
-        start_check = self.test_section.section_scan('Start')
-        skipped_lines = [row for row in start_check]
+        skipped_lines = self.test_section.initialize_scan(DVH_TEST_TEXT)
         self.assertListEqual(DVH_TEST_TEXT[:21], skipped_lines)
 
     def test_structure_info_break_end_sentinal(self):
-        start_check = self.test_section.section_scan('Start')
-        skipped_lines = [row for row in start_check]  # pylint: disable=unused-variable
-        end_check = self.test_section.section_scan('End')
+        end_check = self.test_section.scan(DVH_TEST_TEXT)
         scanned_lines = [row for row in end_check]
         sentinel = self.test_section.context['Sentinel']
         self.assertEqual(sentinel, 'Gradient Measure')
 
     def test_structure_info_break_end_skipped_lines(self):
-        start_check = self.test_section.section_scan('Start')
-        skipped_lines = [row for row in start_check]  # pylint: disable=unused-variable
-        end_check = self.test_section.section_scan('End')
+        end_check = self.test_section.scan(DVH_TEST_TEXT)
         scanned_lines = [row for row in end_check]
         self.assertListEqual(DVH_TEST_TEXT[21:38], scanned_lines)
 
@@ -320,32 +305,25 @@ class Test_dvh_data_SectionBoundaries(unittest.TestCase):
             )
         dvh_data_section = tp.Section(start_section=structure_info_end,
                                       end_section=structure_info_start)
-        dvh_data_section.source = BufferedIterator(DVH_TEST_TEXT)
         self.test_section = dvh_data_section
 
     def test_dvh_data_break_start_sentinal(self):
-        start_check = self.test_section.section_scan('Start')
-        skipped_lines = [row for row in start_check]  # pylint: disable=unused-variable
+        self.test_section.initialize_scan(DVH_TEST_TEXT)
         sentinel = self.test_section.context['Sentinel']
         self.assertEqual(sentinel, 'Gradient Measure')
 
     def test_dvh_data_break_start_skipped_lines(self):
-        start_check = self.test_section.section_scan('Start')
-        skipped_lines = [row for row in start_check]
+        skipped_lines = self.test_section.initialize_scan(DVH_TEST_TEXT)
         self.assertListEqual(DVH_TEST_TEXT[:38], skipped_lines)
 
     def test_dvh_data_break_end_sentinal(self):
-        start_check = self.test_section.section_scan('Start')
-        skipped_lines = [row for row in start_check]  # pylint: disable=unused-variable
-        end_check = self.test_section.section_scan('End')
+        end_check = self.test_section.scan(DVH_TEST_TEXT)
         scanned_lines = [row for row in end_check]
         sentinel = self.test_section.context['Sentinel']
         self.assertEqual(sentinel, 'Structure:')
 
     def test_dvh_data_break_end_skipped_lines(self):
-        start_check = self.test_section.section_scan('Start')
-        skipped_lines = [row for row in start_check]  # pylint: disable=unused-variable
-        end_check = self.test_section.section_scan('End')
+        end_check = self.test_section.scan(DVH_TEST_TEXT)
         scanned_lines = [row for row in end_check]
         self.assertListEqual(DVH_TEST_TEXT[38:51], scanned_lines)
 

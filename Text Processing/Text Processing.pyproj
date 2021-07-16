@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>f0b75ef5-e1d5-4a3e-978c-9a8dcf445620</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>plan_info_test.py</StartupFile>
+    <StartupFile>Text_Processing.py</StartupFile>
     <SearchPath>..\Ulilities</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -13,7 +13,7 @@
     <TestFramework>unittest</TestFramework>
     <UnitTestPattern>test*.py</UnitTestPattern>
     <UnitTestRootDirectory>.</UnitTestRootDirectory>
-    <InterpreterId>CondaEnv|CondaEnv|TextProcessing3.8</InterpreterId>
+    <InterpreterId>CondaEnv|CondaEnv|Standard</InterpreterId>
     <IsWindowsApplication>False</IsWindowsApplication>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
   </PropertyGroup>
@@ -31,7 +31,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="file_utilities.py" />
-    <Compile Include="plan_info_test.py" />
     <Compile Include="read_dir_file.py">
       <SubType>Code</SubType>
     </Compile>

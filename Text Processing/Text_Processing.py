@@ -457,7 +457,7 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
     parsed_line_iter = BufferedIterator(parsed_lines, buffer_size=max_lines)
     for parsed_line in parsed_line_iter:
         completed_line = False
-        completed_section = None  # Stores raised StopSection exceptions
+        # completed_section = None  # Stores raised StopSection exceptions
         # If the first line doesn't not have exactly 2 parts don't join
         # subsequent lines to it.
         if len(parsed_line) != 2:
@@ -465,9 +465,11 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
         while not completed_line:
             # Trap Section breaks so that the current line is returned before
             # the section break is raised
+            # TODO Verify that merge lines still works
             try:
                 next_line = parsed_line_iter.look_ahead()
             except (StopSection, BufferOverflowWarning) as eol:
+                # TODO Test whether this code is reached
                 completed_line = True
                 completed_section = eol
             else:
@@ -1040,7 +1042,7 @@ class Section():
             status = 'Scan Complete'
             break_context['Status'] = 'RuntimeError'
             logger.warning(f'RuntimeError Encountered: {err}')
-        except (BufferedIteratorEOF, IteratorEOF, StopIteration) as eof:
+        except (BufferedIteratorEOF, IteratorEOF, StopIteration):
             status = 'Scan Complete'
             break_context['Status'] = 'End of Source'
         except (StartSection, StopSection) as marker:
@@ -1052,7 +1054,7 @@ class Section():
         else:
             status = 'Scan In Progress'
             break_context['Status'] = 'No Break Found'
-            logger.debug(f'In:\t{section_name}\tGot item:\t{next_item}')
+            logger.debug(f'In:\t{self.section_name}\tGot item:\t{next_item}')
         finally:
             self.scan_status = status
             self.context.update(break_context)
@@ -1073,7 +1075,7 @@ class Section():
             self.scan_status = 'Not Started'
             while True:
                 next_item = self.step_source()
-                if 'Scan Complete' in self.status:
+                if 'Scan Complete' in self.scan_status:
                     break
                 if self.is_boundary(next_item, self.start_section):
                     break
@@ -1088,13 +1090,14 @@ class Section():
         # Read source until end boundary is found or source ends
         while True:
             next_item = self.step_source()
-            if 'Scan Complete' in self.status:
+            if 'Scan Complete' in self.scan_status:
                 break
             if self.is_boundary(next_item, self.end_section):
                 break
             yield next_item
 
     def read_section(self)->Generator[str, None, None]:
+        # TODO determine the section reader function in __init__
         section_iter = self.scan_section()
         if isinstance(self.reader, list):
             section_gen = (sub_rdr.read(section_iter, **self.context)
@@ -1110,7 +1113,7 @@ class Section():
              **context)->Generator[str, None, None]:
         self.context.update(context)
         # check for start
-        skipped_lines = self.initialize_scan(source, start_search)
+        self.initialize_scan(source, start_search)
         # read section while checking for end
         section_iter = iter(self.read_section())
         while True:
@@ -1123,7 +1126,7 @@ class Section():
              **context)->Generator[str, None, None]:
         self.context.update(context)
         # check for start
-        skipped_lines = self.initialize_scan(source, start_search)
+        self.initialize_scan(source, start_search)
         # read section while checking for end
         section_iter = iter(self.read_section())
         section_items = list()

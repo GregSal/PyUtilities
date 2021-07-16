@@ -172,7 +172,6 @@ def parse_use(line, *args, **kwargs):# pylint: disable=unused-argument
     return [[clean_line]]
 
 
-@unittest.expectedFailure('not working yet')
 class TestSingleLineParse(unittest.TestCase):
     def setUp(self):
         self.test_source = '\n'.join([
