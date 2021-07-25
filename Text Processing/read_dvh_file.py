@@ -195,13 +195,13 @@ def to_structure_data_tuple(structure_data_list):
 #%% Reader definitions
 default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
                                       skipinitialspace=True)
-dvh_info_reader = tp.SectionReader(
+dvh_info_reader = tp.SectionParser(
     preprocessing_methods=[clean_ascii_text],
     parsing_rules=[make_date_parse_rule()],
     default_parser=default_parser,
     post_processing_methods=[tp.trim_items, tp.drop_blanks,
                              tp.merge_continued_rows])
-plan_info_reader = tp.SectionReader(
+plan_info_reader = tp.SectionParser(
     preprocessing_methods=[clean_ascii_text],
     parsing_rules=[make_prescribed_dose_rule(),
                    make_approved_status_rule()],
@@ -209,7 +209,7 @@ plan_info_reader = tp.SectionReader(
     post_processing_methods=[tp.trim_items, tp.drop_blanks,
                              tp.convert_numbers]
     )
-structure_info_reader = tp.SectionReader(
+structure_info_reader = tp.SectionParser(
     preprocessing_methods=[clean_ascii_text],
     parsing_rules=[],
     default_parser=default_parser,
@@ -217,7 +217,7 @@ structure_info_reader = tp.SectionReader(
                              tp.convert_numbers,
                              fix_structure_names]
     )
-dvh_data_reader = tp.SectionReader(
+dvh_data_reader = tp.SectionParser(
     preprocessing_methods=[clean_ascii_text],
     default_parser=tp.define_fixed_width_parser(widths=10),
     post_processing_methods=[tp.trim_items, tp.drop_blanks,
@@ -290,7 +290,7 @@ dvh_data_section = tp.Section(
 dvh_group_section = tp.Section(
     section_name='DVH Groups',
     start_section=structure_info_start,
-    reader=[structure_info_section, dvh_data_section],
+    reader=[[structure_info_section, dvh_data_section]],
     aggregate=to_structure_data_tuple
     )
 

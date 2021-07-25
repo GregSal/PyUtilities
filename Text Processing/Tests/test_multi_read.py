@@ -13,7 +13,7 @@ default_parser = tp.define_csv_parser(
     skipinitialspace=True
     )
 
-test_section_reader = tp.SectionReader(
+test_section_reader = tp.SectionParser(
     default_parser=default_parser,
     post_processing_methods=[tp.trim_items,
                              tp.drop_blanks,

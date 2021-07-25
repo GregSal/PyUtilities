@@ -199,13 +199,13 @@ class TestSectionGroupRead(unittest.TestCase):
             delimiter=':',
             skipinitialspace=True
             )
-        delimiter_section_reader = tp.SectionReader(
+        delimiter_section_reader = tp.SectionParser(
             default_parser=delimiter_parser,
             post_processing_methods=[tp.trim_items,
                                      tp.drop_blanks
                                      ]
             )
-        fixed_width_reader = tp.SectionReader(
+        fixed_width_reader = tp.SectionParser(
             default_parser=fixed_width_parser,
             post_processing_methods=[tp.trim_items,
                                         tp.drop_blanks,

@@ -366,7 +366,7 @@ class TestSections(unittest.TestCase):
                                                    skipinitialspace=True)
 
     def test_dvh_info_reader(self):
-        dvh_info_reader = tp.SectionReader(
+        dvh_info_reader = tp.SectionParser(
             preprocessing_methods=[clean_ascii_text],
             parsing_rules=[read_dvh_file.make_date_parse_rule()],
             default_parser=self.default_parser,
@@ -380,7 +380,7 @@ class TestSections(unittest.TestCase):
         self.assertDictEqual(test_output, self.test_result['DVH Info'])
 
     def test_plan_info1_read(self):
-        plan_info_reader = tp.SectionReader(
+        plan_info_reader = tp.SectionParser(
             preprocessing_methods=[clean_ascii_text],
             parsing_rules=[read_dvh_file.make_prescribed_dose_rule(),
                            read_dvh_file.make_approved_status_rule()],
@@ -396,7 +396,7 @@ class TestSections(unittest.TestCase):
 
 
     def test_plan_info2_read(self):
-        plan_info_reader = tp.SectionReader(
+        plan_info_reader = tp.SectionParser(
             preprocessing_methods=[clean_ascii_text],
             parsing_rules=[read_dvh_file.make_prescribed_dose_rule(),
                            read_dvh_file.make_approved_status_rule()],
@@ -412,7 +412,7 @@ class TestSections(unittest.TestCase):
 
 
     def test_structure_reader(self):
-        structure_reader = tp.SectionReader(
+        structure_reader = tp.SectionParser(
             preprocessing_methods=[clean_ascii_text],
             parsing_rules=[],
             default_parser=self.default_parser,
@@ -427,7 +427,7 @@ class TestSections(unittest.TestCase):
 
 
     def test_dvh_reader(self):
-        dvh_data_reader = tp.SectionReader(
+        dvh_data_reader = tp.SectionParser(
             preprocessing_methods=[clean_ascii_text],
             parsing_rules=[],
             default_parser=tp.define_fixed_width_parser(widths=10),

@@ -295,16 +295,16 @@ def make_files_table(dir_gen):
 #%% Reader definitions
 default_parser = tp.define_csv_parser('dir_files', delimiter=':',
                                        skipinitialspace=True)
-heading_reader = tp.SectionReader(
+heading_reader = tp.SectionParser(
     parsing_rules=[],
     default_parser=default_parser,
     post_processing_methods=[tp.trim_items])
-folder_reader = tp.SectionReader(
+folder_reader = tp.SectionParser(
     parsing_rules=[skip_dir_rule, file_listing_rule, dir_header_rule,
                    skip_file_count_rule],
     default_parser=default_parser,
     post_processing_methods=[tp.drop_blanks])
-summary_reader = tp.SectionReader(
+summary_reader = tp.SectionParser(
     parsing_rules=[file_count_rule, skip_totals_rule],
     default_parser=default_parser,
     post_processing_methods=[tp.drop_blanks]

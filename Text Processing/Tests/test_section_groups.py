@@ -221,3 +221,7 @@ class TestSectionSequencer(unittest.TestCase):
         self.maxDiff=None
         self.assertDictEqual(structures_df.to_dict(),
                              self.test_result['Structures'].to_dict())
+
+
+if __name__ == '__main__':
+    unittest.main()
