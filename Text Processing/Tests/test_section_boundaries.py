@@ -206,20 +206,16 @@ class Test_DVH_Info_SectionBoundaries(unittest.TestCase):
         self.assertListEqual(skipped_lines, [])
 
     def test_dvh_info_section_end_sentinel(self):
-        end_check = self.test_section.scan(DVH_TEST_TEXT)
+        end_check = self.test_section.gen(DVH_TEST_TEXT)
         output = [row for row in end_check]  # pylint: disable=unused-variable
         sentinel = self.test_section.context['Sentinel']
         self.assertEqual(sentinel, 'Plan sum:')
 
     def test_dvh_info_section_end_lines(self):
-        end_check = self.test_section.scan(DVH_TEST_TEXT)
-        scanned_lines = [row[0] for row in end_check]
-        self.assertListEqual(DVH_TEST_TEXT[:10], scanned_lines)
-
-    def test_dvh_info_section_end_lines(self):
-        end_check = self.test_section.__iter__(DVH_TEST_TEXT)
+        end_check = self.test_section.gen(DVH_TEST_TEXT)
         scanned_lines = [row for row in end_check]
         self.assertListEqual(DVH_TEST_TEXT[:10], scanned_lines)
+
 
 class Test_Plan_Info_SectionBoundaries(unittest.TestCase):
     def setUp(self):
@@ -248,21 +244,20 @@ class Test_Plan_Info_SectionBoundaries(unittest.TestCase):
         self.assertListEqual(DVH_TEST_TEXT[:10], skipped_lines)
 
     def test_plan_info_section_end_sentinel(self):
-        end_check = self.test_section.scan(DVH_TEST_TEXT)
+        end_check = self.test_section.gen(DVH_TEST_TEXT)
         output = [row for row in end_check]  # pylint: disable=unused-variable
         sentinel = self.test_section.context['Sentinel']
         self.assertEqual(sentinel, '% for dose (%):')
 
     def test_dvh_info_section_end_scan(self):
-        end_check = self.test_section.scan(DVH_TEST_TEXT)
-        scanned_lines = [row[0] for row in end_check]
-        self.assertListEqual(DVH_TEST_TEXT[10:14], scanned_lines)
-
-    def test_dvh_info_section_end_lines(self):
-        end_check = self.test_section.__iter__(DVH_TEST_TEXT)
+        end_check = self.test_section.gen(DVH_TEST_TEXT)
         scanned_lines = [row for row in end_check]
         self.assertListEqual(DVH_TEST_TEXT[10:14], scanned_lines)
 
+    def test_dvh_info_section_end_lines(self):
+        end_check = self.test_section.gen(DVH_TEST_TEXT)
+        scanned_lines = [row for row in end_check]
+        self.assertListEqual(DVH_TEST_TEXT[10:14], scanned_lines)
 
 
 class Test_structure_Info_SectionBoundaries(unittest.TestCase):
@@ -291,18 +286,18 @@ class Test_structure_Info_SectionBoundaries(unittest.TestCase):
         self.assertListEqual(DVH_TEST_TEXT[:21], skipped_lines)
 
     def test_structure_info_break_end_sentinal(self):
-        end_check = self.test_section.scan(DVH_TEST_TEXT)
+        end_check = self.test_section.gen(DVH_TEST_TEXT)
         scanned_lines = [row for row in end_check]
         sentinel = self.test_section.context['Sentinel']
         self.assertEqual(sentinel, 'Gradient Measure')
 
     def test_structure_info_break_end_skipped_scan(self):
-        end_check = self.test_section.scan(DVH_TEST_TEXT)
-        scanned_lines = [row[0] for row in end_check]
+        end_check = self.test_section.gen(DVH_TEST_TEXT)
+        scanned_lines = [row for row in end_check]
         self.assertListEqual(DVH_TEST_TEXT[21:38], scanned_lines)
 
     def test_structure_info_break_end_skipped_lines(self):
-        end_check = self.test_section.__iter__(DVH_TEST_TEXT)
+        end_check = self.test_section.gen(DVH_TEST_TEXT)
         scanned_lines = [row for row in end_check]
         self.assertListEqual(DVH_TEST_TEXT[21:38], scanned_lines)
 
@@ -333,15 +328,16 @@ class Test_dvh_data_SectionBoundaries(unittest.TestCase):
         self.assertListEqual(DVH_TEST_TEXT[:38], skipped_lines)
 
     def test_dvh_data_break_end_sentinal(self):
-        end_check = self.test_section.scan(DVH_TEST_TEXT)
+        end_check = self.test_section.gen(DVH_TEST_TEXT)
         scanned_lines = [row for row in end_check]
         sentinel = self.test_section.context['Sentinel']
         self.assertEqual(sentinel, 'Structure:')
 
     def test_dvh_data_break_end_skipped_lines(self):
-        end_check = self.test_section.__iter__(DVH_TEST_TEXT)
+        end_check = self.test_section.gen(DVH_TEST_TEXT)
         scanned_lines = [row for row in end_check]
         self.assertListEqual(DVH_TEST_TEXT[38:51], scanned_lines)
+
 
 #%% Test Boundary offsets
 class TestBoundaryOffsets(unittest.TestCase):

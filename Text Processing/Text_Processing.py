@@ -16,6 +16,7 @@ from __future__ import annotations
 #%% Imports
 import re
 import csv
+import inspect
 from pathlib import Path
 from inspect import isgeneratorfunction
 from functools import partial
@@ -473,7 +474,7 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
             except (StopSection, BufferOverflowWarning) as eol:
                 # TODO Test whether this code is reached
                 completed_line = True
-                completed_section = eol
+                #completed_section = eol
             else:
                 if len(next_line) == 1:
                     parsed_line[1] = join_strings(parsed_line[1], next_line[0],
@@ -934,13 +935,7 @@ class SectionParser():
 
     def reader(self, buffered_source, **context):
         self.context = context
-        section_iter = cascading_iterators(buffered_source,
-                                           self.section_stages)
-        while True:
-            try:
-                yield next(section_iter)
-            except StopIteration:
-                break
+        return cascading_iterators(buffered_source, self.section_stages)
 
     def read(self, buffered_source, **context):
         self.context = context
@@ -1094,6 +1089,7 @@ class Section():
 
     def initialize_scan(self, source: Source,
              start_search: bool = True)->List[Any]:
+        # FIXME Adding source must be separate from Advance to start
         # Wrap the source in a BufferedIterator if it is not one already
         if isinstance(source, BufferedIterator):
             self.source = source
@@ -1116,7 +1112,7 @@ class Section():
         self.scan_status = f'At the start of section {self.section_name}'
         return skipped_lines
 
-    def __iter__(self, source: Source, start_search: bool = True,
+    def gen(self, source: Source, start_search: bool = True,
                  **context)->Generator[Any, None, None]:
         self.context.update(context)
         # Advance to beginning of section
@@ -1130,84 +1126,112 @@ class Section():
                 break
             yield next_item
 
-
-
-
-# FIXME if reader is Section or SectionParser need to update context
-# FIXME Map out reader steps: SectionParser.read and Section.read look the same but are not iterating appropriately
-    def scan(self, source: Source, start_search: bool = True,
-             **context)->List[Any]:
-        section_iter = self.__iter__(source, start_search, **context)
-        section_list = list()
-        while True:
-            try:
-                section_list.append(next(scan_iter))
-            except StopIteration:
-                break
-        return section_list
-
-    def reader(self, source: Source, start_search: bool = True,
-               **context)->Generator[Any, None, None]:
-        section_iter = self.__iter__(source, start_search, **context)
-        read_iter = iter(self.get_read_section(section_iter))
-        # Read source, applying reader parsing until end boundary is found or source ends
-        while True:
-            try:
-                yield next(read_iter)
-            except StopIteration:
-                break
-
-    def parse(self, source: Source, start_search: bool = True,
-              **context)->List[Any]:
-        section_iter = self.__iter__(source, start_search, **context)
-        read_iter = iter(self.get_read_section(section_iter))
-        read_list = list()
-        while True:
-            try:
-                read_list.append(next(read_iter))
-            except StopIteration:
-                break
-        return read_list
-
     def read(self, source: Source, start_search: bool = True,
              **context)->Any:
-        section_list = self.parse(source, start_search, **context)
-        section_aggregate = self.aggregate(section_items)
-        return section_aggregate
-
-    def read_subsection(self, reader: List[Section], section_iter: Iterator,
-                        **context)->Generator[Any, None, None]:
-        subsection_list = list()
-        for sub_rdr in reader:
-            subsection_list.append(sub_rdr.read(section_iter, **self.context))
-            self.context.update(sub_rdr.context)
-        return subsection_list
-
-    def get_read_section(self, section_iter: Iterator)->Generator[str, None, None]:
-        if isinstance(self.reader, Section):
-            section_read = self.reader.read(section_iter, **self.context)
+        reader = self.reader
+        # FIXME check for pre-existing self.source
+        if isinstance(reader, Section):
+            section_reader = self.subsection_reader(source, start_search, **context)
         elif isinstance(self.reader, SectionParser):
-            section_read = self.reader.read(section_iter, **self.context)
+            section_reader = self.parse_reader(source, start_search, **context)
         elif isinstance(self.reader, list):
             # Verify that all item is the list are type Section
             if all(isinstance(sub_rdr, Section) for sub_rdr in self.reader):
-                section_read = self.read_subsection(self.reader, section_iter,
-                                                    **self.context)
+                section_reader = self.section_part_reader(source, start_search, **context)
             else:
                 raise NotImplementedError(
                     'If Section.reader is a list, '
                     'the list items may only be of type Section.'
                     )
+        section_items = list()
         while True:
             try:
-                section_read = self.reader.read(section_iter, **self.context)
-                self.context.update(self.reader.context)
-                yield section_read
+                section_items.append(next(section_reader))
             except StopIteration:
                 break
-        if isgeneratorfunction(self.reader.read):
-            section_gen = self.reader.read(section_iter, **self.context)
-        else:
-            reader = self.reader.read(section_iter, **self.context)
-            section_gen = (item for item in reader)
-        return section_gen
+        section_aggregate = self.aggregate(section_items)
+        return section_aggregate
+
+    def read_section_part(self, section_iter: Iterator, **context)->List[Any]:
+        subsection_list = list()
+        for sub_rdr in self.reader:
+            #FIXME set sub_rdr.source = self.source
+            subsection_list.append(sub_rdr.read(section_iter, **context))
+            self.context.update(sub_rdr.context)
+        return subsection_list
+
+    def section_part_reader(self, source: Source, start_search: bool = True,
+               **context)->Generator[Any, None, None]:
+        section_iter = self.gen(source, start_search, **context)
+        while True:
+            try:
+                yield self.read_section_part(section_iter, **context)
+            except StopIteration:
+                break
+
+    # FIXME SubSections is initialized with section_iter, so any step calls to BufferedIterator are lost.
+    # FIXME SubSections need to access original source
+    def subsection_reader(self, source: Source, start_search: bool = True,
+               **context)->Generator[Any, None, None]:
+        #FIXME set self.reader.source = self.source
+        section_iter = self.gen(source, start_search, **context)
+        done = False
+        while not done:
+            try:
+                section_read = self.reader.read(section_iter, **self.context)
+            except StopIteration:
+                done = True
+            else:
+                yield section_read
+            finally:
+                self.context.update(self.reader.context)
+
+    def parse_reader(self, source: Source, start_search: bool = True,
+               **context)->Generator[Any, None, None]:
+        section_iter = self.gen(source, start_search, **context)
+        read_iter = iter(self.reader.reader(section_iter, **context))
+        done = False
+        while not done:
+            try:
+                item_read = next(read_iter)
+            except StopIteration:
+                done = True
+            else:
+                yield item_read
+            finally:
+                self.context.update(self.reader.context)
+
+
+    #def scan(self, source: Source, start_search: bool = True,
+    #         **context)->List[Any]:
+    #    section_iter = self.__iter__(source, start_search, **context)
+    #    section_list = list()
+    #    while True:
+    #        try:
+    #            section_list.append(next(scan_iter))
+    #        except StopIteration:
+    #            break
+    #    return section_list
+
+    #def reader(self, source: Source, start_search: bool = True,
+    #           **context)->Generator[Any, None, None]:
+    #    section_iter = self.__iter__(source, start_search, **context)
+    #    read_iter = iter(self.get_read_section(section_iter))
+    #    # Read source, applying reader parsing until end boundary is found or source ends
+    #    while True:
+    #        try:
+    #            yield next(read_iter)
+    #        except StopIteration:
+    #            break
+
+    #def parse(self, source: Source, start_search: bool = True,
+    #          **context)->List[Any]:
+    #    section_iter = self.__iter__(source, start_search, **context)
+    #    read_iter = iter(self.get_read_section(section_iter))
+    #    read_list = list()
+    #    while True:
+    #        try:
+    #            read_list.append(next(read_iter))
+    #        except StopIteration:
+    #            break
+    #    return read_list

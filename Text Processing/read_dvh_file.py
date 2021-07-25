@@ -290,7 +290,7 @@ dvh_data_section = tp.Section(
 dvh_group_section = tp.Section(
     section_name='DVH Groups',
     start_section=structure_info_start,
-    reader=[[structure_info_section, dvh_data_section]],
+    reader=[structure_info_section, dvh_data_section],
     aggregate=to_structure_data_tuple
     )
 
