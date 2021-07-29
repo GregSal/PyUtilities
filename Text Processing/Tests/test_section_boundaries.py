@@ -197,12 +197,13 @@ class Test_DVH_Info_SectionBoundaries(unittest.TestCase):
         self.test_section = dvh_info_section
 
     def test_dvh_info_section_start_sentinel(self):
-        self.test_section.initialize_scan(DVH_TEST_TEXT)
+        self.test_section.advance_to_start(DVH_TEST_TEXT)
         sentinel = self.test_section.context['Sentinel']
         self.assertTrue(sentinel)
 
     def test_dvh_info_section_start_empty_list(self):
-        skipped_lines = self.test_section.initialize_scan(DVH_TEST_TEXT)
+        self.test_section.advance_to_start(DVH_TEST_TEXT)
+        skipped_lines = self.test_section.context['Skipped Lines']
         self.assertListEqual(skipped_lines, [])
 
     def test_dvh_info_section_end_sentinel(self):
@@ -235,12 +236,13 @@ class Test_Plan_Info_SectionBoundaries(unittest.TestCase):
         self.test_section = plan_info_section
 
     def test_plan_info_section_start_sentinel(self):
-        self.test_section.initialize_scan(DVH_TEST_TEXT)
+        self.test_section.advance_to_start(DVH_TEST_TEXT)
         sentinel = self.test_section.context['Sentinel']
         self.assertEqual(sentinel, 'Plan sum:')
 
     def test_plan_info_section_start_skipped_lines(self):
-        skipped_lines = self.test_section.initialize_scan(DVH_TEST_TEXT)
+        self.test_section.advance_to_start(DVH_TEST_TEXT)
+        skipped_lines = self.test_section.context['Skipped Lines']
         self.assertListEqual(DVH_TEST_TEXT[:10], skipped_lines)
 
     def test_plan_info_section_end_sentinel(self):
@@ -277,12 +279,13 @@ class Test_structure_Info_SectionBoundaries(unittest.TestCase):
         self.test_section = structure_info_section
 
     def test_structure_info_break_start_sentinal(self):
-        self.test_section.initialize_scan(DVH_TEST_TEXT)
+        self.test_section.advance_to_start(DVH_TEST_TEXT)
         sentinel = self.test_section.context['Sentinel']
         self.assertEqual(sentinel, 'Structure:')
 
     def test_structure_info_break_start_skipped_lines(self):
-        skipped_lines = self.test_section.initialize_scan(DVH_TEST_TEXT)
+        self.test_section.advance_to_start(DVH_TEST_TEXT)
+        skipped_lines = self.test_section.context['Skipped Lines']
         self.assertListEqual(DVH_TEST_TEXT[:21], skipped_lines)
 
     def test_structure_info_break_end_sentinal(self):
@@ -319,12 +322,13 @@ class Test_dvh_data_SectionBoundaries(unittest.TestCase):
         self.test_section = dvh_data_section
 
     def test_dvh_data_break_start_sentinal(self):
-        self.test_section.initialize_scan(DVH_TEST_TEXT)
+        self.test_section.advance_to_start(DVH_TEST_TEXT)
         sentinel = self.test_section.context['Sentinel']
         self.assertEqual(sentinel, 'Gradient Measure')
 
     def test_dvh_data_break_start_skipped_lines(self):
-        skipped_lines = self.test_section.initialize_scan(DVH_TEST_TEXT)
+        self.test_section.advance_to_start(DVH_TEST_TEXT)
+        skipped_lines = self.test_section.context['Skipped Lines']
         self.assertListEqual(DVH_TEST_TEXT[:38], skipped_lines)
 
     def test_dvh_data_break_end_sentinal(self):
@@ -384,8 +388,7 @@ class TestBoundaryOffsets(unittest.TestCase):
         source = BufferedIterator(GENERIC_TEST_TEXT)
         test_output = test_section.read(source, start_search=True)
         self.assertDictEqual(test_output, GENERIC_TEST_RESULTS['Section A'])
-        get_next = iter(source)
-        next_item = get_next.__next__()
+        next_item = test_section.source.look_ahead()
         self.assertEqual(next_item, 'End Section')
 
     def test_section_break_gap(self):
@@ -409,8 +412,7 @@ class TestBoundaryOffsets(unittest.TestCase):
         source = BufferedIterator(GENERIC_TEST_TEXT)
         test_output = test_section.read(source, start_search=True)
         self.assertDictEqual(test_output, GENERIC_TEST_RESULTS['Section B'])
-        get_next = iter(source)
-        next_item = get_next.__next__()
+        next_item = test_section.source.look_ahead()
         self.assertEqual(next_item, 'Section Reuse')
 
     def test_section_break_reuse(self):
@@ -435,8 +437,7 @@ class TestBoundaryOffsets(unittest.TestCase):
 
         test_output = test_section.read(source, start_search=True)
         self.assertDictEqual(test_output, GENERIC_TEST_RESULTS['Section C'])
-        get_next = iter(source)
-        next_item = get_next.__next__()
+        next_item = test_section.source.look_ahead()
         self.assertEqual(next_item, 'C&D Content1:gg')
 if __name__ == '__main__':
     unittest.main()

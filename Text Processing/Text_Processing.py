@@ -468,7 +468,6 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
         while not completed_line:
             # Trap Section breaks so that the current line is returned before
             # the section break is raised
-            # TODO Verify that merge lines still works
             try:
                 next_line = parsed_line_iter.look_ahead()
             except (StopSection, BufferOverflowWarning) as eol:
@@ -1051,6 +1050,8 @@ class Section():
     def is_boundary(self, line: str, break_triggers: List[SectionBreak])->bool:
         for break_trigger in break_triggers:
             logger.debug(f'Checking Trigger: {break_trigger.name}')
+            # break_trigger needs to access the base BufferedItterator Source
+            # not the top level one, otherwise it will not step back properly.
             is_break = break_trigger.check(line, self.source, **self.context)
             if is_break:
                 logger.debug('Section Break Detected')
@@ -1059,11 +1060,13 @@ class Section():
                 self.context['Break'] = break_trigger.name
         return is_break
 
-    def step_source(self)->Any:
+    def step_source(self, source: Source)->Any:
         break_context = dict()
         next_item = None
         try:
-            next_item = next(self.source)
+            # next must be called on the top level Source not the base one,
+            # otherwise it will not supply the correct item here.
+            next_item = next(source)
         except (RuntimeError) as err:
             status = 'Scan Complete'
             break_context['Status'] = 'RuntimeError'
@@ -1087,40 +1090,49 @@ class Section():
             logger.debug(f'Break Status:\t{break_context["Status"]}')
         return next_item
 
-    def initialize_scan(self, source: Source,
-             start_search: bool = True)->List[Any]:
-        # FIXME Adding source must be separate from Advance to start
+    def initialize_source(self, source: Source)->BufferedIterator:
         # Wrap the source in a BufferedIterator if it is not one already
-        if isinstance(source, BufferedIterator):
-            self.source = source
-        else:
-            self.source = BufferedIterator(source)
+        if not isinstance(source, BufferedIterator):
+            source = BufferedIterator(source)
+        self.source = source
+        return source
+
+    def advance_to_start(self, source: Source,
+                         start_search: bool = True)->BufferedIterator:
+        # Add the source as a BufferedIterator if it is not already present.
+        if not self.source:
+            source = self.initialize_source(source)
         # Advance through the source to the section start
         skipped_lines = list()
         if start_search:
             self.scan_status = 'Not Started'
             while True:
-                next_item = self.step_source()
+                next_item = self.step_source(source)
                 if 'Scan Complete' in self.scan_status:
                     break
                 if self.is_boundary(next_item, self.start_section):
                     break
                 skipped_lines.append(next_item)
         # Update Section Status
+        self.context['Skipped Lines'] = skipped_lines
         logger.debug(f'Starting New Section: {self.section_name}.')
         self.context['Current Section'] = self.section_name
         self.scan_status = f'At the start of section {self.section_name}'
-        return skipped_lines
+        return source
 
     def gen(self, source: Source, start_search: bool = True,
                  **context)->Generator[Any, None, None]:
         self.context.update(context)
+        # Make sure that source is an iterator
+        source = iter(source)
         # Advance to beginning of section
-        self.initialize_scan(source, start_search)
+        source = self.advance_to_start(source, start_search)
         # Read source until end boundary is found or source ends
         while True:
-            next_item = self.step_source()
+            next_item = self.step_source(source)
             if 'Scan Complete' in self.scan_status:
+                # self.scan_status stays local self.context gets updated
+                # by sub-sections.
                 break
             if self.is_boundary(next_item, self.end_section):
                 break
@@ -1129,8 +1141,8 @@ class Section():
     def read(self, source: Source, start_search: bool = True,
              **context)->Any:
         reader = self.reader
-        # FIXME check for pre-existing self.source
         if isinstance(reader, Section):
+            reader.source = self.source
             section_reader = self.subsection_reader(source, start_search, **context)
         elif isinstance(self.reader, SectionParser):
             section_reader = self.parse_reader(source, start_search, **context)
@@ -1155,25 +1167,28 @@ class Section():
     def read_section_part(self, section_iter: Iterator, **context)->List[Any]:
         subsection_list = list()
         for sub_rdr in self.reader:
-            #FIXME set sub_rdr.source = self.source
+            sub_rdr.source = self.source
             subsection_list.append(sub_rdr.read(section_iter, **context))
+           # FIXME the aggregate method of sub_rdr is returning  an empty collection when section_iter closes no StopIteration is raised
             self.context.update(sub_rdr.context)
         return subsection_list
 
     def section_part_reader(self, source: Source, start_search: bool = True,
-               **context)->Generator[Any, None, None]:
+                            **context)->Generator[Any, None, None]:
         section_iter = self.gen(source, start_search, **context)
+        # FIXME StopIteration in source is being trapped before it reached this except statement
         while True:
             try:
                 yield self.read_section_part(section_iter, **context)
+                #FIXME Options to fix section_part_reader
+                #        re-structure iteration so that StopIteration is raised here,
+                #        Test context in the while statement or
+                #        test for generator closed on source
             except StopIteration:
                 break
 
-    # FIXME SubSections is initialized with section_iter, so any step calls to BufferedIterator are lost.
-    # FIXME SubSections need to access original source
     def subsection_reader(self, source: Source, start_search: bool = True,
-               **context)->Generator[Any, None, None]:
-        #FIXME set self.reader.source = self.source
+                          **context)->Generator[Any, None, None]:
         section_iter = self.gen(source, start_search, **context)
         done = False
         while not done:
