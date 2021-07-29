@@ -16,6 +16,14 @@ def print_list(parsed_lines):
         output.append(line_item)
     return output
 
+def make_list(parsed_lines):
+    '''add items to a list, dropping empty items.
+    '''
+    output = list()
+    for line_item in parsed_lines:
+        if len(line_item) > 0:
+            output.append(line_item)
+    return output
 
 #%% tests
 class TestSectionGroupRead(unittest.TestCase):
@@ -292,7 +300,7 @@ class TestSectionGroupRead(unittest.TestCase):
         test_output = test_section.read(source, start_search=True,
                                         **self.context)
         expected_output = self.test_result['Test Group Section']
-        for count, output in enumerate(zip(test_output, expected_output)):
+        for count, output in enumerate(zip(test_output[0], expected_output)):
             with self.subTest(section=count):
                 section_output = output[0]
                 expected_section_output = output[1]

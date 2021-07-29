@@ -987,7 +987,8 @@ class Section():
                  start_section: List[SectionBreak] = None,
                  end_section: List[SectionBreak] = None,
                  reader: SectionParser = None,
-                 aggregate: Callable = None):
+                 aggregate: Callable = None,
+                 keep_partial = False):
 
         '''Creates an Section instance that defines a continuous portion of a
         text stream to be processed in a specific way.
@@ -1020,6 +1021,7 @@ class Section():
         self.context = dict()
         self.scan_status = 'Not Started'
         self.source = None
+        self.keep_partial = keep_partial
 
         # Set the start and end section breaks
         if not start_section:
@@ -1165,25 +1167,30 @@ class Section():
         return section_aggregate
 
     def read_section_part(self, section_iter: Iterator, **context)->List[Any]:
+        if 'GEN_CLOSED' in inspect.getgeneratorstate(section_iter):
+            # If the source has closed don't try reading subsections
+            return None
         subsection_list = list()
         for sub_rdr in self.reader:
+            if not self.keep_partial:
+                if 'GEN_CLOSED' in inspect.getgeneratorstate(section_iter):
+                    # IF the source ends part way through, drop the partial subsection
+                    return None
             sub_rdr.source = self.source
             subsection_list.append(sub_rdr.read(section_iter, **context))
-           # FIXME the aggregate method of sub_rdr is returning  an empty collection when section_iter closes no StopIteration is raised
             self.context.update(sub_rdr.context)
         return subsection_list
 
     def section_part_reader(self, source: Source, start_search: bool = True,
                             **context)->Generator[Any, None, None]:
         section_iter = self.gen(source, start_search, **context)
-        # FIXME StopIteration in source is being trapped before it reached this except statement
-        while True:
+        while 'GEN_CLOSED' not in inspect.getgeneratorstate(section_iter):
+            # Testing the generator state is required because StopIteration
+            # is being trapped before it reached the except statement here.
             try:
-                yield self.read_section_part(section_iter, **context)
-                #FIXME Options to fix section_part_reader
-                #        re-structure iteration so that StopIteration is raised here,
-                #        Test context in the while statement or
-                #        test for generator closed on source
+                subsection_list = self.read_section_part(section_iter, **context)
+                if subsection_list:
+                    yield subsection_list
             except StopIteration:
                 break
 
