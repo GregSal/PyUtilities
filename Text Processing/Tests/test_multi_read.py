@@ -24,17 +24,18 @@ test_section_reader = tp.SectionParser(
 
 #%% SectionBreak definitions
 section_start = tp.SectionBreak(
-    name='Single Section',
-    trigger=tp.Trigger('Section Name')
+    name='Single Section Start',
+    trigger=tp.Trigger('Section Name'),
+    offset='Before'
     )
 
 section_end = tp.SectionBreak(
-    name='Single Section',
+    name='Single Section End',
     trigger=tp.Trigger('End Section')
     )
 
 multi_section_start = tp.SectionBreak(
-    name='Multi Section',
+    name='Multi Section Start',
     trigger=tp.Trigger('Multi Section'),
     offset='After'
     )
@@ -44,6 +45,18 @@ multi_section_end = tp.SectionBreak(
     trigger=tp.Trigger('Done Multi Section'),
     offset='Before'
     )
+
+
+#%% Aggregate methods
+def combine_sections(section_dict_list):
+    '''Combine section dictionaries into dictionary of dictionaries.
+    '''
+    output_dict = dict()
+    for section_dict in section_dict_list:
+        if section_dict:
+            section_name = section_dict.get('Section Name')
+            output_dict[section_name] = section_dict
+    return output_dict
 
 
 #%% tests
@@ -152,15 +165,7 @@ class TestSectionRead(unittest.TestCase):
         self.assertDictEqual(test_output, self.test_result['Section A'])
 
     def test_multi_section_read(self):
-        def combine_sections(section_dict_list):
-            '''Combine section dictionaries into dictionary of dictionaries.
-            '''
-            output_dict = dict()
-            for section_dict in section_dict_list:
-                if section_dict:
-                    section_name = section_dict.get('Section Name')
-                    output_dict[section_name] = section_dict
-            return output_dict
+
 
         test_section = tp.Section(
             section_name='Test Section',
@@ -195,7 +200,7 @@ class TestSectionRead(unittest.TestCase):
 
     def test_end_section_read(self):
         test_section = tp.Section(
-            section_name='Test Section',
+            section_name='Test Section E',
             start_section=multi_section_end,
             end_section=section_end,
             reader=test_section_reader,

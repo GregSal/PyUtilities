@@ -241,7 +241,7 @@ class TestSectionGroupRead(unittest.TestCase):
             )
         multi_group_section_start = tp.SectionBreak(
             name='Multi Combined Group Section',
-            trigger=tp.Trigger('Combined Group Section'),
+            trigger=tp.Trigger('Multi Combined Group Section'),
             offset='After'
             )
         group_section_end = tp.SectionBreak(
@@ -274,7 +274,7 @@ class TestSectionGroupRead(unittest.TestCase):
             )
         self.multi_group_section = tp.Section(
             section_name='Group Section',
-            start_section=group_section_start,
+            start_section=multi_group_section_start,
             end_section=group_section_end,
             reader=[self.delimiter_section, self.fixed_width_section],
             aggregate=print_list
