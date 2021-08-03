@@ -207,13 +207,13 @@ class TestSectionGroupRead(unittest.TestCase):
             delimiter=':',
             skipinitialspace=True
             )
-        delimiter_section_reader = tp.SectionParser(
+        delimiter_section_reader = tp.SectionProcessor(
             default_parser=delimiter_parser,
             post_processing_methods=[tp.trim_items,
                                      tp.drop_blanks
                                      ]
             )
-        fixed_width_reader = tp.SectionParser(
+        fixed_width_reader = tp.SectionProcessor(
             default_parser=fixed_width_parser,
             post_processing_methods=[tp.trim_items,
                                         tp.drop_blanks,
@@ -255,28 +255,28 @@ class TestSectionGroupRead(unittest.TestCase):
             section_name='Delimiter Section',
             start_section=delimiter_section_start,
             end_section=section_end,
-            reader=delimiter_section_reader,
+            processor=delimiter_section_reader,
             aggregate=partial(tp.to_dict, default_value=None)
             )
         self.fixed_width_section = tp.Section(
             section_name='Fixed Width Section',
             start_section=fixed_width_section_start,
             end_section=section_end,
-            reader=fixed_width_reader,
+            processor=fixed_width_reader,
             aggregate=partial(tp.to_dict, default_value=None)
             )
         self.group_section = tp.Section(
             section_name='Group Section',
             start_section=group_section_start,
             end_section=group_section_end,
-            reader=[self.delimiter_section, self.fixed_width_section],
+            processor=[self.delimiter_section, self.fixed_width_section],
             aggregate=print_list
             )
         self.multi_group_section = tp.Section(
             section_name='Group Section',
             start_section=multi_group_section_start,
             end_section=group_section_end,
-            reader=[self.delimiter_section, self.fixed_width_section],
+            processor=[self.delimiter_section, self.fixed_width_section],
             aggregate=print_list
             )
 

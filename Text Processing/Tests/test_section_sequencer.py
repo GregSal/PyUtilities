@@ -214,7 +214,7 @@ class TestSectionSequencer(unittest.TestCase):
             section_name='DVH Info',
             start_section=None,
             end_section=read_dvh_file.plan_info_start,
-            reader=read_dvh_file.dvh_info_reader,
+            processor=read_dvh_file.dvh_info_reader,
             aggregate=tp.to_dict)
         # scan_section
         source = BufferedIterator(self.test_source)
@@ -227,14 +227,14 @@ class TestSectionSequencer(unittest.TestCase):
             section_name='Plan Info',
             start_section=read_dvh_file.plan_info_start,
             end_section=read_dvh_file.plan_info_end,
-            reader=read_dvh_file.plan_info_reader,
+            processor=read_dvh_file.plan_info_reader,
             aggregate=tp.to_dict)
 
         section = tp.Section(
             section_name='Plan Info Group',
             start_section=read_dvh_file.plan_info_start,
             end_section=read_dvh_file.structure_info_start,
-            reader=plan_info_section,
+            processor=plan_info_section,
             aggregate=read_dvh_file.to_plan_info_dict)
         # scan_section
         source = BufferedIterator(self.test_source)
@@ -246,7 +246,7 @@ class TestSectionSequencer(unittest.TestCase):
         section = tp.Section(
             section_name='Structure Group',
             start_section=read_dvh_file.structure_info_start,
-            reader=read_dvh_file.structure_info_section,
+            processor=read_dvh_file.structure_info_section,
             aggregate=partial(tp.to_dataframe, header=False)
             )
 

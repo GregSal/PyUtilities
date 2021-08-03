@@ -295,16 +295,16 @@ def make_files_table(dir_gen):
 #%% Reader definitions
 default_parser = tp.define_csv_parser('dir_files', delimiter=':',
                                        skipinitialspace=True)
-heading_reader = tp.SectionParser(
+heading_reader = tp.SectionProcessor(
     parsing_rules=[],
     default_parser=default_parser,
     post_processing_methods=[tp.trim_items])
-folder_reader = tp.SectionParser(
+folder_reader = tp.SectionProcessor(
     parsing_rules=[skip_dir_rule, file_listing_rule, dir_header_rule,
                    skip_file_count_rule],
     default_parser=default_parser,
     post_processing_methods=[tp.drop_blanks])
-summary_reader = tp.SectionParser(
+summary_reader = tp.SectionProcessor(
     parsing_rules=[file_count_rule, skip_totals_rule],
     default_parser=default_parser,
     post_processing_methods=[tp.drop_blanks]
@@ -334,28 +334,28 @@ header_section = tp.Section(
     section_name='Header',
     start_section=None,
     end_section=folder_start,
-    reader=heading_reader,
+    processor=heading_reader,
     aggregate=print_lines
     )
 folder_section = tp.Section(
     section_name='Folder',
     start_section=folder_start,
     end_section=folder_end,
-    reader=folder_reader,
+    processor=folder_reader,
     aggregate=to_folder_dict
     )
 all_folder_section = tp.Section(
     section_name='All Folders',
     start_section=folder_start,
     end_section=summary_start,
-    reader=[folder_section],
+    processor=[folder_section],
     aggregate=make_files_table
     )
 summary_section = tp.Section(
     section_name='Summary',
     start_section=summary_start,
     end_section=None,
-    reader=summary_reader,
+    processor=summary_reader,
     aggregate=tp.to_dict
     )
 

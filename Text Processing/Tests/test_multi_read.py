@@ -13,7 +13,7 @@ default_parser = tp.define_csv_parser(
     skipinitialspace=True
     )
 
-test_section_reader = tp.SectionParser(
+test_section_reader = tp.SectionProcessor(
     default_parser=default_parser,
     post_processing_methods=[tp.trim_items,
                              tp.drop_blanks,
@@ -155,7 +155,7 @@ class TestSectionRead(unittest.TestCase):
             section_name='Test Section',
             start_section=section_start,
             end_section=section_end,
-            reader=test_section_reader,
+            processor=test_section_reader,
             aggregate=partial(tp.to_dict, default_value=None)
             )
         source = BufferedIterator(self.test_source)
@@ -171,14 +171,14 @@ class TestSectionRead(unittest.TestCase):
             section_name='Test Section',
             start_section=section_start,
             end_section=section_end,
-            reader=test_section_reader,
+            processor=test_section_reader,
             aggregate=partial(tp.to_dict, default_value=None)
             )
         test_multi_section = tp.Section(
             section_name='Test Multi Section',
             start_section=multi_section_start,
             end_section=multi_section_end,
-            reader=test_section,
+            processor=test_section,
             aggregate=combine_sections
             )
 
@@ -203,7 +203,7 @@ class TestSectionRead(unittest.TestCase):
             section_name='Test Section E',
             start_section=multi_section_end,
             end_section=section_end,
-            reader=test_section_reader,
+            processor=test_section_reader,
             aggregate=partial(tp.to_dict, default_value=None)
             )
 

@@ -354,14 +354,14 @@ class TestBoundaryOffsets(unittest.TestCase):
             skipinitialspace=True
             )
 
-        self.test_section_multi_line_reader = tp.SectionParser(
+        self.test_section_multi_line_reader = tp.SectionProcessor(
             default_parser=default_parser,
             post_processing_methods=[tp.trim_items,
                                      tp.drop_blanks,
                                      tp.merge_continued_rows
                                      ]
             )
-        self.test_section_line_reader = tp.SectionParser(
+        self.test_section_line_reader = tp.SectionProcessor(
             default_parser=default_parser,
             post_processing_methods=[tp.trim_items,
                                      tp.drop_blanks
@@ -382,7 +382,7 @@ class TestBoundaryOffsets(unittest.TestCase):
             section_name='Test Section',
             start_section=section_start_after,
             end_section=section_end_before,
-            reader=self.test_section_multi_line_reader,
+            processor=self.test_section_multi_line_reader,
             aggregate=tp.to_dict
             )
         source = BufferedIterator(GENERIC_TEST_TEXT)
@@ -406,7 +406,7 @@ class TestBoundaryOffsets(unittest.TestCase):
             section_name='Test Section',
             start_section=section_start_gap,
             end_section=section_end_skip_line,
-            reader=self.test_section_line_reader,
+            processor=self.test_section_line_reader,
             aggregate=partial(tp.to_dict, default_value=None)
             )
         source = BufferedIterator(GENERIC_TEST_TEXT)
@@ -430,7 +430,7 @@ class TestBoundaryOffsets(unittest.TestCase):
             section_name='Test Section',
             start_section=section_start_reuse,
             end_section=section_end_skip_line,
-            reader=self.test_section_line_reader,
+            processor=self.test_section_line_reader,
             aggregate=partial(tp.to_dict, default_value=None)
             )
         source = BufferedIterator(GENERIC_TEST_TEXT)

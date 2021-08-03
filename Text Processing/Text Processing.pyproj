@@ -13,7 +13,7 @@
     <TestFramework>unittest</TestFramework>
     <UnitTestPattern>test*.py</UnitTestPattern>
     <UnitTestRootDirectory>.</UnitTestRootDirectory>
-    <InterpreterId>CondaEnv|CondaEnv|Standard</InterpreterId>
+    <InterpreterId>Global|ContinuumAnalytics|Anaconda38-64</InterpreterId>
     <IsWindowsApplication>False</IsWindowsApplication>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
   </PropertyGroup>
@@ -31,6 +31,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="file_utilities.py" />
+    <Compile Include="logging_tools.py" />
     <Compile Include="read_dir_file.py">
       <SubType>Code</SubType>
     </Compile>
@@ -57,6 +58,7 @@
     <Compile Include="Text_Processing.py" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="env_analysis.xlsx" />
     <Content Include="requirements.txt" />
     <Content Include="Text Files\Bolus Plancheck Cleaned.txt" />
     <Content Include="Text Files\Dir_listing_text.txt" />
@@ -105,6 +107,7 @@
     <InterpreterReference Include="CondaEnv|CondaEnv|Standard" />
     <InterpreterReference Include="CondaEnv|CondaEnv|TextProcessing" />
     <InterpreterReference Include="CondaEnv|CondaEnv|TextProcessing3.8" />
+    <InterpreterReference Include="Global|ContinuumAnalytics|Anaconda38-64" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
