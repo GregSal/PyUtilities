@@ -82,7 +82,7 @@ file_listing_pt = re.compile(
 #%% Line Parsing Functions
 # Directory Label Rule
 
-def extract_directory(line: str, sentinel, *args,
+def extract_directory(line: str, event, *args,
                     context=None, **kwargs) -> tp.ParseResults:
     '''Extract Directory path from folder header.
     '''
@@ -115,7 +115,7 @@ skip_totals_rule = tp.ParsingRule(
 
 
 # Regular file listings
-def file_parse(line: str, sentinel, *args, **kwargs) -> tp.ParseResults:
+def file_parse(line: str, event, *args, **kwargs) -> tp.ParseResults:
     '''Break file data into three columns containing Filename, Date, Size.
 
     Typical file is:
@@ -126,7 +126,7 @@ def file_parse(line: str, sentinel, *args, **kwargs) -> tp.ParseResults:
 
     Args:
         line (str): The text line to be parsed.
-        sentinel (re.match): The results of the trigger test on the line.
+        event (re.match): The results of the trigger test on the line.
             Contains 3 named groups: ['date', 'size', 'filename'].
         *args & **kwargs: Catch unused extra parameters passed to file_parse.
 
@@ -135,10 +135,10 @@ def file_parse(line: str, sentinel, *args, **kwargs) -> tp.ParseResults:
             information as a 3-item tuple:
                 [(filename: str, date: str, file size: int)].
     '''
-    file_line_parts = sentinel.groupdict(default='')
+    file_line_parts = event.groupdict(default='')
     parsed_line = tuple([
         file_line_parts['filename'],
-        make_date_time_string(sentinel),
+        make_date_time_string(event),
         int(file_line_parts['size'])
         ])
     return [parsed_line]
@@ -150,7 +150,7 @@ file_listing_rule = tp.ParsingRule(file_info_trigger, file_parse, name='Files_ru
 
 
 # File Count Parsing Rule
-def file_count_parse(line: str, sentinel, *args, **kwargs) -> tp.ParseResults:
+def file_count_parse(line: str, event, *args, **kwargs) -> tp.ParseResults:
     '''Break file data into two rows containing:
            Number of files, & Directory size.
 
@@ -164,7 +164,7 @@ def file_count_parse(line: str, sentinel, *args, **kwargs) -> tp.ParseResults:
 
     Args:
         line (str): The text line to be parsed.
-        sentinel (re.match): The results of the trigger test size the line.
+        event (re.match): The results of the trigger test size the line.
             Contains 3 named groups: ['files', 'type', 'size'].
         *args & **kwargs: Catch unused extra parameters passed to file_parse.
 
@@ -175,7 +175,7 @@ def file_count_parse(line: str, sentinel, *args, **kwargs) -> tp.ParseResults:
                 'Number of files', file count value: int
                 'Directory Size', directory size value: int
     '''
-    file_count_parts = sentinel.groupdict(default='')
+    file_count_parts = event.groupdict(default='')
     # Manage case where bytes free is given:
     # 23 Dir(s)     63927545856 bytes free
     if line.strip().endswith('free'):
@@ -206,7 +206,7 @@ skip_file_count_rule = tp.ParsingRule(
 def make_files_rule() -> tp.ParsingRule:
     '''If  File(s) or  Dir(s) extract # files & size
         '''
-    def files_total_parse(line, sentinel, *args, **kwargs) -> tp.ParseResults:
+    def files_total_parse(line, event, *args, **kwargs) -> tp.ParseResults:
         '''Break file counts into three columns containing:
            Type (File or Dir), Count, Size.
 
@@ -221,7 +221,7 @@ def make_files_rule() -> tp.ParsingRule:
 
     Args:
         line (str): The text line to be parsed.
-        sentinel (re.match): The results of the trigger test on the line.
+        event (re.match): The results of the trigger test on the line.
             Contains 3 named groups: ['type', 'files', 'size'].
         *args & **kwargs: Catch unused extra parameters passed to file_parse.
 
@@ -230,7 +230,7 @@ def make_files_rule() -> tp.ParsingRule:
             information as a 3-item tuple:
                 [(Type: str (File or Dir), Count: int, Size: int)].
         '''
-        files_dict = sentinel.groupdict(default='')
+        files_dict = event.groupdict(default='')
         parsed_line = tuple([
             files_dict["type"],
             files_dict["files"],

@@ -198,8 +198,8 @@ class Test_DVH_Info_SectionBoundaries(unittest.TestCase):
 
     def test_dvh_info_section_start_sentinel(self):
         self.test_section.initialize(DVH_TEST_TEXT)
-        sentinel = self.test_section.context['Sentinel']
-        self.assertTrue(sentinel)
+        event = self.test_section.context['Event']
+        self.assertTrue(event)
 
     def test_dvh_info_section_start_empty_list(self):
         self.test_section.initialize(DVH_TEST_TEXT)
@@ -209,8 +209,8 @@ class Test_DVH_Info_SectionBoundaries(unittest.TestCase):
     def test_dvh_info_section_end_sentinel(self):
         end_check = self.test_section.scan(DVH_TEST_TEXT)
         output = [row for row in end_check]  # pylint: disable=unused-variable
-        sentinel = self.test_section.context['Sentinel']
-        self.assertEqual(sentinel, 'Plan sum:')
+        event = self.test_section.context['Event']
+        self.assertEqual(event, 'Plan sum:')
 
     def test_dvh_info_section_end_lines(self):
         end_check = self.test_section.scan(DVH_TEST_TEXT)
@@ -237,8 +237,8 @@ class Test_Plan_Info_SectionBoundaries(unittest.TestCase):
 
     def test_plan_info_section_start_sentinel(self):
         self.test_section.initialize(DVH_TEST_TEXT)
-        sentinel = self.test_section.context['Sentinel']
-        self.assertEqual(sentinel, 'Plan sum:')
+        event = self.test_section.context['Event']
+        self.assertEqual(event, 'Plan sum:')
 
     def test_plan_info_section_start_skipped_lines(self):
         self.test_section.initialize(DVH_TEST_TEXT)
@@ -248,8 +248,8 @@ class Test_Plan_Info_SectionBoundaries(unittest.TestCase):
     def test_plan_info_section_end_sentinel(self):
         end_check = self.test_section.scan(DVH_TEST_TEXT)
         output = [row for row in end_check]  # pylint: disable=unused-variable
-        sentinel = self.test_section.context['Sentinel']
-        self.assertEqual(sentinel, '% for dose (%):')
+        event = self.test_section.context['Event']
+        self.assertEqual(event, '% for dose (%):')
 
     def test_dvh_info_section_end_scan(self):
         end_check = self.test_section.scan(DVH_TEST_TEXT)
@@ -280,8 +280,8 @@ class Test_structure_Info_SectionBoundaries(unittest.TestCase):
 
     def test_structure_info_break_start_sentinal(self):
         self.test_section.initialize(DVH_TEST_TEXT)
-        sentinel = self.test_section.context['Sentinel']
-        self.assertEqual(sentinel, 'Structure:')
+        event = self.test_section.context['Event']
+        self.assertEqual(event, 'Structure:')
 
     def test_structure_info_break_start_skipped_lines(self):
         self.test_section.initialize(DVH_TEST_TEXT)
@@ -291,8 +291,8 @@ class Test_structure_Info_SectionBoundaries(unittest.TestCase):
     def test_structure_info_break_end_sentinal(self):
         end_check = self.test_section.scan(DVH_TEST_TEXT)
         scanned_lines = [row for row in end_check]
-        sentinel = self.test_section.context['Sentinel']
-        self.assertEqual(sentinel, 'Gradient Measure')
+        event = self.test_section.context['Event']
+        self.assertEqual(event, 'Gradient Measure')
 
     def test_structure_info_break_end_skipped_scan(self):
         end_check = self.test_section.scan(DVH_TEST_TEXT)
@@ -323,8 +323,8 @@ class Test_dvh_data_SectionBoundaries(unittest.TestCase):
 
     def test_dvh_data_break_start_sentinal(self):
         self.test_section.initialize(DVH_TEST_TEXT)
-        sentinel = self.test_section.context['Sentinel']
-        self.assertEqual(sentinel, 'Gradient Measure')
+        event = self.test_section.context['Event']
+        self.assertEqual(event, 'Gradient Measure')
 
     def test_dvh_data_break_start_skipped_lines(self):
         self.test_section.initialize(DVH_TEST_TEXT)
@@ -334,8 +334,8 @@ class Test_dvh_data_SectionBoundaries(unittest.TestCase):
     def test_dvh_data_break_end_sentinal(self):
         end_check = self.test_section.scan(DVH_TEST_TEXT)
         scanned_lines = [row for row in end_check]
-        sentinel = self.test_section.context['Sentinel']
-        self.assertEqual(sentinel, 'Structure:')
+        event = self.test_section.context['Event']
+        self.assertEqual(event, 'Structure:')
 
     def test_dvh_data_break_end_skipped_lines(self):
         end_check = self.test_section.scan(DVH_TEST_TEXT)

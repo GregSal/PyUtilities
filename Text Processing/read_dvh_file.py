@@ -43,7 +43,7 @@ def make_approved_status_rule() -> tp.ParsingRule:
         Approved on
         Approved by
         '''
-    def approved_status_parse(line, sentinel, *args, **kwargs) -> tp.ParseResults:
+    def approved_status_parse(line, event, *args, **kwargs) -> tp.ParseResults:
         '''If Treatment Approved, Split "Plan Status" into 3 lines:
 
         Return three rows for a line containing "Treatment Approved"
@@ -53,8 +53,8 @@ def make_approved_status_rule() -> tp.ParsingRule:
              ['Approved on', date],
              ['Approved by', person]
         '''
-        idx1 = line.find(sentinel)
-        idx2 = idx1 + len(sentinel)
+        idx1 = line.find(event)
+        idx2 = idx1 + len(event)
         idx3 = line.find(' by')
         idx4 = idx3 + 4
         parsed_lines = [
@@ -75,7 +75,7 @@ def make_approved_status_rule() -> tp.ParsingRule:
 
 # Prescribed Dose Rule
 def make_prescribed_dose_rule() -> tp.ParsingRule:
-    def parse_prescribed_dose(line, sentinel,
+    def parse_prescribed_dose(line, event,
                               *args, **kwargs) -> tp.ParseResults:
         '''Split "Prescribed dose [cGy]" into 2 lines.
 
@@ -90,7 +90,7 @@ def make_prescribed_dose_rule() -> tp.ParsingRule:
             [['Prescribed dose', '5000.0'],
              ['Prescribed dose unit', 'cGy']]
         '''
-        match_results = sentinel.groupdict()
+        match_results = event.groupdict()
         if match_results['dose'] == 'not defined':
             match_results['dose'] = ''
             match_results['unit'] = ''

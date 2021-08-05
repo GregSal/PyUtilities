@@ -34,7 +34,6 @@ from buffered_iterator import BufferedIteratorEOF
 T = TypeVar('T')
 # TODO create more type definitions: Line, ...
 # TODO more explicit generic type definitions
-# TODO DIstinguish between Sentinel and sentinel output
 # TODO Move generic functions to separate module
 # TODO copy clean_ascii_text from file_utilities
 # TODO copy true_iterable from data_utilities
@@ -85,40 +84,6 @@ ProcessorOptions = Union[SectionProcessor, Section, List[Section]]
 
 #%% Logging
 logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
-
-
-#%% Exceptions
-class TextReadWarnings(UserWarning): pass
-
-
-class TextReadException(Exception): pass
-
-
-class TextReadBreaks(GeneratorExit):
-    '''Base class for indicating that a Section has changed.'''
-
-    def __init__(self, *args, context: Dict[str, Any] = None, **kwargs):
-        super().__init__(*args, **kwargs)
-        if context:
-            self.context = context
-        else:
-            self.context = dict()
-
-    def get_context(self):
-        '''Return the context that existed when StopSection was raised.'''
-        return self.context
-
-
-class StartSection(TextReadBreaks):
-    '''A Section has started through activation of a trigger.'''
-
-
-class StopSection(TextReadBreaks):  #TODO Is this used?
-    '''A Section has ended through activation of a trigger.'''
-
-
-class IteratorEOF(TextReadBreaks):
-    '''A Section has ended through end of source.'''
 
 
 #%% String Functions
@@ -201,77 +166,7 @@ def drop_units(text: str) -> float:
         return value
     return text
 
-
-#%% Iteration Tools
-def file_reader(file_path: Path)->BufferedIterator:
-    def file_line_gen(file_path):
-        with open(file_path, newline='') as textfile:
-            for line in textfile:
-                yield line
-    source = BufferedIterator(file_line_gen(file_path))
-    return source
-
-
-def func_to_iter(source: Iterator, func: Callable) -> Iterator:
-    '''Create a iterator that applies func to each item in source.
-
-    If func is a generator function, return the iterator creates by calling
-    func with source.  Otherwise use a generator expression to return an
-    iterator that returns the result of calling func on each item in source.
-    No type checking is performed.
-
-    Args:
-        source: An iterator that returns the appropriate data types for func.
-        func: A function or generator that takes one argument with type
-            compatible to that produced by source.   If func is a generator
-            function its argument must be an iterator with type
-            compatible to that produced by source.
-
-    Returns:
-        An iterator that returns the result of calling func on each item in
-        source. For example:
-    '''
-    if isgeneratorfunction(func):
-        return func(source)
-    return (func(item) for item in source)
-
-
-def cascading_iterators(source: Iterator, func_list: List[Callable])->Iterator:
-    '''Creates a sequence of nested iterator, taking as input the output from
-    the previous iterator.
-
-    Calls func_to_iter to create each nested iterator.
-
-    Args:
-        source: An iterator that returns the appropriate data types for the
-            first function in func.
-        func_list: A list of functions or generators that takes one argument.
-            The functions do not necessarily all take the same data type, but
-            the input type for each function must be compatible with the output
-            type of the previous function in the sequence. The first function
-            in the sequence must be compatible with that produced by source.
-
-    Returns:
-        An iterator that returns the result of successively calling each
-        function in func_list on the output of the previous function.
-        For example:
-            def ml(x): return x*10
-            def dv(x): return x/5
-            def skip_odd(num_list):
-                for i in num_list:
-                    if i%2 == 0:
-                        yield i
-            source = range(5)
-            a = tp.cascading_iterators(source, [skip_odd, ml, dv])
-            [i for i in a] -> [0.0, 4.0, 8.0]
-    Raises:
-    '''
-    next_source = source
-    for func in func_list:
-        next_source = func_to_iter(next_source, func)
-    return iter(next_source)
-
-
+#%% String Parsers
 # CSV parser
 def csv_parser(line: str, *args, dialect_name='excel',    # pylint: disable=unused-argument
                **kwargs) -> ParseResults:                 # pylint: disable=unused-argument
@@ -481,10 +376,8 @@ def merge_continued_rows(parsed_lines: ParsedStringSource,
             # the section break is raised
             try:
                 next_line = parsed_line_iter.look_ahead()
-            except (StopSection, BufferOverflowWarning) as eol:
-                # TODO Test whether this code is reached
+            except BufferOverflowWarning:
                 completed_line = True
-                #completed_section = eol
             else:
                 if len(next_line) == 1:
                     parsed_line[1] = join_strings(parsed_line[1], next_line[0],
@@ -573,7 +466,77 @@ def merge_extra_items(parsed_line: ParsedString) -> ParsedString:
     return parsed_line
 
 
-#%% Classes
+#%% Iteration Tools
+def file_reader(file_path: Path)->BufferedIterator:
+    def file_line_gen(file_path):
+        with open(file_path, newline='') as textfile:
+            for line in textfile:
+                yield line
+    source = BufferedIterator(file_line_gen(file_path))
+    return source
+
+
+def func_to_iter(source: Iterator, func: Callable) -> Iterator:
+    '''Create a iterator that applies func to each item in source.
+
+    If func is a generator function, return the iterator creates by calling
+    func with source.  Otherwise use a generator expression to return an
+    iterator that returns the result of calling func on each item in source.
+    No type checking is performed.
+
+    Args:
+        source: An iterator that returns the appropriate data types for func.
+        func: A function or generator that takes one argument with type
+            compatible to that produced by source.   If func is a generator
+            function its argument must be an iterator with type
+            compatible to that produced by source.
+
+    Returns:
+        An iterator that returns the result of calling func on each item in
+        source. For example:
+    '''
+    if isgeneratorfunction(func):
+        return func(source)
+    return (func(item) for item in source)
+
+
+def cascading_iterators(source: Iterator, func_list: List[Callable])->Iterator:
+    '''Creates a sequence of nested iterator, taking as input the output from
+    the previous iterator.
+
+    Calls func_to_iter to create each nested iterator.
+
+    Args:
+        source: An iterator that returns the appropriate data types for the
+            first function in func.
+        func_list: A list of functions or generators that takes one argument.
+            The functions do not necessarily all take the same data type, but
+            the input type for each function must be compatible with the output
+            type of the previous function in the sequence. The first function
+            in the sequence must be compatible with that produced by source.
+
+    Returns:
+        An iterator that returns the result of successively calling each
+        function in func_list on the output of the previous function.
+        For example:
+            def ml(x): return x*10
+            def dv(x): return x/5
+            def skip_odd(num_list):
+                for i in num_list:
+                    if i%2 == 0:
+                        yield i
+            source = range(5)
+            a = tp.cascading_iterators(source, [skip_odd, ml, dv])
+            [i for i in a] -> [0.0, 4.0, 8.0]
+    Raises:
+    '''
+    next_source = source
+    for func in func_list:
+        next_source = func_to_iter(next_source, func)
+    return iter(next_source)
+
+
+#%% Section Classes
 class Trigger():
     '''
      Trigger Types:
@@ -739,14 +702,14 @@ class Trigger():
 
 class ParsingRule():
     @staticmethod
-    def default_template(test_object, sentinel, *args,    # pylint: disable=unused-argument
+    def default_template(test_object, event, *args,    # pylint: disable=unused-argument
                          default_return=None, **kwargs):  # pylint: disable=unused-argument
         '''default_method to be set using partial.
         '''
         if 'Original' in default_return:
             return [test_object]
-        if 'Sentinel' in default_return:
-            return sentinel  # TODO The format for sentinel should depend on its type
+        if 'Event' in default_return:
+            return event  # TODO The format for event should depend on its type
         if 'None' in default_return:
             return None
         # TODO Add option for Rule default method to be a blank line
@@ -760,12 +723,12 @@ class ParsingRule():
         '''Apply method based on trigger result.
         pass_method, fail_method: Callable, takes 3 arguments:
             test_object
-            sentinel
+            event
             context
         default_method: str, one of:
             'None'  -> returns None
             'Original' -> returns test_object
-            'Sentinel' -> returns sentinel
+            'Event' -> returns Trigger event object
         '''
         self.name = name
         self.trigger = trigger
@@ -784,15 +747,15 @@ class ParsingRule():
 
 
     def apply(self, test_object, *args, **kwargs):
-        is_match, sentinel = self.trigger.apply(test_object, *args, **kwargs)
+        is_match, event = self.trigger.apply(test_object, *args, **kwargs)
         if is_match:
-            result = self.pass_method(test_object, sentinel, *args, **kwargs)
+            result = self.pass_method(test_object, event, *args, **kwargs)
         else:
-            result = self.fail_method(test_object, sentinel, *args, **kwargs)
+            result = self.fail_method(test_object, event, *args, **kwargs)
         return result
 
 
-class LineParser():  # TODO LineParser should merge with SectionReader
+class LineParser():  # TODO Convert this into RuleSet
     def __init__(self, parsing_rules: List[ParsingRule],
                  default_parser: Callable = None):
         self.parsing_rules = parsing_rules
@@ -832,9 +795,9 @@ class SectionBreak():  # pylint: disable=function-redefined
         self.offset = self.get_offset(offset)
 
         self.count_down = None
-        self.active_sentinel = None
+        self.event = None
 
-    @staticmethod
+    @staticmethod  # TODO convert SectionBreak.offset to a property
     def get_offset(offset) -> int:
         '''Calculate the appropriate step_back value to store.
         Before is a step back of -1
@@ -866,10 +829,10 @@ class SectionBreak():  # pylint: disable=function-redefined
         # Check for a Break condition
         if self.count_down is None:  # No Active Count Down
             # apply the trigger test.
-            is_break, sentinel = self.trigger.apply(line, context)
+            is_break, event = self.trigger.apply(line, context)
             if is_break:
-                logger.debug(f'Break triggered by {sentinel}')
-                self.active_sentinel = sentinel
+                logger.debug(f'Break triggered by {event}')
+                self.event = event
                 is_break = self.set_line_location(source)
 
         elif self.count_down == 0:  # End of Count Down Reached
@@ -972,7 +935,6 @@ class SectionProcessor():  # pylint: disable=function-redefined
 
 
 #%% Section
-
 class Section():  # pylint: disable=function-redefined
     '''Defines a continuous portion of a text stream or other iterable.
 
@@ -1026,12 +988,12 @@ class Section():  # pylint: disable=function-redefined
                 two items will be added to the context dictionary:
                     'Break': (str): The name of the Trigger instance that
                         activated the boundary condition.
-                    'Sentinel' (bool, str, re.match): Information on the
+                    'Event' (bool, str, re.match): Information on the
                         boundary condition returned by the Trigger instance.
-                            If Trigger always passes, 'Sentinel' will be True.
-                            If Trigger matched a string, bool, 'Sentinel' will
+                            If Trigger always passes, 'Event' will be True.
+                            If Trigger matched a string, bool, 'Event' will
                                 be the matching string.
-                            If Trigger matched a regular expression, 'Sentinel'
+                            If Trigger matched a regular expression, 'Event'
                                 will be the resulting re.match object.
   '''
     # A SectionBreak that causes the section to start with the first item in
@@ -1409,12 +1371,12 @@ class Section():  # pylint: disable=function-redefined
             attribute are updated:
             'Break': (str): The name of the Trigger instance that activated the
                 boundary condition.
-            'Sentinel' (bool, str, re.match): Information on the boundary
+            'Event' (bool, str, re.match): Information on the boundary
                 condition returned by the Trigger instance:
-                    If Trigger always passes, 'Sentinel' will be True.
-                    If Trigger matched a string, bool, 'Sentinel' will be the
+                    If Trigger always passes, 'Event' will be True.
+                    If Trigger matched a string, bool, 'Event' will be the
                         matching string.
-                    If Trigger matched a regular expression, 'Sentinel' will be
+                    If Trigger matched a regular expression, 'Event' will be
                         the resulting re.match object.
         Args:
             line (str): The line item from the source iterable.
@@ -1431,7 +1393,7 @@ class Section():  # pylint: disable=function-redefined
             if is_break:
                 logger.debug('Section Break Detected')
                 self.scan_status = 'Break Triggered'
-                self.context['Sentinel'] = break_trigger.active_sentinel
+                self.context['Event'] = break_trigger.event
                 self.context['Break'] = break_trigger.name
         return is_break
 
@@ -1468,7 +1430,7 @@ class Section():  # pylint: disable=function-redefined
             status = 'Scan Complete'
             break_context['Status'] = 'RuntimeError'
             logger.warning(f'RuntimeError Encountered: {err}')
-        except (BufferedIteratorEOF, IteratorEOF, StopIteration):
+        except (BufferedIteratorEOF, StopIteration):
             status = 'Scan Complete'
             break_context['Status'] = 'End of Source'
         else:

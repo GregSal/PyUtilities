@@ -18,7 +18,7 @@ Plan Status: Treatment Approved Thursday, January 02, 2020 12:55:56 by gsal
 '''
 
 #%%  Prescribed dose parse tests
-def parse_prescribed_dose(line, sentinel, context)->List[List[str]]:# pylint: disable=unused-argument
+def parse_prescribed_dose(line, event, context)->List[List[str]]:# pylint: disable=unused-argument
     '''Split "Prescribed dose [cGy]" into 2 lines:
         Prescribed dose
         Prescribed dose Unit
@@ -27,7 +27,7 @@ def parse_prescribed_dose(line, sentinel, context)->List[List[str]]:# pylint: di
         ['Prescribed dose', '{dose}'],
         ['Prescribed dose Unit', '{unit}']
         ]
-    match_results = sentinel.groupdict()
+    match_results = event.groupdict()
     if match_results['dose'] == 'not defined':
         parsed_lines = [
             ['Prescribed dose', ''],
@@ -87,10 +87,10 @@ class TestPrescribedDoseParse(unittest.TestCase):
 
 
 #%%  Date parse tests
-def date_parse(line, sentinel, context)->List[List[str]]:  # pylint: disable=unused-argument
+def date_parse(line, event, context)->List[List[str]]:  # pylint: disable=unused-argument
     '''If Date,don't split beyond first :'''
     parsed_lines = [
-        [sentinel, line.split(':',maxsplit=1)[1]]
+        [event, line.split(':',maxsplit=1)[1]]
         ]
     return parsed_lines
 
@@ -118,14 +118,14 @@ class TestDateParse(unittest.TestCase):
 
 
 #%% Line Parsing
-def approved_status_parse(line, sentinel, context)->List[List[str]]:  # pylint: disable=unused-argument
+def approved_status_parse(line, event, context)->List[List[str]]:  # pylint: disable=unused-argument
     '''If Treatment Approved, Split "Plan Status" into 3 lines:
         Plan Status
         Approved on
         Approved by
         '''
-    idx1 = line.find(sentinel)
-    idx2 = idx1 + len(sentinel)
+    idx1 = line.find(event)
+    idx2 = idx1 + len(event)
     idx3 = line.find('by')
     idx4 = idx3 + 3
     parsed_lines = [
