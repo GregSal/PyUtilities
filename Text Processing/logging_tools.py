@@ -56,7 +56,7 @@ def config_logger(level: str = 'DEBUG', prefix=__name__)->logging.Logger:
 
 
 # Log to a file
-def file_logger(file_name: str, level: str = 'DEBUG', prefix=__name__)->logging.Logger:
+def file_logger(file_name: str, logger: logging.Logger = None, level: str = 'DEBUG', prefix=__name__)->logging.Logger:
     '''Configure a logger that outputs to the specified file.
     Creates a logger that outputs to theb specified file with the given level.
     Arguments:
@@ -76,6 +76,9 @@ def file_logger(file_name: str, level: str = 'DEBUG', prefix=__name__)->logging.
         logger = file_logger('log_file.txt, ''DEBUG')
         logger.debug('This is a debug message')
     '''
+    if logger is None:
+        # create logger
+        logger = logging.getLogger(prefix)
     msg_format = '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
     date_fmt = '%m-%d %H:%M'
     file_name = str(file_name)

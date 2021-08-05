@@ -20,7 +20,8 @@ import inspect
 from pathlib import Path
 from inspect import isgeneratorfunction
 from functools import partial
-from typing import Dict, List, Sequence, Tuple, TypeVar, Iterator, Iterable, Any, Callable, Union, Generator
+from typing import Dict, List, Sequence, Tuple, TypeVar, Iterator
+from typing import Iterable, Any, Callable, Union, Generator
 
 import pandas as pd
 
@@ -73,9 +74,10 @@ Source = Union[StringSource, ParsedStringSource]
 
 # These type definitions will be redefined as class types.  They are defined
 # here to simplify Type annotations.
-Section = TypeVar('Section')
-SectionBreak = TypeVar('SectionBreak')
-SectionProcessor = TypeVar('SectionProcessor')
+Section = TypeVar('Section')  # pylint: disable=function-redefined
+SectionBreak = TypeVar('SectionBreak')  # pylint: disable=function-redefined
+SectionProcessor = TypeVar('SectionProcessor')  # pylint: disable=function-redefined
+SectionProcessor = TypeVar('SectionProcessor')  # pylint: disable=function-redefined
 
 # Relevant Type definitions for Section Classes
 BreakOptions = Union[SectionBreak, List[SectionBreak], str, None]
@@ -812,7 +814,7 @@ class LineParser():  # TODO LineParser should merge with SectionReader
                     yield parsed_line
 
 
-class SectionBreak():
+class SectionBreak():  # pylint: disable=function-redefined
     def __init__(self, trigger: Trigger,
                  offset='Before', name='SectionBreak'):
         '''
@@ -904,7 +906,7 @@ class SectionBreak():
 #  reader	    Generator	       sequence in -> generator out
 #  read	        Sequence (list)	   sequence in -> list of lists out
 
-class SectionProcessor():
+class SectionProcessor():  # pylint: disable=function-redefined
     '''A SectionProcessor has a .read
                 processor method
                 which is a generator function, accepting a source text stream
@@ -971,7 +973,7 @@ class SectionProcessor():
 
 #%% Section
 
-class Section():
+class Section():  # pylint: disable=function-redefined
     '''Defines a continuous portion of a text stream or other iterable.
 
     A section definition may include:
@@ -1317,7 +1319,7 @@ class Section():
         Args:
             section_iter (Iterator): The section's source iterator after
                 checking for boundaries.
-            subreaders (List[Section]): The subsections that together define
+            sub-readers (List[Section]): The subsections that together define
                 the processing of the main section.
             **context (Dict[str, Any]): Break point information and any
                 additional information to be passed to and from the
@@ -1352,7 +1354,7 @@ class Section():
         Args:
             section_iter (Iterator): The section's source iterator after
                 checking for boundaries.
-            subreaders (List[Section]): The subsections that together define
+            sub-readers (List[Section]): The subsections that together define
                 the processing of the main section.
             **context (Dict[str, Any]): Break point information and any
                 additional information to be passed to and from the
@@ -1418,7 +1420,6 @@ class Section():
             line (str): The line item from the source iterable.
             break_triggers (List[SectionBreak]): The SectionBreak Rules that
             define the boundary condition.
-
         Returns:
             bool: Returns True if a boundary event was triggered.
         '''
@@ -1452,11 +1453,10 @@ class Section():
                 and context['Status'] to:
                     'End of Source'
         Args:
-            source (Source): DESCRIPTION.
-
+            source (Source): An iterable where some of the content meets the
+                section boundary conditions.
         Returns:
-            Any: DESCRIPTION.
-
+            Any: The next item from source.
         '''
         break_context = dict()
         next_item = None
@@ -1481,20 +1481,15 @@ class Section():
             logger.debug(f'Break Status:\t{break_context["Status"]}')
         return next_item
 
-  # DONE TO HERE ################################
-
-    def advance_to_start(self, source: Source):
-        '''
-
+    def advance_to_start(self, source: Source)->List[Any]:
+        '''Step through the source until the start of the section is reached.
 
         Args:
-            source (Source): DESCRIPTION.
-
+            source (Source): An iterable where some of the content meets the
+                section boundary conditions.
         Returns:
-            None.
-
+            list[Any]: The items preceding the beginning of the section.
         '''
-        # Advance through the source to the section start
         skipped_lines = list()
         self.scan_status = 'Not Started'
         while True:
@@ -1505,19 +1500,31 @@ class Section():
                 break
             skipped_lines.append(next_item)
         self.context['Skipped Lines'] = skipped_lines
+        return skipped_lines
 
     def initialize(self, source: Source, start_search: bool = True,
                    do_reset: bool = True, **context)->BufferedIterator:
         '''
         Args:
-            source (Source): DESCRIPTION.
-            start_search (bool, optional): DESCRIPTION. Defaults to True.
-            do_reset (bool, optional): DESCRIPTION. Defaults to True.
-            **context (TYPE): DESCRIPTION.
-
+            source (Source): An iterable where some of the content meets the
+                section boundary conditions.
+            start_search (bool, optional): Indicates whether to advance through
+                the source until the beginning of the section is found or
+                assume that the section begins at the start of the source.
+                Defaults to True, meaning advance until the start boundary is
+                found.
+            do_reset (bool, optional): Indicate whether to reset the source-
+                related properties when initializing the source. Normally
+                the properties should be reset, but if the section is being
+                used as a subsection, then it should inherit properties from
+                the parent section and not be reset. Defaults to True, meaning
+                reset the properties.
+            **context (Dict[str, Any]): Break point information and any
+                additional information to be passed to and from the
+                Section instance.
         Returns:
-            BufferedIterator: DESCRIPTION.
-
+            BufferedIterator: The iterable object (with a BufferedIterator
+            wrapper) that the section instance is actively iterating through.
         '''
         # Reset variables and Update context
         if do_reset:
@@ -1544,15 +1551,17 @@ class Section():
         return active_source
 
     def gen(self, source: Source)->Generator[Any, None, None]:
-        '''
+        '''The internal section generator function.
 
+        Step through all items from source that are in section; starting and
+        stopping at the defined start and end boundaries of the section.
 
         Args:
-            source (Source): DESCRIPTION.
-
+            source (Source): An iterable where some of the content meets the
+                section boundary conditions.
         Yields:
-            Generator[Any, None, None]: DESCRIPTION.
-
+            Generator[Any, None, None]: An iterator containing all source items
+                within the section.
         '''
         # Read source until end boundary is found or source ends
         while True:
@@ -1567,18 +1576,33 @@ class Section():
 
     def scan(self, source: Source, start_search: bool = True,
              do_reset: bool = True, **context)->Generator[Any, None, None]:
-        '''
+        '''The primary outward facing section generator function.
 
+        Initialize the source and then provide the generator that will step
+        through all items from source that are in section; starting and
+        stopping at the defined start and end boundaries of the section.
 
         Args:
-            source (Source): DESCRIPTION.
-            start_search (bool, optional): DESCRIPTION. Defaults to True.
-            do_reset (bool, optional): DESCRIPTION. Defaults to True.
-            **context (TYPE): DESCRIPTION.
-
+            source (Source): An iterable where some of the content meets the
+                section boundary conditions.
+            start_search (bool, optional): Indicates whether to advance through
+                the source until the beginning of the section is found or
+                assume that the section begins at the start of the source.
+                Defaults to True, meaning advance until the start boundary is
+                found.
+            do_reset (bool, optional): Indicate whether to reset the source-
+                related properties when initializing the source. Normally
+                the properties should be reset, but if the section is being
+                used as a subsection, then it should inherit properties from
+                the parent section and not be reset. Defaults to True, meaning
+                reset the properties.
+            **context (Dict[str, Any]): Break point information and any
+                additional information to be passed to and from the
+                Section instance.
         Returns:
-            Generator[Any, None, None]: DESCRIPTION.
-
+            Generator[Any, None, None]: A generator that will step
+        through all items from source that are in section; starting and
+        stopping at the defined start and end boundaries of the section.
         '''
         # Initialize the section
         source = self.initialize(source, start_search, do_reset, **context)
@@ -1588,17 +1612,28 @@ class Section():
     def process(self, source: Source, start_search: bool = True,
              do_reset: bool = True, **context)->Generator[Any, None, None]:
         '''
-
-
         Args:
-            source (Source): DESCRIPTION.
-            start_search (bool, optional): DESCRIPTION. Defaults to True.
-            do_reset (bool, optional): DESCRIPTION. Defaults to True.
-            **context (TYPE): DESCRIPTION.
-
+            source (Source): An iterable where some of the content meets the
+                section boundary conditions.
+            start_search (bool, optional): Indicates whether to advance through
+                the source until the beginning of the section is found or
+                assume that the section begins at the start of the source.
+                Defaults to True, meaning advance until the start boundary is
+                found.
+            do_reset (bool, optional): Indicate whether to reset the source-
+                related properties when initializing the source. Normally
+                the properties should be reset, but if the section is being
+                used as a subsection, then it should inherit properties from
+                the parent section and not be reset. Defaults to True, meaning
+                reset the properties.
+            **context (Dict[str, Any]): Break point information and any
+                additional information to be passed to and from the
+                Section instance.
         Yields:
-            Generator[Any, None, None]: DESCRIPTION.
-
+            Generator[Any, None, None]: A generator that will step
+                through all items from source that are within the section
+                boundaries; returning the results of applying the
+                SectionProcessor Rules to each item in the section.
         '''
         # Initialize the section
         source = self.initialize(source, start_search, do_reset, **context)
@@ -1613,17 +1648,26 @@ class Section():
     def read(self, source: Source, start_search: bool = True,
              do_reset: bool = True, **context)->Any:
         '''
-
-
         Args:
-            source (Source): DESCRIPTION.
-            start_search (bool, optional): DESCRIPTION. Defaults to True.
-            do_reset (bool, optional): DESCRIPTION. Defaults to True.
-            **context (TYPE): DESCRIPTION.
-
+            source (Source): An iterable where some of the content meets the
+                section boundary conditions.
+            start_search (bool, optional): Indicates whether to advance through
+                the source until the beginning of the section is found or
+                assume that the section begins at the start of the source.
+                Defaults to True, meaning advance until the start boundary is
+                found.
+            do_reset (bool, optional): Indicate whether to reset the source-
+                related properties when initializing the source. Normally
+                the properties should be reset, but if the section is being
+                used as a subsection, then it should inherit properties from
+                the parent section and not be reset. Defaults to True, meaning
+                reset the properties.
+            **context (Dict[str, Any]): Break point information and any
+                additional information to be passed to and from the
+                Section instance.
         Returns:
-            Any: DESCRIPTION.
-
+            Any: The result of applying the aggregate function to all processed
+                items from source that are within the section boundaries.
         '''
         # Initialize the section
         source = self.initialize(source, start_search, do_reset, **context)
@@ -1636,5 +1680,6 @@ class Section():
                 section_items.append(next(section_reader))
             except StopIteration:
                 break
+        # Apply the aggregate function
         section_aggregate = self.aggregate(section_items)
         return section_aggregate
