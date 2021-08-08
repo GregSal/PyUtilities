@@ -32,37 +32,29 @@ from buffered_iterator import BufferedIterator
 from buffered_iterator import BufferOverflowWarning
 from buffered_iterator import BufferedIteratorEOF
 
-#%% Type Definitions
-TriggerOptions = Union[None, bool, int, str, re.Pattern, Callable,
-                       List[str], List[re.Pattern], List[Callable]]
 
-T = TypeVar('T')
-# TODO create more type definitions: Line, ...
-# TODO more explicit generic type definitions
-# TODO Move generic functions to separate module
-# TODO copy clean_ascii_text from file_utilities
-# TODO copy true_iterable from data_utilities
-# Move the major classes:  Section, SectionReader, SectionBreak, ParsingRule,
-# Trigger to a separate Module
-'''
-    Trigger Types:
-    None
-    bool
-    List[str]
-    Regex
-    Callable   -- Not Yet Implemented
-    n          -- Not Yet Implemented
-    If None, the test will never pass
-    If bool, the test will always return the boolean value
-    If list of strings, a match with any string in the list will be a pass
-    The matched string will be added to the Context dict.
-    If Regex the re.match object will be added to the Context dict.
-    If Callable, a non-None return value will be a pass -- Not Yet Implemented
-    The return value will be added to the Context dict.
-    If n skip n lines then trigger                      -- Not Yet Implemented
-    If Repeating sub-sections, can be number of repetitions
-    '''
+#%% Logging
+logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
+
+
+#%% Type Definitions
+TriggerSingleTypes = Union[None, bool, int]
+TriggerListOptions = Union[str, re.Pattern, Callable]
+TriggerTypes = Union[TriggerSingleTypes, TriggerListOptions]
+TriggerOptions = Union[TriggerTypes, List[TriggerListOptions]]
+CallableResult = TypeVar('CallableResult')  # Represents the return from a Trigger Callable
+EventType = Union[bool, int, str, re.match, CallableResult, None]
+TestResult = Union[bool, re.match, CallableResult]
+
+# NonStringSource represents the non-string type iterables used as a source
+NonStringSource = TypeVar('NonStringSource')
 ParsedString = List[str]
+SourceItem = Union[str, ParsedString, NonStringSource]
+Source = Iterable[SourceItem]
+
+ContextType = Union[Dict[str, Any], None]
+
+TestType = Callable[[TriggerTypes, SourceItem, ContextType], TestResult]
 Strings = Union[str, ParsedString]
 OptStrings = Union[Strings, None]
 OptStr = Union[str, None]
@@ -71,9 +63,10 @@ Integers = Union[int, List[int]]
 
 ParseResults = Union[List[ParsedString], None]
 
-StringSource = Union[Iterator[str], Sequence[str]]
+StringSource = Iterable[str]
 ParsedStringSource = Union[Iterator[ParsedString], Sequence[ParsedString]]
-Source = Union[StringSource, ParsedStringSource]
+
+
 
 
 # These type definitions will be redefined as class types.  They are defined
@@ -87,8 +80,13 @@ SectionProcessor = TypeVar('SectionProcessor')  # pylint: disable=function-redef
 BreakOptions = Union[SectionBreak, List[SectionBreak], str, None]
 ProcessorOptions = Union[SectionProcessor, Section, List[Section]]
 
-#%% Logging
-logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
+# TODO create more type definitions: Line, ...
+# TODO more explicit generic type definitions
+# TODO Move generic functions to separate module
+# TODO copy clean_ascii_text from file_utilities
+# TODO copy true_iterable from data_utilities
+# Move the major classes:  Section, SectionReader, SectionBreak, ParsingRule,
+# Trigger to a separate Module
 
 
 #%% String Functions
@@ -471,7 +469,7 @@ def merge_extra_items(parsed_line: ParsedString) -> ParsedString:
     return parsed_line
 
 
-#%% Iteration Tools
+
 def file_reader(file_path: Path)->BufferedIterator:
     def file_line_gen(file_path):
         with open(file_path, newline='') as textfile:
@@ -480,7 +478,9 @@ def file_reader(file_path: Path)->BufferedIterator:
     source = BufferedIterator(file_line_gen(file_path))
     return source
 
+###### These all belong in their own module
 
+#%% Iteration Tools
 def func_to_iter(source: Iterator, func: Callable) -> Iterator:
     '''Create a iterator that applies func to each item in source.
 
@@ -597,11 +597,12 @@ class Trigger():
                       re.Pattern or List[re.Pattern],
                       Callable or List[Callable]):
                 the object(s) used to generate the conditional definition.
-                Note: Callable and int type sentinel are not yet implemented.
+                Note: int type sentinel is not yet implemented.
             location (str, optional):  A sentinel modifier that applies to str
                 or re.Pattern types of sentinels. For other sentinel types it
-                is ignored. One of  ['IN', 'START', 'END', 'FULL'].
-                location can be one of:
+                is ignored. One of  ['IN', 'START', 'END', 'FULL', None].
+                Default is None, which is treated as 'IN'
+
             name (str, optional): A reference label for the Trigger.
                 A reference name for the section instance.
             event (Any): Information resulting from applying the test. Its type
@@ -609,11 +610,8 @@ class Trigger():
             context (Dict[str, Any]): Additional information to be passed to
                 and from the Trigger instance.  It is passed to a Callable
                 sentinel in the form of keyword arguments.
-     '''
-     #### Done To Here ##############
-     # TODO convert some of the Trigger attributes into private names
-     # TODO Create Trigger.event and Trigger.context read-only properties.
-    def __init__(self, sentinel: TriggerOptions, location='IN',
+    '''
+    def __init__(self, sentinel: TriggerOptions, location=None,
                  name='TextTrigger'):
         '''Define Text strings that signal a trigger event.
         sentinel: {str|re.Pattern|Tuple[str],Tuple[re.Pattern}
@@ -628,63 +626,101 @@ class Trigger():
             location == 'START' -> sentinel.match(line),
             location == 'FULL' -> sentinel.fullmatch(line),
             location == 'END' -> raise NotImplementedError.
-
         '''
         self.sentinel = sentinel
-        self.location = location
         self.name = name
 
         # Private attributes
-        self.sentinel_type = None  # Private
-        self.test_method = None # Private
-        self.test_type = None # Private
-        self.test = None # Private
-        self.set_sentinel_type_test()  # Set the private attributes
+        self._is_multi_test = False
+        self._sentinel_type = self.set_sentinel_type()
+        self._test_func = self.set_test_func(location)
+        #self.test_type = None # Private
+        #self.test = None # Private
 
         # Read Only Properties
-        # event
-        # context
+        self._test_result = False
+        self._event = None
+        self._event_name = ''
 
+    @property
+    def sentinel_type(self):
+        '''str: The type of sentinel supplied.
 
-    def set_sentinel_type_test(self):
+        Can be one of:
+            'None':     A place holder conditional that will never pass.
+            'Boolean':  A conditional that does not depend on the object being
+                        tested.
+            'String':   A conditional that will pass if the item being tested
+                        matches with a string.
+            'RE':       A conditional that will pass if an re.pattern
+                        successfully matches in the item being tested.
+            'Function': A conditional that will pass if the sentinel function
+                        returns a non-blank value.
+            'Count':    A conditional that will pass after being called the
+                        specified number of times. -- Not Yet Implemented.
+
+        If the sentinel is a list of strings, re patterns or functions, set
+        the self._is_multi_test = True.
+        '''
+        return self._sentinel_type
+
+    def set_sentinel_type(self)->str:
+        '''Identify the type of sentinel supplied.
+
+        The sentinel type returned can be one of:
+
+            type(sentinel)  sentinel_type string
+              None                'None'
+              bool                'Boolean'
+              int                 'Count'
+              str                 'String'
+              List[str]           'String'
+              re.Pattern          'RE'
+              List[re.Pattern]    'RE'
+              Callable            'Function'
+              List[Callable]      'Function'
+
+        If the sentinel is a list of strings, re patterns or functions, set
+        the self._is_multi_test = True.
+
+        Raises:
+            NotImplementedError: If self.sentinel is not one of the above types.
+
+        Returns:
+            str: The string matching the self.sentinel type.
+        '''
+        test_type = None
         if self.sentinel is None:
-            self.sentinel_type = 'None'  # should become bolean False
-            self.test_type = None
-            self.test = None
+            test_type = 'None'
         elif isinstance(self.sentinel, bool):
-            self.sentinel_type = 'Boolean'
-            self.test_type = self.fixed_test
-            self.test = self.single_test
+            test_type = 'Boolean'
         elif isinstance(self.sentinel, str):
-            self.sentinel_type = 'String'
-            self.test_type = self.str_test
-            self.test = self.single_test
+            test_type = 'String'
         elif isinstance(self.sentinel, re.Pattern):
-            self.sentinel_type = 'RE'
-            self.test_type = self.re_test
-            self.test = self.single_test
+            test_type = 'RE'
+        elif callable(self.sentinel):
+            test_type = 'Function'
         elif true_iterable(self.sentinel):
+            # Set the indicator that sentinel contains a list of conditions.
+            self._is_multi_test = True
             if all(isinstance(snt, str) for snt in self.sentinel):
-                self.sentinel_type = 'String'
-                self.test_type = self.str_test
-                self.test = self.multi_test
+                test_type = 'String'
             elif all(isinstance(snt, re.Pattern) for snt in self.sentinel):
-                self.sentinel_type = 'RE'
-                self.test_type = self.re_test
-                self.test = self.multi_test
-            else:
-                raise NotImplementedError('Only Boolean, String and '
-                                          'Regular Expression '
-                                          'tests are currently supported.')
-        else:
-            raise NotImplementedError('Only Boolean, String and '
-                                      'Regular Expression '
-                                      'tests are currently supported.')
-        self.set_sentinel_test_location()
+                test_type = 'RE'
+            elif all(callable(snt) for snt in self.sentinel):
+                test_type = 'Function'
+        if not test_type:
+            raise NotImplementedError('Only Boolean, String, Regular '
+                                      'Expression and Callable tests are '
+                                      'supported.')
+        return test_type
 
-    # Set the required test function
-    def set_sentinel_test_location(self):
-        '''Set test based on sentinel type and location.
+    @property
+    def test_func(self):
+        '''Callable[TriggerTypes, Any, Dict[str, Any]: Test Function
+
+        The test function is set based on based on the sentinel type and
+        location value.
         if sentinel is a string type:
             location == 'IN' -> sentinel in line,
             location == 'START' -> line.startswith(sentinel), in line,
@@ -695,74 +731,199 @@ class Trigger():
             location == 'START' -> sentinel.match(line),
             location == 'FULL' -> sentinel.fullmatch(line),
             location == 'END' -> raise NotImplementedError.
+        if sentinel is a Boolean type:
+            sentinel
+        if sentinel is a Function type:
+            sentinel(line, **context)
+        if sentinel is None:
+            False
         '''
-        if self.sentinel_type == 'String':
-            if self.location == 'IN':
-                self.test_method = lambda sentinel, line: sentinel in line
-            elif self.location == 'START':
-                self.test_method = lambda sentinel, line: line.startswith(sentinel)
-            elif self.location == 'END':
-                self.test_method = lambda sentinel, line: line.endswith(sentinel)
-            elif self.location == 'FULL':
-                self.test_method = lambda sentinel, line: sentinel == line
-        elif self.sentinel_type == 'RE':
-            if self.location == 'IN':
-                self.test_method = lambda sentinel, line: sentinel.search(line)
-            elif self.location == 'START':
-                self.test_method = lambda sentinel, line: sentinel.match(line)
-            elif self.location == 'FULL':
-                self.test_method = lambda sentinel, line: sentinel.fullmatch(line)
-            elif self.location == 'END':
-                raise NotImplementedError('The location "END" is not'
-                                          'compatible with a regular '
-                                          'expression test.')
+        return self._test_func
+
+    def set_test_func(self, location: str)->TestType:
+        '''Determine the appropriate test function for the sentinel type.
+
+        Test functions correspond to particular sentinel types and location
+        values.
+        Args:
+            location (str): Indicates how string and regular expression
+                sentinels will be applied as a test. One of:
+                    'IN', 'START', 'END', 'FULL'
+            location is only relevant for String' and 'RE' sentinel types.
+            For all other types it will be ignored.
+        Returns:
+            (Callable[[TriggerTypes, SourceItem, ContextType], TestResult]:
+            The test function to apply.
+        '''
+        test_options = {
+            ('String', None):  # The default if location is not specified
+                lambda sentinel, line, context: sentinel in line,
+            ('String', 'IN'):
+                lambda sentinel, line, context: sentinel in line,
+            ('String', 'START'):
+                lambda sentinel, line, context: line.startswith(sentinel),
+            ('String', 'END'):
+                lambda sentinel, line, context: line.endswith(sentinel),
+            ('String', 'FULL'):
+                lambda sentinel, line, context: sentinel == line,
+            ('RE', None):  # The default if location is not specified
+                lambda sentinel, line, context: sentinel.search(line),
+            ('RE', 'IN'):
+                lambda sentinel, line, context: sentinel.search(line),
+            ('RE', 'START'):
+                lambda sentinel, line, context: sentinel.match(line),
+            ('RE', 'FULL'):
+                lambda sentinel, line, context: sentinel.fullmatch(line),
+            ('RE', 'END'):
+                NotImplementedError('The location "END" is not compatible with '
+                                    'a regular expression test.'),
+            ('Boolean', None):
+                lambda sentinel, line, context: sentinel,
+            ('Function', None):
+                lambda sentinel, line, context: sentinel(line, **context),
+            (None, None):
+                lambda sentinel, line, context: False
+            }
+
+        t_method = test_options[(self.sentinel_type, location)]
+        if isinstance(t_method, Exception):
+            raise t_method
+        return t_method
+
+    @property
+    def event(self):
+        '''EventType: Information on the result of the Trigger test.
+
+        The event object type depends on sentinel_type:
+            type(sentinel)      type(event)
+              None                bool = False
+              bool                bool
+              int                 int = sentinel
+              str                 str = sentinel
+              List[str]           str = one of sentinel items
+              re.Pattern          re.match
+              List[re.Pattern]    re.match
+              Callable            CallableResult
+              List[Callable]      CallableResult
+        '''
+        return self._event
+
+    @property
+    def event_name(self):
+        '''str: The designation for the result of the Trigger test.
+
+        The event name type depends on sentinel_type:
+            type(sentinel)      event_name
+              None                'None'
+              bool                str(sentinel)
+              int                 str(sentinel)
+              str                 sentinel
+              List[str]           The sentinel item triggering the event
+              re.Pattern          sentinel.pattern
+              List[re.Pattern]    sentinel.pattern for the triggering item.
+              Callable            sentinel.__name__
+              List[Callable]      sentinel.__name__ for the triggering item.
+        '''
+        return self._event_name
+
+    def set_event(self, test_result: TestResult,
+                  sentinel: TriggerTypes)->(EventType, str):
+        '''Return the appropriate object and label for the passed test.
+
+        The event object and label type depend on sentinel_type:
+            type(sentinel)      type(event)             event_name
+              None                bool = False          'None'
+              bool                bool                  str(sentinel)
+              int                 int = sentinel        str(sentinel)
+              str                 str = sentinel        sentinel
+              re.Pattern          re.match              sentinel.pattern
+              Callable            CallableResult        sentinel.__name__
+
+        Args:
+            test_result (TestResult): The value returned by the test function.
+            sentinel (TriggerTypes): The individual object used to define the
+                test.
+        Returns:
+            (EventType, str): The event object and label resulting from
+                the passed test.
+        '''
+        result = None
+        label = ''
+        if self._sentinel_type ==  'None':
+            result = test_result
+            label = 'None'
+        elif self._sentinel_type ==  'Boolean':
+            result = test_result
+            label = str(test_result)
+        elif self._sentinel_type ==  'String':
+            result = sentinel
+            label = str(sentinel)
+        elif self._sentinel_type ==  'RE':
+            result = test_result
+            label = sentinel.pattern
+        elif self._sentinel_type ==  'Function':
+            result = test_result
+            label = sentinel.__name__
+        elif self._sentinel_type ==  'Count':
+            result = sentinel
+            label = str(sentinel)
         else:
-            self.test_method = None
+            result = None
+            label = ''
+        return (result, label)
 
-    # TODO Merge the Trigger test types including multi_test
-    # Define the return values for a given sentinel type
-    def str_test(self, line: str, sentinel_string: str) -> (bool, str):
-        test_result = self.test_method(sentinel_string, line)
-        if test_result:
-            logger.debug(f'Triggered on {sentinel_string}')
-            return True, sentinel_string
-        return False, None
+    def do_test(self, item: SourceItem, context=None)->bool:
+        '''Call the appropriate test(s) on the supplied item.
 
-    def re_test(self, line: str, pattern: re.Pattern) -> (bool, re.Match):
-        sentinel_match = self.test_method(pattern, line)
-        if sentinel_match is not None:
-            logger.debug(f'Triggered on {sentinel_match.string}')
-            return True, sentinel_match
-        return False, None
+        The designated test(s) are applied to the item.  No testing is done to
+        ensure that item has an appropriate data type.  If the test passes,
+        event and event_name are appropriately updated and test_result=True.
+        If the test does not pass, event and event_name are reset to default
+        values and test_result=False.
 
-    def fixed_test(self, line: str, test_result: bool) -> (bool, bool):
-        '''Always return the boolean test_result regardless of line content.
+        If sentinel is a list, each sentinel element is used to test item.
+        When one of these tests pass, the particular sentinel element that
+        passed the test is used to update event and event_name.
+
+        Args:
+            item (SourceItem): The value to be tested.
+            context (Dict[str, Any], Optional): Any additional information to
+                be passed as keyword arguments to a sentinel function.  Ignored
+                for other sentinel types.
+        Returns:
+            (bool): True if the supplied item passed a test, False otherwise.
         '''
-        # pylint: disable=unused-argument
-        return self.sentinel, self.sentinel
-
-    # Optional applications of multiple patterns / strings in one trigger
-    def multi_test(self, line, context) -> (bool, str):
-        # pylint: disable=unused-argument
-        for sentinel_item in self.sentinel:
-            test_result, test_value = self.test_type(line, sentinel_item)
+        if not context:
+            context = {}
+        self._event = None
+        self._event_name = ''
+        self._test_result = False
+        if self._is_multi_test:
+            for sentinel_item in self.sentinel:
+                test_result = self.test_func(sentinel_item, item, context)
+                if test_result:
+                    self._test_result = True
+                    self._event, self._event_name = self.set_event(
+                        test_result, sentinel_item)
+                    break
+        else:
+            test_result = self.test_func(self.sentinel, item, context)
             if test_result:
-                return test_result, test_value
-        return False, None
+                self._test_result = True
+                self._event, self._event_name = self.set_event(
+                    test_result, self.sentinel)
+        return self._test_result
 
-    def single_test(self, line, context) -> (bool, str):
-        # pylint: disable=unused-argument
-        return self.test_type(line, self.sentinel)
-
+    ### Done To Here ##################
 
     # Apply the defined test and return the results
     def apply(self, line, context=None):
         logger.debug('in apply trigger')
-        if self.test is None:
-            is_pass = False
-            sentinel_output = None
+        is_pass = self.do_test(line, context)
+        if is_pass:
+            sentinel_output = self.event
         else:
-            is_pass, sentinel_output = self.test(line, context)
+            sentinel_output = self.event
         return is_pass, sentinel_output
 
 
@@ -781,7 +942,8 @@ class ParsingRule():  # Rename ParsingRule as Rule
         # TODO Add option for Rule default method to be a blank line
         return None
 
-    def __init__(self, trigger: Trigger = None,  # Allow for Tuple of (sentinel, [location]) to be used to define a trigger
+    # TODO Allow for Tuple of (sentinel, [location]) to be used to define a trigger
+    def __init__(self, trigger: Trigger = None,
                  pass_method: Callable = None,
                  fail_method: Callable = None,
                  default='None',
@@ -1109,6 +1271,7 @@ class Section():  # pylint: disable=function-redefined
         Returns:
             New Section.
         '''
+
         # Initialize attributes
         self.section_name = section_name
         self.keep_partial = keep_partial
@@ -1118,12 +1281,15 @@ class Section():  # pylint: disable=function-redefined
         # reset() method is should set these attributes to the values below.
         # In addition, if the processor contains one or more Sections these
         # attributes in the processor sections will must also be reset.
+
         self.context = dict()
         self.scan_status = 'Not Started'
         self.source = None
+
         # Set the start and end section break properties
         self.start_section = start_section
         self.end_section = end_section
+
         # Initialize the processor properties
         # _section_reader is set when the processor.setter method is called.
         self._section_reader = None
