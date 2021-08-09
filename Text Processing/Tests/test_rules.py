@@ -18,7 +18,7 @@ Plan Status: Treatment Approved Thursday, January 02, 2020 12:55:56 by gsal
 '''
 
 #%%  Prescribed dose parse tests
-def parse_prescribed_dose(line, event, context)->List[List[str]]:# pylint: disable=unused-argument
+def parse_prescribed_dose(line, event, **context)->List[List[str]]:# pylint: disable=unused-argument
     '''Split "Prescribed dose [cGy]" into 2 lines:
         Prescribed dose
         Prescribed dose Unit
@@ -69,7 +69,7 @@ class TestPrescribedDoseParse(unittest.TestCase):
 
     def test_prescribed_dose_parse(self):
         line = 'Prescribed dose [cGy]: 5000.0'
-        parsed_lines = self.rule.apply(line, self.context)
+        parsed_lines = self.rule.apply(line, **self.context)
         results = [
             ['Prescribed dose', '5000.0'],
             ['Prescribed dose Unit', 'cGy']
@@ -78,7 +78,7 @@ class TestPrescribedDoseParse(unittest.TestCase):
 
     def test_no_prescribed_dose_parse(self):
         line = 'Prescribed dose [cGy]: not defined'
-        parsed_lines = self.rule.apply(line, self.context)
+        parsed_lines = self.rule.apply(line, **self.context)
         results = [
             ['Prescribed dose', ''],
             ['Prescribed dose Unit', '']
@@ -87,7 +87,7 @@ class TestPrescribedDoseParse(unittest.TestCase):
 
 
 #%%  Date parse tests
-def date_parse(line, event, context)->List[List[str]]:  # pylint: disable=unused-argument
+def date_parse(line, event, **context)->List[List[str]]:  # pylint: disable=unused-argument
     '''If Date,don't split beyond first :'''
     parsed_lines = [
         [event, line.split(':',maxsplit=1)[1]]
@@ -113,12 +113,12 @@ class TestDateParse(unittest.TestCase):
     def test_date_parse(self):
         line = 'Date                 : Thursday, August 13, 2020 15:21:06'
         expected_results = [['Date', ' Thursday, August 13, 2020 15:21:06']]
-        parsed_lines = self.rule.apply(line, self.context)
+        parsed_lines = self.rule.apply(line, **self.context)
         self.assertListEqual(parsed_lines, expected_results)
 
 
 #%% Line Parsing
-def approved_status_parse(line, event, context)->List[List[str]]:  # pylint: disable=unused-argument
+def approved_status_parse(line, event, **context)->List[List[str]]:  # pylint: disable=unused-argument
     '''If Treatment Approved, Split "Plan Status" into 3 lines:
         Plan Status
         Approved on
@@ -161,7 +161,7 @@ class TestApprovalParse(unittest.TestCase):
             ['Approved on', ' Thursday, January 02, 2020 12:55:56 '],
             ['Approved by', 'gsal']
             ]
-        parsed_lines = self.rule.apply(line, self.context)
+        parsed_lines = self.rule.apply(line, **self.context)
         self.assertListEqual(parsed_lines, expected_results)
 
 
@@ -185,12 +185,6 @@ class TestSingleLineParse(unittest.TestCase):
         self.default_parser = tp.define_csv_parser('comma')
         #use_trigger = Trigger('Use', location='IN', name='Use')
         self.rule = ParsingRule(Trigger('Use'), pass_method=parse_use)
-
-    @unittest.skip('Not Done')
-    def test_use_parse(self):
-        expected_results = self.test_result
-        parsed_lines = self.rule.apply(self.test_source)
-        self.assertListEqual(parsed_lines, expected_results)
 
 
 if __name__ == '__main__':

@@ -1,8 +1,8 @@
 import unittest
 from itertools import chain
+import pandas as pd
 import Text_Processing as tp
 import read_dvh_file
-import pandas as pd
 
 class Test_cascading_iterators(unittest.TestCase):
     def test_simple_cascading_iterators(self):

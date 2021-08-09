@@ -26,28 +26,32 @@ class TestSimpleTriggers(unittest.TestCase):
     def test_simple_trigger(self):
         s_trigger = Trigger(['Structure:'], name='End of Plan Info')
         line = 'Structure: PRV5 SpinalCanal'
-        is_break, event = s_trigger.apply(line, self.context)
+        is_break = s_trigger.evaluate(line, **self.context)
+        event = s_trigger.event.test_value
         self.assertTrue(is_break)
         self.assertEqual(event, 'Structure:')
 
     def test_multi_string_trigger(self):
         plan_trigger = Trigger(['Plan:', 'Plan sum:'])
         line = 'Plan sum: Plan Sum'
-        is_break, event = plan_trigger.apply(line, self.context)
+        is_break = plan_trigger.evaluate(line, **self.context)
+        event = plan_trigger.event.test_value
         self.assertTrue(is_break)
         self.assertEqual(event, 'Plan sum:')
 
     def test_not_trigger(self):
         plan_trigger = Trigger(['Plan:', 'Plan sum:'])
         line = 'Comment              : DVHs for a plan sum'
-        is_break, event = plan_trigger.apply(line, self.context)
+        is_break= plan_trigger.evaluate(line, **self.context)
+        event = plan_trigger.event.test_value
         self.assertFalse(is_break)
         self.assertIsNone(event)
 
     def test_info_trigger(self):
         info_trigger = Trigger(['% for dose (%):'])
         line = '% for dose (%): 100.0'
-        is_break, event = info_trigger.apply(line, self.context)
+        is_break = info_trigger.evaluate(line, **self.context)
+        event = info_trigger.event.test_value
         self.assertTrue(is_break)
         self.assertEqual(event, '% for dose (%):')
 
@@ -96,7 +100,8 @@ class TestReTriggers(unittest.TestCase):
             'unit': 'cGy',
             'dose': '5000.0'
             }
-        is_break, event = dose_trigger.apply(line, self.context)
+        is_break = dose_trigger.evaluate(line, **self.context)
+        event = dose_trigger.event.test_value
         self.assertTrue(is_break)
         self.assertIsNotNone(event)
         self.assertIsInstance(event, re.Match)
@@ -110,7 +115,8 @@ class TestReTriggers(unittest.TestCase):
             'unit': 'cGy',
             'dose': 'not defined'
             }
-        is_break, event = dose_trigger.apply(line, self.context)
+        is_break = dose_trigger.evaluate(line, **self.context)
+        event = dose_trigger.event.test_value
         self.assertTrue(is_break)
         self.assertIsNotNone(event)
         self.assertIsInstance(event, re.Match)
@@ -120,7 +126,8 @@ class TestReTriggers(unittest.TestCase):
     def test_not_trigger(self):
         dose_trigger = Trigger(self.re_pattern, name='Prescribed Dose')
         line = 'Comment              : DVHs for a plan sum'
-        is_break, event = dose_trigger.apply(line, self.context)
+        is_break = dose_trigger.evaluate(line, **self.context)
+        event = dose_trigger.event.test_value
         self.assertFalse(is_break)
         self.assertIsNone(event)
 
