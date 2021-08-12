@@ -25,25 +25,25 @@ test_section_reader = tp.SectionProcessor(
 #%% SectionBreak definitions
 section_start = tp.SectionBreak(
     name='Single Section Start',
-    trigger=tp.Trigger('Section Name'),
-    offset='Before'
+    sentinel='Section Name',
+    break_offset='Before'
     )
 
 section_end = tp.SectionBreak(
     name='Single Section End',
-    trigger=tp.Trigger('End Section')
+    sentinel='End Section'
     )
 
 multi_section_start = tp.SectionBreak(
     name='Multi Section Start',
-    trigger=tp.Trigger('Multi Section'),
-    offset='After'
+    sentinel='Multi Section',
+    break_offset='After'
     )
 
 multi_section_end = tp.SectionBreak(
     name='End Multi Section',
-    trigger=tp.Trigger('Done Multi Section'),
-    offset='Before'
+    sentinel='Done Multi Section',
+    break_offset='Before'
     )
 
 

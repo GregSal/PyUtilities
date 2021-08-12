@@ -222,32 +222,32 @@ class TestSectionGroupRead(unittest.TestCase):
         # SectionBreak definitions
         delimiter_section_start = tp.SectionBreak(
             name='Delimiter Section',
-            trigger=tp.Trigger('Single Delimiter Section'),
-            offset='After'
+            sentinel='Single Delimiter Section',
+            break_offset='After'
             )
         fixed_width_section_start = tp.SectionBreak(
             name='Fixed Width Section',
-            trigger=tp.Trigger('Single Fixed Width Section'),
-            offset='After'
+            sentinel='Single Fixed Width Section',
+            break_offset='After'
             )
         section_end = tp.SectionBreak(
             name='Single Section',
-            trigger=tp.Trigger('End Section')
+            sentinel='End Section'
             )
         group_section_start = tp.SectionBreak(
             name='Combined Group Section',
-            trigger=tp.Trigger('Combined Group Section'),
-            offset='After'
+            sentinel='Combined Group Section',
+            break_offset='After'
             )
         multi_group_section_start = tp.SectionBreak(
             name='Multi Combined Group Section',
-            trigger=tp.Trigger('Multi Combined Group Section'),
-            offset='After'
+            sentinel='Multi Combined Group Section',
+            break_offset='After'
             )
         group_section_end = tp.SectionBreak(
             name='End Group Section',
-            trigger=tp.Trigger('Done Combined Group Section'),
-            offset='Before'
+            sentinel='Done Combined Group Section',
+            break_offset='Before'
             )
 
         # Section definitions

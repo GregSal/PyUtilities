@@ -189,7 +189,7 @@ class Test_DVH_Info_SectionBoundaries(unittest.TestCase):
         self.context = {}
         dvh_info_end = tp.SectionBreak(
             name='End of DVH Info',
-            trigger=tp.Trigger(['Plan:', 'Plan sum:'])
+            sentinel=['Plan:', 'Plan sum:']
             )
         dvh_info_section = tp.Section(
             start_section=None,
@@ -223,12 +223,12 @@ class Test_Plan_Info_SectionBoundaries(unittest.TestCase):
         self.context = {}
         dvh_info_end = tp.SectionBreak(
             name='End of DVH Info',
-            trigger=tp.Trigger(['Plan:', 'Plan sum:'])
+            sentinel=['Plan:', 'Plan sum:']
             )
         plan_info_end = tp.SectionBreak(
             name='End of Plan Info',
-            trigger=tp.Trigger(['% for dose (%):']),
-            offset='After'
+            sentinel='% for dose (%):',
+            break_offset='After'
             )
         plan_info_section = tp.Section(
             start_section=dvh_info_end,
@@ -266,13 +266,13 @@ class Test_structure_Info_SectionBoundaries(unittest.TestCase):
     def setUp(self):
         structure_info_start = tp.SectionBreak(
             name='Start of Structure Info',
-            trigger=tp.Trigger(['Structure:']),
-            offset='Before'
+            sentinel='Structure:',
+            break_offset='Before'
             )
         structure_info_end = tp.SectionBreak(
             name='End of Structure Info',
-            trigger=tp.Trigger(['Gradient Measure']),
-            offset='After'
+            sentinel='Gradient Measure',
+            break_offset='After'
             )
         structure_info_section = tp.Section(start_section=structure_info_start,
                                             end_section=structure_info_end)
@@ -309,13 +309,13 @@ class Test_dvh_data_SectionBoundaries(unittest.TestCase):
     def setUp(self):
         structure_info_start = tp.SectionBreak(
             name='Start of Structure Info',
-            trigger=tp.Trigger(['Structure:']),
-            offset='Before'
+            sentinel='Structure:',
+            break_offset='Before'
             )
         structure_info_end = tp.SectionBreak(
             name='End of Structure Info',
-            trigger=tp.Trigger(['Gradient Measure']),
-            offset='After'
+            sentinel='Gradient Measure',
+            break_offset='After'
             )
         dvh_data_section = tp.Section(start_section=structure_info_end,
                                       end_section=structure_info_start)
@@ -370,13 +370,13 @@ class TestBoundaryOffsets(unittest.TestCase):
     def test_section_break_after_before(self):
         section_start_after = tp.SectionBreak(
             name='Single Section After',
-            trigger=tp.Trigger('Single Section'),
-            offset='After'
+            sentinel='Single Section',
+            break_offset='After'
             )
         section_end_before = tp.SectionBreak(
             name='Single Section Before',
-            trigger=tp.Trigger('End'),
-            offset='Before'
+            sentinel='End',
+            break_offset='Before'
             )
         test_section = tp.Section(
             section_name='Test Section',
@@ -394,13 +394,13 @@ class TestBoundaryOffsets(unittest.TestCase):
     def test_section_break_gap(self):
         section_start_gap = tp.SectionBreak(
             name='Section With Gap',
-            trigger=tp.Trigger('Section With Gap'),
-            offset=1
+            sentinel='Section With Gap',
+            break_offset=1
             )
         section_end_skip_line = tp.SectionBreak(
             name='Section End Skip Line',
-            trigger=tp.Trigger('End'),
-            offset=2
+            sentinel='End',
+            break_offset=2
             )
         test_section = tp.Section(
             section_name='Test Section',
@@ -418,13 +418,13 @@ class TestBoundaryOffsets(unittest.TestCase):
     def test_section_break_reuse(self):
         section_start_reuse = tp.SectionBreak(
             name='Section Start Before',
-            trigger=tp.Trigger('C Content1:d'),
-            offset=-2
+            sentinel='C Content1:d',
+            break_offset=-2
             )
         section_end_skip_line = tp.SectionBreak(
             name='Section End Reuse',
-            trigger=tp.Trigger('Section D'),
-            offset=-3
+            sentinel='Section D',
+            break_offset=-3
             )
         test_section = tp.Section(
             section_name='Test Section',

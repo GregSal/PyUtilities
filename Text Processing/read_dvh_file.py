@@ -227,28 +227,28 @@ dvh_data_reader = tp.SectionProcessor(
 #%% SectionBreak definitions
 plan_info_start = tp.SectionBreak(
     name='Start of Plan Info',
-    trigger=tp.Trigger(['Plan:', 'Plan sum:']),
-    offset='Before'
+    sentinel=['Plan:', 'Plan sum:'],
+    break_offset='Before'
     )
 plan_info_end = tp.SectionBreak(
     name='End of Plan Info',
-    trigger=tp.Trigger(['% for dose (%):']),
-    offset='After'
+    sentinel='% for dose (%):',
+    break_offset='After'
     )
 structure_info_start = tp.SectionBreak(
     name='Start of Structure Info',
-    trigger=tp.Trigger(['Structure:']),
-    offset='Before'
+    sentinel='Structure:',
+    break_offset='Before'
     )
 structure_info_end = tp.SectionBreak(
     name='End of Structure Info',
-    trigger=tp.Trigger(['Gradient Measure']),
-    offset='After'
+    sentinel='Gradient Measure',
+    break_offset='After'
     )
 dvh_data_start = tp.SectionBreak(
     name='Start of DVH Data',
-    trigger=tp.Trigger(['Ratio of Total Structure Volume']),
-    offset='Before'
+    sentinel='Ratio of Total Structure Volume',
+    break_offset='Before'
     )
 
 #%% Section definitions

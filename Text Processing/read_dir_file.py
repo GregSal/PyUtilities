@@ -313,20 +313,11 @@ summary_reader = tp.SectionProcessor(
 
 #%% SectionBreak definitions
 folder_start = tp.SectionBreak(
-    name='Start of Folder',
-    trigger=tp.Trigger(['Directory of']),
-    offset='Before'
-    )
-folder_end = tp.SectionBreak(
-    name='End of Folder',
-    trigger=tp.Trigger([folder_summary_pt]),
-    offset='After'
-    )
-summary_start = tp.SectionBreak(
-    name='Start of DIR Summary',
-    trigger=tp.Trigger(['Total Files Listed:']),
-    offset='Before'
-    )
+    name='Start of Folder', sentinel='Directory of', break_offset='Before')
+folder_end = tp.SectionBreak(name='End of Folder',sentinel=folder_summary_pt,
+                             break_offset='After')
+summary_start = tp.SectionBreak(sentinel='Total Files Listed:',
+                                name='Start of DIR Summary', break_offset='Before')
 
 
 #%% Section definitions

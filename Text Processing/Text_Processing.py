@@ -722,7 +722,7 @@ class Trigger():
     '''
     def __init__(self, sentinel: TriggerOptions, location=None,
                  name='Trigger'):
-        '''Define Text strings that signal a trigger event.
+        '''Define test(s) that signal a trigger event.
 
         Arguments:
             name (str, optional): A reference label for the Trigger.
@@ -915,6 +915,162 @@ class Trigger():
         return result
 
 
+class SectionBreak(Trigger):  # pylint: disable=function-redefined
+    '''Defines the method of identifying the start or end of a section.
+
+    A SectionBreak is a subclass of Trigger, with an additional offset
+    attribute and related methods. offset is used to identify a location in the
+    Source sequence, and an offset, specifying the distance (in number of
+    Source items) between the identified location and the break point.
+
+    Offset is an integer indicating the number of additional Source items to
+    include in the section.  The two most popular offset options, have text
+    equivalents:
+        'After'  -> offset =  0  -> The SectionBreak location is between the
+                                    current item and the next.
+        'Before' -> offset = -1 -> The SectionBreak location is just before the
+                                   current item (Step back 1 item).
+    Attributes:
+        sentinel (None, bool, int,
+                    str or List[str],
+                    re.Pattern or List[re.Pattern],
+                    Callable or List[Callable]):
+            the object(s) used to generate the conditional definition.
+        event (TriggerEvent): Information resulting from applying the test.
+        See Trigger class for more information on the sentinel and event
+        attributes.
+
+        name (str): A text label for the boundary.
+        offset (int): Specifies the distance (in number of Source items)
+            between the location identified by trigger and the boundary.
+    '''
+    def __init__(self, sentinel: TriggerOptions, location=None,
+                 name='SectionBreak', break_offset='Before'):
+        '''Defines trigger and offset for a Boundary point.
+
+        Arguments:
+            sentinel (TriggerOptions): Object(s) used to generate the
+                conditional definition.
+            location (str, optional):  A sentinel modifier that applies to str
+                or re.Pattern types of sentinels. For other sentinel types it
+                is ignored. One of  ['IN', 'START', 'END', 'FULL', None].
+                Default is None, which is treated as 'IN'
+
+            See Trigger class for more information on the sentinel and event
+            arguments.
+
+            offset (int, str, optional): The number of Source items
+                before (negative) or after (positive) between the item that
+                causes a trigger event and the boundary.  offset can also be
+                one of
+                    'After' =  0, or
+                    'Before' = -1
+                Defaults to 'Before'.
+            name (str, optional): A reference label for the Boundary.
+        '''
+        super().__init__(sentinel, location, name)
+        self.offset = break_offset
+        # Condition tracking attribute for internal use
+        self._count_down = None
+
+    @property
+    def offset(self)->int:
+        '''int: The number of Source items before (negative) or after
+        (positive) between the item that causes a trigger event and the
+        boundary.
+        '''
+        return self._offset
+
+    @offset.setter
+    def offset(self, break_offset):
+        '''Set the offset value converting the strings 'After' to  0, and
+        'Before' to -1.
+
+        Argument:
+            offset (int, str): An integer or one of ['After', 'Before'].
+        Raises:
+            ValueError if offset is not an integer or a string containing one
+                of ['After', 'Before']
+        '''
+        offset_value = 0
+        try:
+            offset_value = int(break_offset)
+        except ValueError as err:
+            if isinstance(break_offset, str):
+                if 'before' == break_offset.lower():
+                    offset_value = -1
+                elif 'after' == break_offset.lower():
+                    offset_value = 0
+            else:
+                msg = ('Offset must be an integer or one of'
+                       '"Before" or "After";\t Got {repr(offset)}')
+                raise ValueError(msg) from err
+        self._offset = int(offset_value)
+
+
+    def check(self, item: SourceItem, source: BufferedIterator, **context):
+        '''Check for a Break condition.
+
+        If an Active count down situation exists, continue the count down.
+        Otherwise, apply the trigger test.  If the Trigger signals a break,
+        set the appropriate line location for the break based on the offset
+        value.
+
+        Arguments:
+            item (SourceItem): The current Source item to apply a boundary
+                check to.
+            source (BufferedIterator): The primary source from which item is
+                obtained.  Access to this object is required for negative
+                offsets.
+            **context (Dict[str, Any], optional): Additional information to be
+                passed to the trigger object.
+        '''
+        logger.debug('in section_break.check')
+        # Check for a Break condition
+        if self._count_down is None:  # No Active Count Down
+            # apply the trigger test.
+            is_event = self.evaluate(item, **context)
+            if is_event:
+                logger.debug(f'Break triggered by {self.event.test_name}')
+                is_break = self.set_line_location(source)
+            else:
+                is_break = False
+        elif self._count_down == 0:  # End of Count Down Reached
+            logger.debug(f'Line count down in {self.name} completed.')
+            self._count_down = None  # Remove Active Count Down
+            is_break = True
+            source.step_back = 1  # Save current line for next section
+        elif self._count_down > 0:  #  Active Count Down Exists
+            logger.debug(f'Line count down in {self.name} Continuing;\t'
+                         f'Count down now at {self._count_down}')
+            self._count_down -= 1   #  Continue Count Down
+            is_break = False
+        return is_break
+
+    def set_line_location(self, source: BufferedIterator):
+        '''Set the appropriate line location for a break based on the offset
+        value.
+
+        Arguments:
+            source (BufferedIterator): The primary source from which item is
+                obtained.  Access to this object is required for negative
+                offsets.
+        Returns (bool): True if the current BufferedIterator line pointer is
+            at a break point.  False otherwise
+        '''
+        if self.offset < 0: # Save current line for next section
+            logger.debug(f'Stepping back {-self.offset} lines')
+            source.step_back = -self.offset
+            is_break = True
+        else: # Use more lines before activating break
+            logger.debug(f'Using {self.offset} more lines.')
+            self._count_down = self.offset  # Begin Active Count Down
+            is_break = False
+        return is_break
+
+
+    ####### Done To Here ################
+
 class ParsingRule():  # Rename ParsingRule as Rule
     @staticmethod
     def default_template(test_object, event, *args,    # pylint: disable=unused-argument
@@ -992,163 +1148,6 @@ class LineParser():  # TODO Convert this into RuleSet
             if parsed_lines is not None:
                 for parsed_line in parsed_lines:
                     yield parsed_line
-
-
-class SectionBreak():  # pylint: disable=function-redefined
-    '''Defines the method of identifying the start or end of a section.
-
-    A SectionBreak is defined by the combination a Trigger, used to identify a
-    location in the Source sequence, and an offset, specifying the distance (in
-    number of Source items) between the identified location and the
-    break point.
-
-    Offset is an integer indicating the number of additional Source items to
-    include in the section.  The two most popular offset options, have text
-    equivalents:
-        'After'  -> offset =  0  -> The SectionBreak location is between the
-                                    current item and the next.
-        'Before' -> offset = -1 -> The SectionBreak location is just before the
-                                   current item (Step back 1 item).
-    Attributes:
-        name (str): A text label for the boundary.
-        trigger (Trigger): A test condition used to identify a location in the
-            Source sequence.
-        offset (int): Specifies the distance (in number of Source items)
-            between the location identified by trigger and the boundary.
-        event (EventType): Information resulting from applying the trigger.
-            The event type depends on the trigger type:
-                trigger.sentinel type           event type
-                bool (True)                     bool (True)
-                int:                            int: the integer value of the
-                                                     sentinel.
-                str or List[str]                str: the specific string in the
-                                                     list that caused the pass.
-                re.Pattern or List[re.Pattern]  re.match: the match object
-                                                    generated by applying the
-                                                    pattern to the item.
-                Callable or List[Callable]      Any: The return value of the
-                                                    successful function.
-    '''
-    def __init__(self, trigger: Trigger,
-                 offset='Before', name='SectionBreak'):
-        '''Defines trigger and offset for a Boundary point.
-
-        Args:
-            trigger (Trigger, TriggerOptions):
-                If trigger is not type Trigger, The trigger object is passed as
-                the sentinel argument to create a new Trigger instance.  The
-                Trigger class will raise a NotImplementedError if it is unable
-                to create a Trigger instance with the suppled sentinel.
-            offset (int, str, optional): The number of Source items
-                before (negative) or after (positive) between the item that
-                causes a trigger event and the boundary.  offset can also be
-                one of
-                    'After' =  0, or
-                    'Before' = -1
-                Defaults to 'Before'.
-        '''
-        self.name = name
-        if isinstance(trigger, Trigger):
-            self.trigger = trigger
-        else:
-            self.trigger = Trigger(trigger)
-        self._offset = -1
-        self.set_offset(offset)
-
-        # Condition tracking attributes for internal use
-        self._count_down = None
-        self.event = None
-
-    @property
-    def offset(self):
-        '''int: The number of Source items before (negative) or after
-        (positive) between the item that causes a trigger event and the
-        boundary.
-        '''
-        return self._offset
-
-    @offset.setter
-    def offset(offset):
-        '''Set the offset value converting the strings 'After' to  0, and
-        'Before' to -1.
-
-        Argument:
-            offset (int, str): An integer or one of ['After', 'Before'].
-        Raises:
-            ValueError if offset is not an integer or a string containing one
-                of ['After', 'Before']
-        '''
-        offset_value = 0
-        try:
-            offset_value = int(offset)
-        except ValueError as err:
-            if isinstance(offset, str):
-                if 'Before' in offset:
-                    offset_value = -1
-                elif 'After' in offset:
-                    offset_value = 0
-            else:
-                msg = ('Offset must be an integer or one of'
-                       '"Before" or "After";\t Got {repr(offset)}')
-                raise ValueError(msg) from err
-        self._offset = offset_value
-
-    def check(self, item: SourceItem, source: BufferedIterator, **context):
-        '''Check for a Break condition.
-
-        If an Active count down situation exists, continue the count down.
-        Otherwise, apply the trigger test.  If the Trigger signals a break,
-        set the appropriate line location for the break based on the offset
-        value.
-
-        Arguments:
-            item (SourceItem): The current Source item to apply a boundary
-                check to.
-            source (BufferedIterator): The primary source from which item is
-                obtained.  Access to this object is required for negative
-                offsets.
-            **context (Dict[str, Any], optional): Additional information to be
-                passed to the trigger object.
-        '''
-        logger.debug('in section_break.check')
-        # Check for a Break condition
-        if self._count_down is None:  # No Active Count Down
-            # apply the trigger test.
-            is_event = self.trigger.evaluate(item, **context)
-            self.event = self.trigger.event.test_value
-            if is_event:
-                event_name = self.trigger.event.test_name
-                logger.debug(f'Break triggered by {event_name}')
-                is_break = self.set_line_location(source)
-            else:
-                is_break = False
-        elif self._count_down == 0:  # End of Count Down Reached
-            logger.debug(f'Line count down in {self.name} completed.')
-            self._count_down = None  # Remove Active Count Down
-            is_break = True
-            source.step_back = 1  # Save current line for next section
-        elif self._count_down > 0:  #  Active Count Down Exists
-            logger.debug(f'Line count down in {self.name} Continuing;\t'
-                         f'Count down now at {self.count_down}')
-            self._count_down -= 1   #  Continue Count Down
-            is_break = False
-        return is_break
-
-    ####### Done To Here ################
-
-    def set_line_location(self, source: BufferedIterator):
-        '''Set the appropriate line location for a break based on the offset
-        value.
-        '''
-        if self.offset < 0: # Save current line for next section
-            logger.debug(f'Stepping back {-self.offset} lines')
-            source.step_back = -self.offset
-            is_break = True
-        else: # Use more lines before activating break
-            logger.debug(f'Using {self.offset} more lines.')
-            self._count_down = self.offset  # Begin Active Count Down
-            is_break = False
-        return is_break
 
 
 #%% Section Parser
@@ -1287,11 +1286,10 @@ class Section():  # pylint: disable=function-redefined
   '''
     # A SectionBreak that causes the section to start with the first item in
     # the source.
-    default_start = SectionBreak(Trigger(True), name='AlwaysBreak',
-                                 offset='Before')
+    default_start = SectionBreak(True, name='AlwaysBreak', break_offset='Before')
     # A SectionBreak that never triggers, causing the section to continue to
     # the end of the source.
-    default_end = SectionBreak(Trigger(False), name='NeverBreak')
+    default_end = SectionBreak(False, name='NeverBreak')
 
     def __init__(self,
                  section_name: str = 'Section',
@@ -1686,7 +1684,7 @@ class Section():  # pylint: disable=function-redefined
             if is_break:
                 logger.debug('Section Break Detected')
                 self.scan_status = 'Break Triggered'
-                self.context['Event'] = break_trigger.event
+                self.context['Event'] = break_trigger.event.test_value
                 self.context['Break'] = break_trigger.name
         return is_break
 
