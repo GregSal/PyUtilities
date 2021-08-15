@@ -23,27 +23,25 @@ logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
 
 #%% Line Parsing Functions
 # Date Rule
-def make_date_parse_rule() -> tp.ParsingRule:
+def make_date_parse_rule() -> tp.Rule:
     def date_parse(line: str, *args, **kwargs) -> tp.ParseResults:
         '''If Date,don't split beyond first :.'''
         parsed_line = line.split(':', maxsplit=1)
         return [parsed_line]
 
-    date_trigger = tp.Trigger('Date', location='START',
-                              name='Starts With Date')
-    date_rule = tp.ParsingRule(date_trigger, date_parse,
+    date_rule = tp.Rule('Date', location='START', pass_method=date_parse,
                         name='date_rule')
     return date_rule
 
 
 # Approved Status
-def make_approved_status_rule() -> tp.ParsingRule:
+def make_approved_status_rule() -> tp.Rule:
     '''If Treatment Approved, Split "Plan Status" into 3 lines:
         Plan Status
         Approved on
         Approved by
         '''
-    def approved_status_parse(line, event, *args, **kwargs) -> tp.ParseResults:
+    def approved_status_parse(line, event, **context) -> tp.ParseResults:
         '''If Treatment Approved, Split "Plan Status" into 3 lines:
 
         Return three rows for a line containing "Treatment Approved"
@@ -53,8 +51,8 @@ def make_approved_status_rule() -> tp.ParsingRule:
              ['Approved on', date],
              ['Approved by', person]
         '''
-        idx1 = line.find(event)
-        idx2 = idx1 + len(event)
+        idx1 = line.find(event.test_value)
+        idx2 = idx1 + len(event.test_value)
         idx3 = line.find(' by')
         idx4 = idx3 + 4
         parsed_lines = [
@@ -64,19 +62,15 @@ def make_approved_status_rule() -> tp.ParsingRule:
             ]
         return parsed_lines
 
-    approved_status_trigger = tp.Trigger('Treatment Approved',
-                                         location='IN',
-                                         name='Treatment Approved')
-    approved_status_rule = tp.ParsingRule(approved_status_trigger,
-                                   approved_status_parse,
+    approved_status_rule = tp.Rule('Treatment Approved', location='IN',
+                                   pass_method=approved_status_parse,
                                    name='approved_status_rule')
     return approved_status_rule
 
 
 # Prescribed Dose Rule
-def make_prescribed_dose_rule() -> tp.ParsingRule:
-    def parse_prescribed_dose(line, event,
-                              *args, **kwargs) -> tp.ParseResults:
+def make_prescribed_dose_rule() -> tp.Rule:
+    def parse_prescribed_dose(line, event, **context) -> tp.ParseResults:
         '''Split "Prescribed dose [cGy]" into 2 lines.
 
         Return two rows for a line containing:
@@ -90,7 +84,7 @@ def make_prescribed_dose_rule() -> tp.ParsingRule:
             [['Prescribed dose', '5000.0'],
              ['Prescribed dose unit', 'cGy']]
         '''
-        match_results = event.groupdict()
+        match_results = event.test_value.groupdict()
         if match_results['dose'] == 'not defined':
             match_results['dose'] = ''
             match_results['unit'] = ''
@@ -102,7 +96,7 @@ def make_prescribed_dose_rule() -> tp.ParsingRule:
         return parsed_lines
 
 
-    def make_prescribed_dose_trigger()->tp.Trigger:
+    def make_prescribed_dose_re()->tp.Trigger:
         '''Create a trigger that checks for Prescribed Dose Line.
 
         Use regular expression to match:
@@ -124,12 +118,11 @@ def make_prescribed_dose_rule() -> tp.ParsingRule:
             r'$'                    # end of string
             )
         re_pattern = re.compile(prescribed_dose_pattern)
-        dose_trigger = tp.Trigger(re_pattern, name='Prescribed Dose')
-        return dose_trigger
+        return re_pattern
 
-    dose_rule = tp.ParsingRule(make_prescribed_dose_trigger(),
-                     parse_prescribed_dose,
-                     name='prescribed_dose_rule')
+    dose_rule = tp.Rule(sentinel=make_prescribed_dose_re(),
+                        pass_method= parse_prescribed_dose,
+                        name='prescribed_dose_rule')
     return dose_rule
 
 

@@ -38,6 +38,24 @@ logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
 
 
 #%% Type Definitions
+# These type definitions will be redefined as class types.  They are defined
+# here to simplify Type annotations.
+Section = TypeVar('Section')  # pylint: disable=function-redefined
+SectionBreak = TypeVar('SectionBreak')  # pylint: disable=function-redefined
+SectionProcessor = TypeVar('SectionProcessor')  # pylint: disable=function-redefined
+SectionProcessor = TypeVar('SectionProcessor')  # pylint: disable=function-redefined
+TriggerEvent = TypeVar('TriggerEvent')  # pylint: disable=function-redefined
+
+# NonStringSource represents the non-string type iterables used as a source
+NonStringSource = TypeVar('NonStringSource')
+ProcessedItem = TypeVar('ProcessedItem')
+ParsedString = List[str]
+SourceItem = Union[str, ParsedString, NonStringSource]
+Source = Iterable[SourceItem]
+
+ContextType = Union[Dict[str, Any], None]
+
+# Relevant Type definitions for Trigger Class
 TriggerSingleTypes = Union[None, bool, int]
 TriggerListOptions = Union[str, re.Pattern, Callable]
 TriggerTypes = Union[TriggerSingleTypes, TriggerListOptions]
@@ -46,13 +64,15 @@ CallableResult = TypeVar('CallableResult')  # Represents the return from a Trigg
 EventType = Union[bool, int, str, re.match, CallableResult, None]
 TestResult = Union[bool, re.match, CallableResult]
 
-# NonStringSource represents the non-string type iterables used as a source
-NonStringSource = TypeVar('NonStringSource')
-ParsedString = List[str]
-SourceItem = Union[str, ParsedString, NonStringSource]
-Source = Iterable[SourceItem]
+# Relevant Type definitions for SectionBreak Class
+OffsetTypes = Union[int, str]
 
-ContextType = Union[Dict[str, Any], None]
+# Relevant Type definitions for Rule Class
+RuleResult = TypeVar('RuleResult')  # Represents the return from a Rule Method
+SingleItemFunc = Callable[[SourceItem], RuleResult]
+ItemEventFunc = Callable[[SourceItem, TriggerEvent], RuleResult]
+RuleFunc = Callable[[SourceItem, TriggerEvent, ContextType], RuleResult]
+RuleMethodOptions = Union[str, SingleItemFunc, ItemEventFunc, RuleFunc, None]
 
 TestType = Callable[[TriggerTypes, SourceItem, ContextType], TestResult]
 Strings = Union[str, ParsedString]
@@ -65,16 +85,6 @@ ParseResults = Union[List[ParsedString], None]
 
 StringSource = Iterable[str]
 ParsedStringSource = Union[Iterator[ParsedString], Sequence[ParsedString]]
-
-
-
-
-# These type definitions will be redefined as class types.  They are defined
-# here to simplify Type annotations.
-Section = TypeVar('Section')  # pylint: disable=function-redefined
-SectionBreak = TypeVar('SectionBreak')  # pylint: disable=function-redefined
-SectionProcessor = TypeVar('SectionProcessor')  # pylint: disable=function-redefined
-SectionProcessor = TypeVar('SectionProcessor')  # pylint: disable=function-redefined
 
 # Relevant Type definitions for Section Classes
 BreakOptions = Union[SectionBreak, List[SectionBreak], str, None]
@@ -171,8 +181,7 @@ def drop_units(text: str) -> float:
 
 #%% String Parsers
 # CSV parser
-def csv_parser(line: str, *args, dialect_name='excel',    # pylint: disable=unused-argument
-               **kwargs) -> ParseResults:                 # pylint: disable=unused-argument
+def csv_parser(line: str, dialect_name='excel') -> ParseResults:
     '''Convert a single text line into one or more rows of parsed text.
 
     Uses the pre-defined csv Dialect for the line parsing rules.
@@ -541,11 +550,11 @@ def cascading_iterators(source: Iterator, func_list: List[Callable])->Iterator:
     return iter(next_source)
 
 
-class TriggerEvent():
+class TriggerEvent(): # pylint: disable=function-redefined
     '''Trigger test result information.
 
     Attributes:
-        trigger_name (bool): The name of the trigger the test is associated
+        trigger_name (str): The name of the trigger the test is associated
             with.
         test_result (bool): True if one of the applied tests passed; otherwise
             False.
@@ -575,7 +584,7 @@ class TriggerEvent():
                   List[Callable]      CallableResult
     '''
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self):
         '''Initialize a TriggerEvent with default values.
         '''
         self.trigger_name: str = ''
@@ -889,10 +898,8 @@ class Trigger():
         passed the test is used to update event and event_name.
 
         Args:
-            item (SourceItem): The value to be tested.
-            **context (Dict[str, Any], Optional): Any additional information to
-                be passed as keyword arguments to a sentinel function.  Ignored
-                for other sentinel types.
+
+
         Returns:
             (bool): True if the supplied item passed a test, False otherwise.
         '''
@@ -944,8 +951,8 @@ class SectionBreak(Trigger):  # pylint: disable=function-redefined
         offset (int): Specifies the distance (in number of Source items)
             between the location identified by trigger and the boundary.
     '''
-    def __init__(self, sentinel: TriggerOptions, location=None,
-                 name='SectionBreak', break_offset='Before'):
+    def __init__(self, sentinel: TriggerOptions, location: str = None,
+                 break_offset: OffsetTypes = 'Before', name='SectionBreak'):
         '''Defines trigger and offset for a Boundary point.
 
         Arguments:
@@ -969,6 +976,7 @@ class SectionBreak(Trigger):  # pylint: disable=function-redefined
             name (str, optional): A reference label for the Boundary.
         '''
         super().__init__(sentinel, location, name)
+        self._offset = -1  # Equivalent to 'Before'
         self.offset = break_offset
         # Condition tracking attribute for internal use
         self._count_down = None
@@ -982,7 +990,7 @@ class SectionBreak(Trigger):  # pylint: disable=function-redefined
         return self._offset
 
     @offset.setter
-    def offset(self, break_offset):
+    def offset(self, break_offset: OffsetTypes):
         '''Set the offset value converting the strings 'After' to  0, and
         'Before' to -1.
 
@@ -992,7 +1000,7 @@ class SectionBreak(Trigger):  # pylint: disable=function-redefined
             ValueError if offset is not an integer or a string containing one
                 of ['After', 'Before']
         '''
-        offset_value = 0
+        offset_value = self._offset # If new value fails keep original.
         try:
             offset_value = int(break_offset)
         except ValueError as err:
@@ -1005,7 +1013,7 @@ class SectionBreak(Trigger):  # pylint: disable=function-redefined
                 msg = ('Offset must be an integer or one of'
                        '"Before" or "After";\t Got {repr(offset)}')
                 raise ValueError(msg) from err
-        self._offset = int(offset_value)
+        self._offset = offset_value
 
 
     def check(self, item: SourceItem, source: BufferedIterator, **context):
@@ -1059,8 +1067,8 @@ class SectionBreak(Trigger):  # pylint: disable=function-redefined
             at a break point.  False otherwise
         '''
         if self.offset < 0: # Save current line for next section
-            logger.debug(f'Stepping back {-self.offset} lines')
-            source.step_back = -self.offset
+            logger.debug(f'Stepping back {-self.offset:d} lines')  # pylint: disable=invalid-unary-operand-type
+            source.step_back = -self.offset  # pylint: disable=invalid-unary-operand-type
             is_break = True
         else: # Use more lines before activating break
             logger.debug(f'Using {self.offset} more lines.')
@@ -1068,80 +1076,278 @@ class SectionBreak(Trigger):  # pylint: disable=function-redefined
             is_break = False
         return is_break
 
+#%% Rule Class
+class Rule(Trigger):
+    '''Defines action to take on an item depending on the result of a test.
 
-    ####### Done To Here ################
+    A Rule is a subclass of Trigger, with two additional attributes and
+    related methods:
+        pass_method RuleMethod: The method to apply if the test passes.
+        fail_method RuleMethod: The method to apply if the test fails.
 
-class ParsingRule():  # Rename ParsingRule as Rule
-    @staticmethod
-    def default_template(test_object, event, *args,    # pylint: disable=unused-argument
-                         default_return=None, **kwargs):  # pylint: disable=unused-argument
-        '''default_method to be set using partial.
-        '''
-        if 'Original' in default_return:
-            return [test_object]
-        if 'Event' in default_return:
-            return event  # TODO The format for event should depend on its type
-        if 'None' in default_return:
-            return None
-        # TODO Add option for Rule default method to be a blank line
-        return None
+    An additional default_method class attribute defines the action to assign
+    for undefined pass or fail methods.
 
-    # TODO Allow for Tuple of (sentinel, [location]) to be used to define a trigger
-    def __init__(self, trigger: Trigger = None,
-                 pass_method: Callable = None,
-                 fail_method: Callable = None,
-                 default='None',
+    All three methods (pass, fail, default) should have the following signature:
+        rule_method(test_object: SourceItem, event: TriggerEvent, **context)
+                Name              Kind                       Type
+             test_object       Positional or Keyword      SourceItem
+             event             Positional or Keyword      TriggerEvent
+             context           Var Keyword                Any
+
+    All three methods (pass, fail, default) should return the same data type.
+        No checking is done to validate this.
+
+    In addition to a callable, the pass, fail and default attributes can be
+    the names of standard actions:
+        'Original': return the item being.
+        'Event': return the self.event object.
+        'None': return None
+        'Blank': return ''  (an empty string)
+
+    Attributes:
+        sentinel (None, bool, int,
+                    str or List[str],
+                    re.Pattern or List[re.Pattern],
+                    Callable or List[Callable]):
+            the object(s) used to generate the conditional definition.
+        event (TriggerEvent): Information resulting from applying the test.
+        See Trigger class for more information on the sentinel and event
+        attributes.
+
+        name (str): A text label for the rule.
+        pass_method (Callable, str, optional): The method to apply if the test
+            passes.
+        fail_method (Callable, str, optional): The method to apply if the test
+            fails.
+    ClassLevelAttribute:
+        default_method (Callable, str, optional): The method to use as the
+            pass or fail method if not specified defaults to 'Original'.
+    '''
+
+    #The default method below returns the supplied item.
+    _default_method = None
+
+    def __init__(self, sentinel: TriggerOptions, location=None,
+                 pass_method: RuleMethodOptions = None,
+                 fail_method: RuleMethodOptions = None,
                  name='Rule'):
-        '''Apply method based on trigger result.
-        pass_method, fail_method: Callable, takes 3 arguments:
-            test_object
-            event
-            context
-        default_method: str, one of:
-            'None'  -> returns None
-            'Original' -> returns test_object
-            'Event' -> returns Trigger event object
+        '''Apply a method based on trigger test result.
+
+        Arguments:
+            sentinel (TriggerOptions): Object(s) used to generate the
+                conditional definition.
+            location (str, optional):  A sentinel modifier that applies to str
+                or re.Pattern types of sentinels. For other sentinel types it
+                is ignored. One of  ['IN', 'START', 'END', 'FULL', None].
+                Default is None, which is treated as 'IN'
+
+            See Trigger class for more information on the sentinel and event
+            arguments.
+
+            name (str, optional): A reference label for the Rule.
+
+            pass_method (RuleMethodOptions): A function, or the name of a
+                standard action to be implemented if the test passes on the
+                supplied item.
+            fail_method (RuleMethodOptions): A function, or the name of a
+                standard action to be implemented if the test fails on the
+                supplied item.
+
+        Both pass_method and fail_method should have one of the following
+        argument signatures:
+            rule_method(item: SourceItem)
+            rule_method(item: SourceItem, event: TriggerEvent)
+            rule_method(item: SourceItem, event: TriggerEvent, **context)
+        Instead of a callable, pass_method and fail_method can be the name of a
+        standard actions:
+                'Original': return the item being.
+                'Event': return the self.event object.
+                'None': return None
+                'Blank': return ''  (an empty string)
+        Both pass_method and fail_method should return the same data type. No
+        checking is done to validate this.
         '''
-        self.name = name
-        self.trigger = trigger
-        # TODO in Rule __init__ get rid of default and have pass & fail methods check for string.
-        default_method = partial(self.default_template,
-                                 default_return=default)
-        if pass_method:
-            self.pass_method = pass_method
+        super().__init__(sentinel, location, name)
+        self.default_method = lambda test_object, event, **context: test_object
+        self.pass_method = self.set_method(pass_method)
+        self.fail_method = self.set_method(fail_method)
+
+    @staticmethod
+    def drop_context(rule_method: ItemEventFunc, test_object: SourceItem,   # pylint: disable=unused-argument
+                     event: TriggerEvent,
+                     **context)->RuleResult: # pylint: disable=unused-argument
+        '''wrapper that removes context.
+
+        This wrapper is provided to easily use functions that don't include
+        the context Var Keyword.
+
+        Args:
+            rule_method (ItemEventFunc): A function with the signature:
+                rule_method(test_object: SourceItem, event: TriggerEvent)
+            test_object (SourceItem): The value to be tested.
+                        item (SourceItem): The value to be tested.
+            event (TriggerEvent): Trigger test result information.  See the
+                TriggerEvent class for more information.
+            **context (Dict[str, Any], Optional): Any additional information to
+                be passed as keyword arguments to a sentinel function.  Ignored
+                for other sentinel types.
+        Returns:
+            RuleResult: The result of the supplied rule_method when called with
+            test_object, event.
+         '''
+        return rule_method(test_object, event)
+
+    @staticmethod
+    def single_argument(rule_method: SingleItemFunc, test_object: SourceItem,   # pylint: disable=unused-argument
+                        event: TriggerEvent,   # pylint: disable=unused-argument
+                        **context)->RuleFunc:  # pylint: disable=unused-argument
+        '''Wrapper that removes event & context parameters.
+
+        This wrapper is provided to allow for use of single argument functions
+        as Rule methods by using the signature expected for a Rule method, but
+        calling the wrapped function with only the test_item argument.
+
+        Args:
+            rule_method (ItemEventFunc): A function with the signature:
+                rule_method(test_object: SourceItem)
+            test_object (SourceItem): The value to be tested.
+                        item (SourceItem): The value to be tested.
+            event (TriggerEvent): Trigger test result information.  See the
+                TriggerEvent class for more information.
+            **context (Dict[str, Any], Optional): Any additional information to
+                be passed as keyword arguments to a sentinel function.  Ignored
+                for other sentinel types.
+        Returns:
+            RuleResult: The result of applying rule_method to the supplied
+                test_object.
+        '''
+        return rule_method(test_object)
+
+    @staticmethod
+    def standard_action(action_name: str)->RuleFunc:
+        '''Convert a Method name to a Standard Function.
+
+        Take the name of a standard actions and return the matching function.
+
+        Argument:
+            action_name (str): The name of the standard action.
+                Valid Action names are:
+                    'Original': return the item being.
+                    'Event': return the self.event object.
+                    'None': return None
+                    'Blank': return ''  (an empty string)
+        Raises: ValueError If the string supplied is not one of the valid
+            action names.
+        Returns:
+            RuleFunc: One of the standard action functions.
+        '''
+        action_dict = {
+            'Original': lambda test_object, event, **context: test_object,
+            'Event':  lambda test_object, event, **context: event,
+            'Blank':  lambda test_object, event, **context: '',
+            'None':  lambda test_object, event, **context: None
+            }
+        use_function = action_dict.get(action_name)
+        if not use_function:
+            raise ValueError('Standard Action names are: '
+                             '["Original", "Event", "None", "Blank"]'
+                             f'Got {action_name}')
+        return use_function
+
+    def set_method(self, rule_method: RuleMethodOptions)->RuleFunc:
+        '''Convert the supplied function or action name to a Function with
+        the standard signature.
+
+        Argument:
+            rule_method (RuleMethodOptions): A function, or the name of a
+                standard action.
+        Raises: ValueError If rule_method is a string and is not one of the
+            valid action names, or if rule_method is a function and does not
+            have length 1, 2, or 3  argument signature.
+        Returns:
+            RuleFunc: A function with the standard Rule Method argument
+            signature:
+         rule_method(test_object: SourceItem, event: TriggerEvent, **context)
+        '''
+        # FIXME use inspect.getfullargspec
+        #FullArgSpec(args=['line', 'event'], varargs=None, varkw='context',
+        #defaults=('', None), kwonlyargs=[], kwonlydefaults=None, annotations={})
+        # Count args, check for varkw=None
+        if not rule_method:
+            use_function = self.default_method
+        elif isinstance(rule_method, str):
+            use_function = self.standard_action(rule_method)
         else:
-            self.pass_method = default_method
+            arg_spec = inspect.getfullargspec(rule_method)
+            if len(arg_spec.args) == 1:
+                use_function = partial(self.single_argument, rule_method)
+            elif ((len(arg_spec.args) == 2) & (arg_spec.varkw is None)):
+                use_function = partial(self.drop_context, rule_method)
+            elif ((len(arg_spec.args) == 2) & (arg_spec.varkw is not None)):
+                use_function = rule_method
+            else:
+                raise ValueError('Invalid function type.')
+        return use_function
 
-        if fail_method:
-            self.fail_method = fail_method
-        else:
-            self.fail_method = default_method
+    @property
+    def default_method(self)->RuleFunc:
+        '''The Rule method to be used whenever the instance pass_method
+        or fail_method is not supplied.
 
+        Returns:
+            RuleFunc: A function with the standard Rule Method argument
+                signature:
+        '''
+        return self._default_method
 
-    def apply(self, test_object, *args, **kwargs):
-        is_match = self.trigger.evaluate(test_object, **kwargs)
-        event = self.trigger.event.test_value
+    @default_method.setter
+    def default_method(self, rule_method: RuleMethodOptions):
+        '''Convert the supplied function or action name to a Function with
+        the standard signature and set it as the class default method.
+
+        Argument:
+            rule_method (RuleMethodOptions): A function, or the name of a
+                standard action.
+        '''
+        self._default_method = self.set_method(rule_method)
+
+    def apply(self, test_object, **context)->RuleResult:
+        '''Apply the Rule to the supplied test item and return the output of
+        the relevant method based on the test result.
+
+        Argument:
+            test_object (SourceItem): The object to be tested.
+
+        Returns:
+            RuleResult: The result of applying the relevant rule_method to the
+                supplied test_object.
+        '''
+        is_match = self.evaluate(test_object, **context)
         if is_match:
-            result = self.pass_method(test_object, event, *args, **kwargs)
+            result = self.pass_method(test_object, self.event, **context)
         else:
-            result = self.fail_method(test_object, event, *args, **kwargs)
+            result = self.fail_method(test_object, self.event, **context)
         return result
 
 
+    ############# Done To Here  ##################
+
+
 class LineParser():  # TODO Convert this into RuleSet
-    def __init__(self, parsing_rules: List[ParsingRule],
+    def __init__(self, parsing_rules: List[Rule],
                  default_parser: Callable = None):
         self.parsing_rules = parsing_rules
-        default_rule = ParsingRule(Trigger(True), default_parser, name='Default')
+        default_rule = Rule(True, pass_method=default_parser, name='Default')
         self.parsing_rules.append(default_rule)
 
-    def parse(self, source, *args, **kwargs):
+    def parse(self, source, **context):
         logger.debug('In line_parser')
         for line in source:
             logger.debug(f'In line_parser, received line: {line}')
 
             for rule in self.parsing_rules:
-                parsed_lines = rule.apply(line, *args, **kwargs)
+                parsed_lines = rule.apply(line, **context)
                 if parsed_lines is not None:
                     break
 

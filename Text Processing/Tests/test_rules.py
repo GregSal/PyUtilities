@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from typing import List
 import re
-from Text_Processing import ParsingRule, Trigger
+from Text_Processing import Rule, Trigger
 import Text_Processing as tp
 
 #%% Test Text
@@ -27,7 +27,7 @@ def parse_prescribed_dose(line, event, **context)->List[List[str]]:# pylint: dis
         ['Prescribed dose', '{dose}'],
         ['Prescribed dose Unit', '{unit}']
         ]
-    match_results = event.groupdict()
+    match_results = event.test_value.groupdict()
     if match_results['dose'] == 'not defined':
         parsed_lines = [
             ['Prescribed dose', ''],
@@ -63,8 +63,7 @@ class TestPrescribedDoseParse(unittest.TestCase):
             r'$'                              # end of string
             )
         re_pattern = re.compile(prescribed_dose_pattern)
-        dose_trigger = Trigger(re_pattern, name='Prescribed Dose')
-        self.rule = ParsingRule(dose_trigger, pass_method=parse_prescribed_dose,
+        self.rule = Rule(re_pattern, pass_method=parse_prescribed_dose,
                          name = 'prescribed_dose_rule')
 
     def test_prescribed_dose_parse(self):
@@ -90,7 +89,7 @@ class TestPrescribedDoseParse(unittest.TestCase):
 def date_parse(line, event, **context)->List[List[str]]:  # pylint: disable=unused-argument
     '''If Date,don't split beyond first :'''
     parsed_lines = [
-        [event, line.split(':',maxsplit=1)[1]]
+        [event.test_value, line.split(':',maxsplit=1)[1]]
         ]
     return parsed_lines
 
@@ -105,10 +104,8 @@ class TestDateParse(unittest.TestCase):
             'File Path': test_file.parent,
             'Line Count': 0
             }
-
-        date_trigger = Trigger('Date', name='Starts With Date', location='START')
-        self.rule = ParsingRule(date_trigger, pass_method=date_parse,
-                         name = 'date_rule')
+        self.rule = Rule(sentinel='Date', location='START',
+                         pass_method=date_parse, name = 'date_rule')
 
     def test_date_parse(self):
         line = 'Date                 : Thursday, August 13, 2020 15:21:06'
@@ -124,8 +121,8 @@ def approved_status_parse(line, event, **context)->List[List[str]]:  # pylint: d
         Approved on
         Approved by
         '''
-    idx1 = line.find(event)
-    idx2 = idx1 + len(event)
+    idx1 = line.find(event.test_value)
+    idx2 = idx1 + len(event.test_value)
     idx3 = line.find('by')
     idx4 = idx3 + 3
     parsed_lines = [
@@ -147,11 +144,8 @@ class TestApprovalParse(unittest.TestCase):
             'File Path': test_file.parent,
             'Line Count': 0
             }
-
-        status_trigger = Trigger('Treatment Approved', location='IN',
-                                 name='Treatment Approved')
-        self.rule = ParsingRule(status_trigger, pass_method=approved_status_parse,
-                         name = 'date_rule')
+        self.rule = Rule(sentinel='Treatment Approved', location='IN',
+                         pass_method=approved_status_parse, name = 'date_rule')
 
     def test_approval_parse(self):
         line = ('Plan Status: Treatment Approved Thursday, January 02, 2020 '
@@ -166,7 +160,7 @@ class TestApprovalParse(unittest.TestCase):
 
 
 #%%  Parse with single line
-def parse_use(line, *args, **kwargs):# pylint: disable=unused-argument
+def parse_use(line):# pylint: disable=unused-argument
     line_break = line.split('-')
     clean_line = [part.strip() for part in line_break]
     return [[clean_line]]
@@ -183,8 +177,8 @@ class TestSingleLineParse(unittest.TestCase):
         self.test_result = ['Text Processing','Use']
 
         self.default_parser = tp.define_csv_parser('comma')
-        #use_trigger = Trigger('Use', location='IN', name='Use')
-        self.rule = ParsingRule(Trigger('Use'), pass_method=parse_use)
+        #use_trigger = Trigger('Use', name='Use')
+        self.rule = Rule('Use', location='IN', pass_method=parse_use)
 
 
 if __name__ == '__main__':

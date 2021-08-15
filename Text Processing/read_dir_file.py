@@ -90,9 +90,9 @@ def extract_directory(line: str, event, *args,
     return [[full_dir]]
 
 
-dir_header_rule = tp.ParsingRule(
+dir_header_rule = tp.Rule(
     name='Dir Header Rule',
-    trigger=tp.Trigger('Directory of ', name='Directory Header'),
+    sentinel='Directory of ',
     pass_method=extract_directory
     )
 
@@ -102,14 +102,14 @@ def blank_line(*args, **kwargs) -> tp.ParseResults:
     return [['']]
 
 
-skip_dir_rule = tp.ParsingRule(
+skip_dir_rule = tp.Rule(
     name='Skip <DIR> Rule',
-    trigger=tp.Trigger(' <DIR> ', name='Is Directory'),
+    sentinel=' <DIR> ',
     pass_method=blank_line
     )
-skip_totals_rule = tp.ParsingRule(
+skip_totals_rule = tp.Rule(
     name='Skip Total Files Header Rule',
-    trigger=tp.Trigger('Total Files Listed:', name='Total Files Header'),
+    sentinel='Total Files Listed:',
     pass_method=blank_line
     )
 
@@ -145,8 +145,8 @@ def file_parse(line: str, event, *args, **kwargs) -> tp.ParseResults:
 
 
 # Regular File Parsing Rule
-file_info_trigger = tp.Trigger(file_listing_pt, name='Files')
-file_listing_rule = tp.ParsingRule(file_info_trigger, file_parse, name='Files_rule')
+file_listing_rule = tp.Rule(file_listing_pt, pass_method=file_parse,
+                            name='Files_rule')
 
 
 # File Count Parsing Rule
@@ -190,20 +190,19 @@ def file_count_parse(line: str, event, *args, **kwargs) -> tp.ParseResults:
     parsed_line = [new_line.split(',')
                    for new_line in parsed_line_str.splitlines()]
     return parsed_line
-file_count_trigger = tp.Trigger(folder_summary_pt, name='Files')
-file_count_rule = tp.ParsingRule(file_count_trigger, file_count_parse,
+file_count_rule = tp.Rule(folder_summary_pt, pass_method=file_count_parse,
                           name='Files_rule')
 
 
-skip_file_count_rule = tp.ParsingRule(
+skip_file_count_rule = tp.Rule(
     name='Skip File(s) Rule',
-    trigger=file_count_trigger,
+    sentinel=folder_summary_pt,
     pass_method=blank_line
     )
 
 
 # Files / DIRs Parse
-def make_files_rule() -> tp.ParsingRule:
+def make_files_rule() -> tp.Rule:
     '''If  File(s) or  Dir(s) extract # files & size
         '''
     def files_total_parse(line, event, *args, **kwargs) -> tp.ParseResults:
@@ -230,7 +229,7 @@ def make_files_rule() -> tp.ParsingRule:
             information as a 3-item tuple:
                 [(Type: str (File or Dir), Count: int, Size: int)].
         '''
-        files_dict = event.groupdict(default='')
+        files_dict = event.test_value.groupdict(default='')
         parsed_line = tuple([
             files_dict["type"],
             files_dict["files"],
@@ -238,9 +237,9 @@ def make_files_rule() -> tp.ParsingRule:
             ])
         return [parsed_line]
 
-    files_total_trigger = tp.Trigger(folder_summary_pt, name='Files')
-    files_total_rule = tp.ParsingRule(files_total_trigger, files_total_parse,
-                         name='Files_Total_rule')
+    files_total_rule = tp.Rule(folder_summary_pt,
+                               pass_method=files_total_parse,
+                               name='Files_Total_rule')
     return files_total_rule
 
 
