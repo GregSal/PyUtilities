@@ -24,13 +24,13 @@ logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
 #%% Line Parsing Functions
 # Date Rule
 def make_date_parse_rule() -> tp.Rule:
-    def date_parse(line: str, *args, **kwargs) -> tp.ParseResults:
+    def date_parse(line: str) -> tp.ParseResults:
         '''If Date,don't split beyond first :.'''
         parsed_line = line.split(':', maxsplit=1)
         return [parsed_line]
 
-    date_rule = tp.Rule('Date', location='START', pass_method=date_parse,
-                        name='date_rule')
+    date_rule = tp.Rule('Date', location='START', name='date_rule',
+                        pass_method=date_parse, fail_method='None')
     return date_rule
 
 
@@ -41,7 +41,7 @@ def make_approved_status_rule() -> tp.Rule:
         Approved on
         Approved by
         '''
-    def approved_status_parse(line, event, **context) -> tp.ParseResults:
+    def approved_status_parse(line, event) -> tp.ParseResults:
         '''If Treatment Approved, Split "Plan Status" into 3 lines:
 
         Return three rows for a line containing "Treatment Approved"
@@ -64,13 +64,14 @@ def make_approved_status_rule() -> tp.Rule:
 
     approved_status_rule = tp.Rule('Treatment Approved', location='IN',
                                    pass_method=approved_status_parse,
+                                   fail_method='None',
                                    name='approved_status_rule')
     return approved_status_rule
 
 
 # Prescribed Dose Rule
 def make_prescribed_dose_rule() -> tp.Rule:
-    def parse_prescribed_dose(line, event, **context) -> tp.ParseResults:
+    def parse_prescribed_dose(line, event) -> tp.ParseResults:
         '''Split "Prescribed dose [cGy]" into 2 lines.
 
         Return two rows for a line containing:
@@ -95,34 +96,20 @@ def make_prescribed_dose_rule() -> tp.Rule:
             ]
         return parsed_lines
 
-
-    def make_prescribed_dose_re()->tp.Trigger:
-        '''Create a trigger that checks for Prescribed Dose Line.
-
-        Use regular expression to match:
-            Prescribed dose [(unit)]: (dose)
-
-        Returns:
-            dose_trigger: A trigger that uses a regular expression to check for
-            a Prescribed Dose Line.
-        '''
-        prescribed_dose_pattern = (
-            r'^Prescribed dose\s*'  # Begins with Prescribed dose
-            r'\['                   # Unit start delimiter
-            r'(?P<unit>[A-Za-z]+)'  # unit group: text surrounded by []
-            r'\]'                   # Unit end delimiter
-            r'\s*:\s*'              # Dose delimiter with possible whitespace
-            r'(?P<dose>[0-9.]+'     # dose group Number
-            r'|not defined)'        #"not defined" alternative
-            r'[\s\r\n]*'            # drop trailing whitespace
-            r'$'                    # end of string
-            )
-        re_pattern = re.compile(prescribed_dose_pattern)
-        return re_pattern
-
-    dose_rule = tp.Rule(sentinel=make_prescribed_dose_re(),
-                        pass_method= parse_prescribed_dose,
-                        name='prescribed_dose_rule')
+    prescribed_dose_pattern = (
+        r'^Prescribed dose\s*'  # Begins with Prescribed dose
+        r'\['                   # Unit start delimiter
+        r'(?P<unit>[A-Za-z]+)'  # unit group: text surrounded by []
+        r'\]'                   # Unit end delimiter
+        r'\s*:\s*'              # Dose delimiter with possible whitespace
+        r'(?P<dose>[0-9.]+'     # dose group Number
+        r'|not defined)'        #"not defined" alternative
+        r'[\s\r\n]*'            # drop trailing whitespace
+        r'$'                    # end of string
+        )
+    re_pattern = re.compile(prescribed_dose_pattern)
+    dose_rule = tp.Rule(sentinel=re_pattern, name='prescribed_dose_rule',
+                        pass_method= parse_prescribed_dose, fail_method='None')
     return dose_rule
 
 

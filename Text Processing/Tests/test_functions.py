@@ -85,11 +85,9 @@ class TestParsers(unittest.TestCase):
             ['Prescribed dose [cGy]', 'not defined'],
             ['% for dose (%)', 'not defined'],
             ]
-        stl = ''
-        ctx = {}
         test_parser = tp.define_csv_parser('dvh_info', delimiter=':',
                                            skipinitialspace=True)
-        test_iter = (test_parser(line, stl, ctx) for line in test_text)
+        test_iter = (test_parser(line) for line in test_text)
         test_output = [row for row in chain.from_iterable(test_iter)]
         self.assertListEqual(test_output, expected_output)
 

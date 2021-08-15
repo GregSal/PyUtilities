@@ -206,7 +206,7 @@ def csv_parser(line: str, dialect_name='excel') -> ParseResults:
     return parsed_lines
 
 
-def define_csv_parser(name='csv', **dialect_parameters) -> Callable:
+def define_csv_parser(name='csv', **parameters) -> Callable[[str,],List[str]]:
     '''Create a function that applies the defined csv parsing rules.
 
     Create a unique csv parsing Dialect referred to by name. Use the partial
@@ -215,7 +215,7 @@ def define_csv_parser(name='csv', **dialect_parameters) -> Callable:
 
     Args:
         name: Optional, The name for the new Dialect. Default is 'csv'.
-        **dialect_parameters: Any valid csv reader parameter.
+        **parameters: Any valid csv reader parameter.
             default values are:
                 delimiter=',',
                 doublequote=True,
@@ -234,7 +234,7 @@ def define_csv_parser(name='csv', **dialect_parameters) -> Callable:
             default_parser('Part 1,"Part 2a, Part 2b"') ->
                 [['Part 1', 'Part 2a, Part 2b']]
     '''
-    parameters = dict(
+    default_parameters = dict(
         delimiter=',',
         doublequote=True,
         quoting=csv.QUOTE_MINIMAL,
@@ -244,8 +244,8 @@ def define_csv_parser(name='csv', **dialect_parameters) -> Callable:
         skipinitialspace=False,
         strict=False
         )
-    parameters.update(dialect_parameters)
-    csv.register_dialect(name, **parameters)
+    default_parameters.update(parameters)
+    csv.register_dialect(name, **default_parameters)
     parse_csv = partial(csv_parser, dialect_name=name)
     return parse_csv
 
@@ -1348,7 +1348,7 @@ class LineParser():  # TODO Convert this into RuleSet
 
             for rule in self.parsing_rules:
                 parsed_lines = rule.apply(line, **context)
-                if parsed_lines is not None:
+                if rule.event.test_result:
                     break
 
             if parsed_lines is not None:
