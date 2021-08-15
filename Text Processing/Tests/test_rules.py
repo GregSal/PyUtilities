@@ -160,11 +160,66 @@ class TestApprovalParse(unittest.TestCase):
 
 
 #%%  Parse with single line
-def parse_use(line):# pylint: disable=unused-argument
-    line_break = line.split('-')
-    clean_line = [part.strip() for part in line_break]
-    return [[clean_line]]
 
+# Test data
+class TestRuleExceptions(unittest.TestCase):
+
+    @unittest.skip('Currently rule_method(item, **context) is allowed')
+    def test_no_event_arg(self):
+        test_func = lambda item, **context: str(item) + repr(context)
+        with self.assertRaises(ValueError):
+            invalid_rule = tp.Rule('T', pass_method=test_func)
+
+    def test_no_arg(self):
+        def test_func():
+            return "T"
+        with self.assertRaises(ValueError):
+            invalid_rule = tp.Rule('T', pass_method=test_func)
+
+    def test_many_arg(self):
+        test_func = lambda item1, item2, event, **context: 'a'
+        with self.assertRaises(ValueError):
+            invalid_rule = tp.Rule('T', pass_method=test_func)
+
+    def test_bad_action(self):
+        with self.assertRaises(ValueError):
+            invalid_rule = tp.Rule('T', pass_method='Not an Action')
+
+class TestRuleActions(unittest.TestCase):
+    def test_original_action(self):
+        test_text = 'Test Text'
+        test_rule = tp.Rule('Text', pass_method='Original')
+        result = test_rule.apply(test_text)
+        self.assertEquals(result, test_text)
+
+    def test_event_action(self):
+        test_text = 'Test Text'
+        sentinel = 'Text'
+        test_rule = tp.Rule(sentinel, pass_method='Event')
+        result = test_rule.apply(test_text)
+        self.assertEquals(result.test_value, sentinel)
+
+    def test_none_action(self):
+        test_text = 'Test Text'
+        test_rule = tp.Rule('Text', pass_method='None')
+        result = test_rule.apply(test_text)
+        self.assertIsNone(result)
+
+    def test_blank_action(self):
+        test_text = 'Test Text'
+        test_rule = tp.Rule('Text', pass_method='Blank')
+        result = test_rule.apply(test_text)
+        self.assertEquals(result, '')
+
+class TestRuleFail(unittest.TestCase):
+    def test_fail_method(self):
+        test_text = 'Test Line'
+        test_rule = tp.Rule('Text', pass_method='Blank',
+                            fail_method='Original')
+        result = test_rule.apply(test_text)
+        self.assertEquals(result, test_text)
+        result2 = test_rule.apply('Test Text')
+        self.assertEquals(result2, '')
 
 class TestSingleLineParse(unittest.TestCase):
     def setUp(self):
@@ -179,6 +234,8 @@ class TestSingleLineParse(unittest.TestCase):
         self.default_parser = tp.define_csv_parser('comma')
         #use_trigger = Trigger('Use', name='Use')
         self.rule = Rule('Use', location='IN', pass_method=parse_use)
+
+
 
 
 if __name__ == '__main__':

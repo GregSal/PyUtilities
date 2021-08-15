@@ -1088,15 +1088,19 @@ class Rule(Trigger):
     An additional default_method class attribute defines the action to assign
     for undefined pass or fail methods.
 
-    All three methods (pass, fail, default) should have the following signature:
-        rule_method(test_object: SourceItem, event: TriggerEvent, **context)
-                Name              Kind                       Type
-             test_object       Positional or Keyword      SourceItem
-             event             Positional or Keyword      TriggerEvent
-             context           Var Keyword                Any
+    Both pass_method and fail_method should have one of the following
+    argument signatures:
+        rule_method(item: SourceItem)
+        rule_method(item: SourceItem, event: TriggerEvent)
+        rule_method(item: SourceItem, event: TriggerEvent, **context)
 
-    All three methods (pass, fail, default) should return the same data type.
-        No checking is done to validate this.
+            Name              Kind                       Type
+            item              Positional or Keyword      SourceItem
+            event             Positional or Keyword      TriggerEvent
+            context           Var Keyword                Any
+
+    Both pass_method and fail_method should return the same data type. No
+    checking is done to validate this.
 
     In addition to a callable, the pass, fail and default attributes can be
     the names of standard actions:
@@ -1175,8 +1179,7 @@ class Rule(Trigger):
 
     @staticmethod
     def drop_context(rule_method: ItemEventFunc, test_object: SourceItem,   # pylint: disable=unused-argument
-                     event: TriggerEvent,
-                     **context)->RuleResult: # pylint: disable=unused-argument
+                     event: TriggerEvent, **context)->RuleResult: # pylint: disable=unused-argument
         '''wrapper that removes context.
 
         This wrapper is provided to easily use functions that don't include
@@ -1270,15 +1273,13 @@ class Rule(Trigger):
             signature:
          rule_method(test_object: SourceItem, event: TriggerEvent, **context)
         '''
-        # FIXME use inspect.getfullargspec
-        #FullArgSpec(args=['line', 'event'], varargs=None, varkw='context',
-        #defaults=('', None), kwonlyargs=[], kwonlydefaults=None, annotations={})
-        # Count args, check for varkw=None
         if not rule_method:
             use_function = self.default_method
         elif isinstance(rule_method, str):
             use_function = self.standard_action(rule_method)
         else:
+            # Note: Currently rule_method(item, **context) is allowed'). but 
+            # Keyword arguments are not passed to the rule_method.
             arg_spec = inspect.getfullargspec(rule_method)
             if len(arg_spec.args) == 1:
                 use_function = partial(self.single_argument, rule_method)
