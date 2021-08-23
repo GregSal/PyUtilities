@@ -207,18 +207,17 @@ class TestSectionGroupRead(unittest.TestCase):
             delimiter=':',
             skipinitialspace=True
             )
-        delimiter_section_reader = tp.SectionProcessor(
-            default_parser=delimiter_parser,
-            post_processing_methods=[tp.trim_items,
-                                     tp.drop_blanks
-                                     ]
-            )
-        fixed_width_reader = tp.SectionProcessor(
-            default_parser=fixed_width_parser,
-            post_processing_methods=[tp.trim_items,
-                                        tp.drop_blanks,
-                                        tp.convert_numbers]
-            )
+        delimiter_section_reader = tp.ProcessingMethods([
+            delimiter_parser,
+            tp.trim_items,
+            tp.drop_blanks
+            ])
+        fixed_width_reader = tp.ProcessingMethods([
+            fixed_width_parser,
+            tp.trim_items,
+            tp.drop_blanks,
+            tp.convert_numbers
+            ])
         # SectionBreak definitions
         delimiter_section_start = tp.SectionBreak(
             name='Delimiter Section',
@@ -284,21 +283,21 @@ class TestSectionGroupRead(unittest.TestCase):
         test_section = self.delimiter_section
         source = BufferedIterator(self.test_source)
         test_output = test_section.read(source, start_search=True,
-                                        **self.context)
+                                        context=self.context)
         self.assertDictEqual(test_output, self.test_result['Section D1'])
 
     def test_fixed_width_sub_section_read(self):
         test_section = self.fixed_width_section
         source = BufferedIterator(self.test_source)
         test_output = test_section.read(source, start_search=True,
-                                        **self.context)
+                                        context=self.context)
         self.assertDictEqual(test_output, self.test_result['Section F1'])
 
     def test_group_section_read(self):
         test_section = self.group_section
         source = BufferedIterator(self.test_source)
         test_output = test_section.read(source, start_search=True,
-                                        **self.context)
+                                        context=self.context)
         expected_output = self.test_result['Test Group Section']
         for count, output in enumerate(zip(test_output[0], expected_output)):
             with self.subTest(section=count):
@@ -311,7 +310,7 @@ class TestSectionGroupRead(unittest.TestCase):
         test_section = self.multi_group_section
         source = BufferedIterator(self.test_source)
         test_output = test_section.read(source, start_search=True,
-                                        **self.context)
+                                        context=self.context)
         expected_output = self.test_result['Test Multi Group Section']
         for section_count, section_output in enumerate(zip(test_output,
                                                            expected_output)):

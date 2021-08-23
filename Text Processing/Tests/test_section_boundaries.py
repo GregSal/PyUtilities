@@ -354,19 +354,15 @@ class TestBoundaryOffsets(unittest.TestCase):
             skipinitialspace=True
             )
 
-        self.test_section_multi_line_reader = tp.SectionProcessor(
-            default_parser=default_parser,
-            post_processing_methods=[tp.trim_items,
-                                     tp.drop_blanks,
-                                     tp.merge_continued_rows
-                                     ]
-            )
-        self.test_section_line_reader = tp.SectionProcessor(
-            default_parser=default_parser,
-            post_processing_methods=[tp.trim_items,
-                                     tp.drop_blanks
-                                     ]
-            )
+        self.test_section_multi_line_reader = tp.ProcessingMethods([
+            default_parser,
+            tp.trim_items,
+            tp.drop_blanks,
+            tp.merge_continued_rows
+            ])
+        self.test_section_line_reader = tp.ProcessingMethods([default_parser,
+                                                              tp.trim_items,
+                                                              tp.drop_blanks])
     def test_section_break_after_before(self):
         section_start_after = tp.SectionBreak(
             name='Single Section After',

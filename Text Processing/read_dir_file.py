@@ -294,20 +294,19 @@ def make_files_table(dir_gen):
 #%% Reader definitions
 default_parser = tp.define_csv_parser('dir_files', delimiter=':',
                                        skipinitialspace=True)
-heading_reader = tp.SectionProcessor(
-    parsing_rules=[],
-    default_parser=default_parser,
-    post_processing_methods=[tp.trim_items])
-folder_reader = tp.SectionProcessor(
-    parsing_rules=[skip_dir_rule, file_listing_rule, dir_header_rule,
-                   skip_file_count_rule],
-    default_parser=default_parser,
-    post_processing_methods=[tp.drop_blanks])
-summary_reader = tp.SectionProcessor(
-    parsing_rules=[file_count_rule, skip_totals_rule],
-    default_parser=default_parser,
-    post_processing_methods=[tp.drop_blanks]
-    )
+heading_reader = tp.ProcessingMethods([
+    default_parser,
+    tp.trim_items
+    ])
+folder_reader = tp.ProcessingMethods([
+    tp.RuleSet([skip_dir_rule, file_listing_rule, dir_header_rule,
+             skip_file_count_rule, default_parser]),
+    tp.drop_blanks
+    ])
+summary_reader = tp.ProcessingMethods([
+    tp.RuleSet([file_count_rule, skip_totals_rule, default_parser]),
+    tp.drop_blanks
+    ])
 
 
 #%% SectionBreak definitions
@@ -367,7 +366,7 @@ def main():
         }
 
     source = tp.file_reader(test_file)
-    file_info = all_folder_section.read(source, **context)
+    file_info = all_folder_section.read(source, context)
     #summary = summary_section.read(source, **context)
 
     # Output  Data

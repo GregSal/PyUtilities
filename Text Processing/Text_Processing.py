@@ -43,7 +43,6 @@ logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
 Section = TypeVar('Section')  # pylint: disable=function-redefined
 SectionBreak = TypeVar('SectionBreak')  # pylint: disable=function-redefined
 SectionProcessor = TypeVar('SectionProcessor')  # pylint: disable=function-redefined
-SectionProcessor = TypeVar('SectionProcessor')  # pylint: disable=function-redefined
 TriggerEvent = TypeVar('TriggerEvent')  # pylint: disable=function-redefined
 
 # NonStringSource represents the non-string type iterables used as a source
@@ -74,6 +73,12 @@ ItemEventFunc = Callable[[SourceItem, TriggerEvent], RuleResult]
 RuleFunc = Callable[[SourceItem, TriggerEvent, ContextType], RuleResult]
 RuleMethodOptions = Union[str, SingleItemFunc, ItemEventFunc, RuleFunc, None]
 
+ProcessFunc = Callable[[SourceItem, ContextType], RuleResult]
+ProcessMethodOptions = Union[str, SingleItemFunc, ProcessFunc, None]
+
+ProcessGenerator = Generator[RuleResult, None, None]
+ProcessMethodTypes = Union[ProcessFunc, ProcessGenerator, "Rule", "RuleSet"]
+
 TestType = Callable[[TriggerTypes, SourceItem, ContextType], TestResult]
 Strings = Union[str, ParsedString]
 OptStrings = Union[Strings, None]
@@ -88,7 +93,7 @@ ParsedStringSource = Union[Iterator[ParsedString], Sequence[ParsedString]]
 
 # Relevant Type definitions for Section Classes
 BreakOptions = Union[SectionBreak, List[SectionBreak], str, None]
-ProcessorOptions = Union[SectionProcessor, Section, List[Section]]
+ProcessorOptions = Union["ProcessingMethods", Section, List[Section]]
 
 # TODO create more type definitions: Line, ...
 # TODO more explicit generic type definitions
@@ -487,13 +492,74 @@ def file_reader(file_path: Path)->BufferedIterator:
     source = BufferedIterator(file_line_gen(file_path))
     return source
 
-###### These all belong in their own module
 
-#%% Iteration Tools
-def func_to_iter(source: Iterator, func: Callable) -> Iterator:
+#%% ##### These all belong in their own module
+def sig_match(given_method, sig_type='Process'):
+    '''Convert the supplied function with a standard signature.
+
+    The conversion is based on number of arguments and the presence of a var
+    keyword argument (**kwargs):
+    rule method:                               Args    varkw
+      func(item)                                1       None
+      func(item, **context)                     1       context
+      func(item, event)                         2       None
+      func(item, event, **context)              2       context
+      func(item, event, context)                3       None    # Expected
+      func(item, event, [other(s),] **context)  3+      context # Not Yet Implemented
+    process method:                            Args    varkw
+      func(item)                                1       None
+      func(item, **context)                     1       context
+      func(item, context)                       2       None    # Expected
+      func(item, [other(s),] **context)         2+      context # Not Yet Implemented
+
+    Note: rule_method(item, context) is not allowed;
+        use rule_method(item, **context)
+        or  rule_method(item, event, context)
+        instead.
+    Arguments:
+        given_method (MethodOptions): A function to be used as a rule
+            method or a process method.
+        sig_type (str, optional): The type of argument signature desired.  Can
+            be one of: 'Process' or 'Rule'.  Defaults to 'Process'.
+
+    Raises: ValueError If given_method does not have one of the expected
+        argument signature types.
+    Returns:
+        [RuleFunc|ProcessFunc]: A function with the standard Rule or Process
+            Method argument signature:
+         rule_method(test_object: SourceItem, event: TriggerEvent, context)
+         process_method(test_object: SourceItem, context)
+    '''
+    rule_sig = {
+        (1, False): lambda func, item, event, context: func(item),
+        (2, False): lambda func, item, event, context: func(item, event),
+        (2, True):
+            lambda func, item, event, context: func(item, event, **context),
+        (3, False):
+            lambda func, item, event, context: func(item, event, context)
+        }
+    process_sig = {
+        (1, False): lambda func, item, context: func(item),
+        (2, False): lambda func, item, context: func(item, context),
+        (1, True): lambda func, item, context: func(item, **context)
+        }
+    arg_spec = inspect.getfullargspec(given_method)
+    arg_count = len(arg_spec.args)
+    has_varkw = arg_spec.varkw is not None
+    if sig_type == 'Process':
+        sig_function = process_sig.get((arg_count, has_varkw))
+    else:
+        sig_function = rule_sig.get((arg_count, has_varkw))
+    if not sig_function:
+        raise ValueError('Invalid function type.')
+    use_function = partial(sig_function, given_method)
+    return use_function
+
+
+def func_to_iter(source: Iterator, func: Callable, context) -> Iterator:
     '''Create a iterator that applies func to each item in source.
 
-    If func is a generator function, return the iterator creates by calling
+    If func is a generator function, return the iterator created by calling
     func with source.  Otherwise use a generator expression to return an
     iterator that returns the result of calling func on each item in source.
     No type checking is performed.
@@ -509,47 +575,13 @@ def func_to_iter(source: Iterator, func: Callable) -> Iterator:
         An iterator that returns the result of calling func on each item in
         source. For example:
     '''
+    # TODO add context and check function signature
+    use_func = sig_match(func)
     if isgeneratorfunction(func):
-        return func(source)
-    return (func(item) for item in source)
+        return use_func(source, context)
+    return (use_func(item, context) for item in source)
 
-
-def cascading_iterators(source: Iterator, func_list: List[Callable])->Iterator:
-    '''Creates a sequence of nested iterator, taking as input the output from
-    the previous iterator.
-
-    Calls func_to_iter to create each nested iterator.
-
-    Args:
-        source: An iterator that returns the appropriate data types for the
-            first function in func.
-        func_list: A list of functions or generators that takes one argument.
-            The functions do not necessarily all take the same data type, but
-            the input type for each function must be compatible with the output
-            type of the previous function in the sequence. The first function
-            in the sequence must be compatible with that produced by source.
-
-    Returns:
-        An iterator that returns the result of successively calling each
-        function in func_list on the output of the previous function.
-        For example:
-            def ml(x): return x*10
-            def dv(x): return x/5
-            def skip_odd(num_list):
-                for i in num_list:
-                    if i%2 == 0:
-                        yield i
-            source = range(5)
-            a = tp.cascading_iterators(source, [skip_odd, ml, dv])
-            [i for i in a] -> [0.0, 4.0, 8.0]
-    Raises:
-    '''
-    next_source = source
-    for func in func_list:
-        next_source = func_to_iter(next_source, func)
-    return iter(next_source)
-
-
+#%% Iteration Tools
 class TriggerEvent(): # pylint: disable=function-redefined
     '''Trigger test result information.
 
@@ -830,7 +862,7 @@ class Trigger():
         if sentinel is a Boolean type:
             sentinel
         if sentinel is a Function type:
-            sentinel(line, **context)
+            sentinel(line, context)
         if sentinel is None:
             False
         Args:
@@ -868,7 +900,7 @@ class Trigger():
             ('Boolean', None):
                 lambda sentinel, line, context: sentinel,
             ('Function', None):
-                lambda sentinel, line, context: sentinel(line, **context),
+                lambda sentinel, line, context: sentinel(line, context),
             (None, None):
                 lambda sentinel, line, context: False
             }
@@ -884,7 +916,7 @@ class Trigger():
         '''
         return self._event
 
-    def evaluate(self, item: SourceItem, **context)->bool:
+    def evaluate(self, item: SourceItem, context)->bool:
         '''Call the appropriate test(s) on the supplied item.
 
         The designated test(s) are applied to the item.  No testing is done to
@@ -1016,7 +1048,7 @@ class SectionBreak(Trigger):  # pylint: disable=function-redefined
         self._offset = offset_value
 
 
-    def check(self, item: SourceItem, source: BufferedIterator, **context):
+    def check(self, item: SourceItem, source: BufferedIterator, context):
         '''Check for a Break condition.
 
         If an Active count down situation exists, continue the count down.
@@ -1030,14 +1062,14 @@ class SectionBreak(Trigger):  # pylint: disable=function-redefined
             source (BufferedIterator): The primary source from which item is
                 obtained.  Access to this object is required for negative
                 offsets.
-            **context (Dict[str, Any], optional): Additional information to be
+            context (Dict[str, Any], optional): Additional information to be
                 passed to the trigger object.
         '''
         logger.debug('in section_break.check')
         # Check for a Break condition
         if self._count_down is None:  # No Active Count Down
             # apply the trigger test.
-            is_event = self.evaluate(item, **context)
+            is_event = self.evaluate(item, context)
             if is_event:
                 logger.debug(f'Break triggered by {self.event.test_name}')
                 is_break = self.set_line_location(source)
@@ -1076,7 +1108,7 @@ class SectionBreak(Trigger):  # pylint: disable=function-redefined
             is_break = False
         return is_break
 
-#%% Rule Class
+# Rule Class
 class Rule(Trigger):
     '''Defines action to take on an item depending on the result of a test.
 
@@ -1092,7 +1124,7 @@ class Rule(Trigger):
     argument signatures:
         rule_method(item: SourceItem)
         rule_method(item: SourceItem, event: TriggerEvent)
-        rule_method(item: SourceItem, event: TriggerEvent, **context)
+        rule_method(item: SourceItem, event: TriggerEvent, context)
 
             Name              Kind                       Type
             item              Positional or Keyword      SourceItem
@@ -1106,6 +1138,8 @@ class Rule(Trigger):
     the names of standard actions:
         'Original': return the item being.
         'Event': return the self.event object.
+        'Value': return the self.event.test_value object.
+        'Name': return the self.event.test_name object.
         'None': return None
         'Blank': return ''  (an empty string)
 
@@ -1162,70 +1196,22 @@ class Rule(Trigger):
         argument signatures:
             rule_method(item: SourceItem)
             rule_method(item: SourceItem, event: TriggerEvent)
-            rule_method(item: SourceItem, event: TriggerEvent, **context)
+            rule_method(item: SourceItem, event: TriggerEvent, context)
         Instead of a callable, pass_method and fail_method can be the name of a
         standard actions:
                 'Original': return the item being.
                 'Event': return the self.event object.
+                'Value': return the self.event.test_value object.
+                'Name': return the self.event.test_name object.
                 'None': return None
                 'Blank': return ''  (an empty string)
         Both pass_method and fail_method should return the same data type. No
         checking is done to validate this.
         '''
         super().__init__(sentinel, location, name)
-        self.default_method = lambda test_object, event, **context: test_object
+        self.default_method = lambda test_object, event, context: test_object
         self.pass_method = self.set_method(pass_method)
         self.fail_method = self.set_method(fail_method)
-
-    @staticmethod
-    def drop_context(rule_method: ItemEventFunc, test_object: SourceItem,   # pylint: disable=unused-argument
-                     event: TriggerEvent, **context)->RuleResult: # pylint: disable=unused-argument
-        '''wrapper that removes context.
-
-        This wrapper is provided to easily use functions that don't include
-        the context Var Keyword.
-
-        Args:
-            rule_method (ItemEventFunc): A function with the signature:
-                rule_method(test_object: SourceItem, event: TriggerEvent)
-            test_object (SourceItem): The value to be tested.
-                        item (SourceItem): The value to be tested.
-            event (TriggerEvent): Trigger test result information.  See the
-                TriggerEvent class for more information.
-            **context (Dict[str, Any], Optional): Any additional information to
-                be passed as keyword arguments to a sentinel function.  Ignored
-                for other sentinel types.
-        Returns:
-            RuleResult: The result of the supplied rule_method when called with
-            test_object, event.
-         '''
-        return rule_method(test_object, event)
-
-    @staticmethod
-    def single_argument(rule_method: SingleItemFunc, test_object: SourceItem,   # pylint: disable=unused-argument
-                        event: TriggerEvent,   # pylint: disable=unused-argument
-                        **context)->RuleFunc:  # pylint: disable=unused-argument
-        '''Wrapper that removes event & context parameters.
-
-        This wrapper is provided to allow for use of single argument functions
-        as Rule methods by using the signature expected for a Rule method, but
-        calling the wrapped function with only the test_item argument.
-
-        Args:
-            rule_method (ItemEventFunc): A function with the signature:
-                rule_method(test_object: SourceItem)
-            test_object (SourceItem): The value to be tested.
-                        item (SourceItem): The value to be tested.
-            event (TriggerEvent): Trigger test result information.  See the
-                TriggerEvent class for more information.
-            **context (Dict[str, Any], Optional): Any additional information to
-                be passed as keyword arguments to a sentinel function.  Ignored
-                for other sentinel types.
-        Returns:
-            RuleResult: The result of applying rule_method to the supplied
-                test_object.
-        '''
-        return rule_method(test_object)
 
     @staticmethod
     def standard_action(action_name: str)->RuleFunc:
@@ -1238,6 +1224,8 @@ class Rule(Trigger):
                 Valid Action names are:
                     'Original': return the item being.
                     'Event': return the self.event object.
+                    'Value': return the self.event.test_value object.
+                    'Name': return the self.event.test_name object.
                     'None': return None
                     'Blank': return ''  (an empty string)
         Raises: ValueError If the string supplied is not one of the valid
@@ -1246,10 +1234,12 @@ class Rule(Trigger):
             RuleFunc: One of the standard action functions.
         '''
         action_dict = {
-            'Original': lambda test_object, event, **context: test_object,
-            'Event':  lambda test_object, event, **context: event,
-            'Blank':  lambda test_object, event, **context: '',
-            'None':  lambda test_object, event, **context: None
+            'Original': lambda test_object, event, context: test_object,
+            'Event':    lambda test_object, event, context: event,
+            'Name':     lambda test_object, event, context: event.test_name,
+            'Value':    lambda test_object, event, context: event.test_value,
+            'Blank':    lambda test_object, event, context: '',
+            'None':     lambda test_object, event, context: None
             }
         use_function = action_dict.get(action_name)
         if not use_function:
@@ -1267,28 +1257,21 @@ class Rule(Trigger):
                 standard action.
         Raises: ValueError If rule_method is a string and is not one of the
             valid action names, or if rule_method is a function and does not
-            have length 1, 2, or 3  argument signature.
+            have one of the following argument signature types:
+                rule_method(item: SourceItem)
+                rule_method(item: SourceItem, event: TriggerEvent)
+                rule_method(item: SourceItem, event: TriggerEvent, context)
         Returns:
             RuleFunc: A function with the standard Rule Method argument
             signature:
-         rule_method(test_object: SourceItem, event: TriggerEvent, **context)
+         rule_method(test_object: SourceItem, event: TriggerEvent, context)
         '''
         if not rule_method:
             use_function = self.default_method
         elif isinstance(rule_method, str):
             use_function = self.standard_action(rule_method)
         else:
-            # Note: Currently rule_method(item, **context) is allowed'). but 
-            # Keyword arguments are not passed to the rule_method.
-            arg_spec = inspect.getfullargspec(rule_method)
-            if len(arg_spec.args) == 1:
-                use_function = partial(self.single_argument, rule_method)
-            elif ((len(arg_spec.args) == 2) & (arg_spec.varkw is None)):
-                use_function = partial(self.drop_context, rule_method)
-            elif ((len(arg_spec.args) == 2) & (arg_spec.varkw is not None)):
-                use_function = rule_method
-            else:
-                raise ValueError('Invalid function type.')
+            use_function = sig_match(rule_method, sig_type='Rule')
         return use_function
 
     @property
@@ -1313,121 +1296,263 @@ class Rule(Trigger):
         '''
         self._default_method = self.set_method(rule_method)
 
-    def apply(self, test_object, **context)->RuleResult:
+    def apply(self, test_object, context)->RuleResult:
         '''Apply the Rule to the supplied test item and return the output of
         the relevant method based on the test result.
 
-        Argument:
+        Arguments:
             test_object (SourceItem): The object to be tested.
-
+            context (Dict[str, Any], Optional): Any additional information to
+                be passed as keyword arguments to a sentinel function.  Ignored
+                for other sentinel types.
         Returns:
             RuleResult: The result of applying the relevant rule_method to the
                 supplied test_object.
         '''
-        is_match = self.evaluate(test_object, **context)
+        is_match = self.evaluate(test_object, context)
         if is_match:
-            result = self.pass_method(test_object, self.event, **context)
+            result = self.pass_method(test_object, self.event, context)
         else:
-            result = self.fail_method(test_object, self.event, **context)
+            result = self.fail_method(test_object, self.event, context)
+        return result
+
+
+class RuleSet():
+    '''Combines related Rules to provide multiple choices for actions.
+
+    A Rule Set takes A sequence of Rules and a default method each Rule in the
+    sequence will be applied to the input until One of the rules triggers. At
+    that point The sequence ends.  if no Rule triggers then the default method
+    is applied.  Each of the Rules (and the default) should expect the same
+    input type and should produce the same output type.
+
+    The default_method should have one of the following argument signatures:
+        rule_method(item: SourceItem)
+        rule_method(item: SourceItem, context)
+
+    The default_method can also be the names of a standard action:
+        'Original': return the item being.
+        'None': return None
+        'Blank': return ''  (an empty string)
+
+    All Rules in the RuleSet Should expect the same input data type and should
+    return the same data type. No checking is done to validate this.  The
+    return type from the default method should also match that of the Rules.
+
+    Attributes:
+        rule_seq (List[Rule]): The Rules to apply to the supplied object. The
+        result on only one of the Rules will be returned (the first one to
+        pass).  If none of the Rules pass, the output from the default method
+        will be returned.
+
+        default_method (ProcessFunc): The method to apply if none of the Rules
+            pass.
+        name (str): A text label for the rule set.
+    '''
+
+
+    def __init__(self, rule_list: List[Rule],
+                 default: ProcessMethodOptions = 'None', name='RuleSet'):
+        '''Apply a sequence of Rules, stopping with the first Rule to pass.
+
+        A RuleSet is a combination of Rules that expect similar input and
+        produce similar output. The rules are applied one-by-one to the input
+        object, stopping a rule passes. The output from that rule is returned
+        and all of the remaining rules in the set are skipped.
+
+        A default_method attribute defines the action to take if none of the
+        Rules in the set pass.
+
+        Arguments:
+            rule_list (List[Rule]): A list of rules to apply in the order
+                they are to be applied.
+            default (ProcessMethodOptions):  The method to apply if none of the
+                Rules pass. The default_method should have one of the
+                following argument signatures:
+                    rule_method(item: SourceItem)
+                    rule_method(item: SourceItem, context)
+                Or be the names of a standard action:
+                    'Original': return the item being.
+                    'Event': return the self.event object.
+                    'None': return None
+                    'Blank': return ''  (an empty string)
+                Defaults to 'None'.
+            name (str, optional): A reference label for the RuleSet.
+
+        All Rules in the RuleSet Should expect the same input data type and
+        should return the same data type. No checking is done to validate this.
+        The return type from the default method should also match that of the
+        Rules.
+        '''
+        self.name = name
+        if default is None:
+            self.default_method = self.set_method('None')
+        else:
+            self.default_method = self.set_method(default)
+        if all(isinstance(rule, Rule) for rule in rule_list):
+            self.rule_seq = rule_list
+        else:
+            raise ValueError('All items in rule_list must be of type Rule.')
+
+    @staticmethod
+    def standard_action(action_name: str)->ProcessFunc:
+        '''Convert a method name to a Standard Function.
+
+        Take the name of a standard actions and return the matching function.
+
+        Argument:
+            action_name (str): The name of the standard action.
+                Valid Action names are:
+                    'Original': return the item being.
+                    'None': return None
+                    'Blank': return ''  (an empty string)
+        Raises: ValueError If the string supplied is not one of the valid
+            action names.
+        Returns:
+            ProcessFunc: One of the standard action functions.
+        '''
+        action_dict = {
+            'Original': lambda test_object, context: test_object,
+            'Blank':  lambda test_object, context: '',
+            'None':  lambda test_object, context: None
+            }
+        use_function = action_dict.get(action_name)
+        if not use_function:
+            raise ValueError('Standard Action names are: '
+                             '["Original", "None", "Blank"]'
+                             f'Got {action_name}')
+        return use_function
+
+    def set_method(self, process_method: ProcessMethodOptions)->ProcessFunc:
+        '''Convert the supplied function or action name to a Function with
+        the standard signature.
+
+        Argument:
+            rule_method (ProcessMethodOptions): A function, or the name of a
+                standard action.
+        Returns:
+            ProcessFunc: A function with the standard processing method
+            argument signature:
+         rule_method(test_object: SourceItem, context)
+        '''
+        if isinstance(process_method, str):
+            use_function = self.standard_action(process_method)
+        else:
+            use_function = sig_match(process_method, sig_type='Process')
+        return use_function
+
+    def apply(self, test_object: SourceItem, context)->RuleResult:
+        '''Apply the RuleSet to the supplied test item and return the output of
+        the first Rule to pass.
+
+        Argument:
+            test_object (SourceItem): The object to be tested.
+            context (Dict[str, Any], Optional): Any additional information to
+                be passed as keyword arguments to a sentinel function.  Ignored
+                for other sentinel types.
+        Returns:
+            RuleResult: The result of applying the relevant rule_method to the
+                supplied test_object.
+        '''
+        for rule in self.rule_seq:
+            result = rule.apply(test_object, context)
+            if rule.event.test_result:
+                break
+        else:
+            result = self.default_method(test_object, context)
         return result
 
 
     ############# Done To Here  ##################
-
-
-class LineParser():  # TODO Convert this into RuleSet
-    def __init__(self, parsing_rules: List[Rule],
-                 default_parser: Callable = None):
-        self.parsing_rules = parsing_rules
-        default_rule = Rule(True, pass_method=default_parser, name='Default')
-        self.parsing_rules.append(default_rule)
-
-    def parse(self, source, **context):
-        logger.debug('In line_parser')
-        for line in source:
-            logger.debug(f'In line_parser, received line: {line}')
-
-            for rule in self.parsing_rules:
-                parsed_lines = rule.apply(line, **context)
-                if rule.event.test_result:
-                    break
-
-            if parsed_lines is not None:
-                for parsed_line in parsed_lines:
-                    yield parsed_line
-
-
 #%% Section Parser
-### Parser methods ###
-#  Method Name	Produces	       Action
-#  parse	    Single Object	   line in -> list out
-#  reader	    Generator	       sequence in -> generator out
-#  read	        Sequence (list)	   sequence in -> list of lists out
 
-class SectionProcessor():  # pylint: disable=function-redefined
-    '''A SectionProcessor has a .read
-                processor method
-                which is a generator function, accepting a source text stream
+class ProcessingMethods():  # pylint: disable=function-redefined
+    '''Applies a sequence of functions to a supplied sequence of items.
+
+    Processing Methods combines a sequence of functions, generator functions,
+    Rules, and/or Rule Sets (Processes) to produce a single generator function.
+    The generator function will iterate through a supplied source of items
+    returning the final processed item. The output type of each Process must
+    match the expected input type of the next Process in the sequence.  No
+    validation tests are done on this.
+
+    In general a Callable is used when there is a one-to-one correspondence
+    between input item and output item.  Generator Functions are used when
+    multiple input items are required to generate an output item.  Individual
+    Rules can be used when the output is of the same type regardless of whether
+    the Trigger passes or fails.
+
+    Processing functions should accept the following arguments:
+        func(item)
+        func(item, **context)
+        func(item, context)
+        func(item, [other(s),] **context)  # Not Yet Implemented
+
+    Arguments:
+        processing_methods (List[ProcessMethodTypes]): The sequence of
+            Processes (functions, generator functions, Rules, and/or RuleSets)
+            to be applied to the section source.
+        section_name (str): Reference label for the processing method.
+            Defaults to 'SectionProcessor'
+
+    Methods:
+        process(self, item, context)->RuleResult:
+        reader(self, buffered_source, context):
+        read(self, buffered_source, context):
+            a generator function, accepting a source text stream
                 and yielding the processed text. Defaults to None, which sets
-                a basic csv parser.'''
-    def __init__(self,
-                 section_name = 'SectionParser',
-                 preprocessing_methods=None,
-                 parsing_rules=None,
-                 default_parser=None,
-                 post_processing_methods=None):
+                a basic csv parser.
+    '''
+    def __init__(self, processing_methods: List[ProcessMethodTypes] = None,
+                 section_name = 'SectionProcessor'):
         self.section_name = section_name
-        self.context = dict()
-        if preprocessing_methods:
-            self.preprocessing_methods = preprocessing_methods
+        if processing_methods:
+            if isinstance(processing_methods, Iterable):
+                self.processing_methods = processing_methods
+            else:
+                self.processing_methods = list(processing_methods)
         else:
-            self.preprocessing_methods = list()
-        if parsing_rules:
-            self.parsing_rules = parsing_rules
-        else:
-            self.parsing_rules = list()
-        # TODO SectionReader should use an internally defined parser as default
-        if default_parser:
-            self.default_parser = default_parser
-        else:
-            self.default_parser = define_csv_parser()
-        if post_processing_methods:
-            self.post_processing_methods = post_processing_methods
-        else:
-            self.post_processing_methods = list()
-        # Apply Section Cleaning -> clean_lines
-        # Check for End of Section Break -> break_triggers
-        # Call Line Parser, passing Context & Lines -> Dialect, Special Lines
-        # Apply Line Processing Rules -> trim_lines
-        # TODO want line_parser and post processing to access context,
-        # but preprocessing_methods only expect 1 argument; the text line to
-        # process, Separate stages into successive iterators
-        self.section_stages = list()
-        self.section_stages.extend(self.preprocessing_methods)
-        self.section_stages.append(self.set_line_parser())
-        self.section_stages.extend(self.post_processing_methods)
+            self.processing_methods = lambda item, context: item
 
-    def set_line_parser(self)->Callable:
-        parser_instance = LineParser(self.parsing_rules,
-                                     self.default_parser)
-        return parser_instance.parse
+    def reader(self, source: Iterator, context)->Iterator:
+        '''Creates a sequence of nested iterator, taking as input the output from
+        the previous iterator.
 
-    def reader(self, buffered_source, **context):
+        Calls func_to_iter to create each nested iterator.
+
+        Args:
+            source: An iterator that returns the appropriate data types for the
+                first function in func.
+            func_list: A list of functions or generators that takes one argument.
+                The functions do not necessarily all take the same data type, but
+                the input type for each function must be compatible with the output
+                type of the previous function in the sequence. The first function
+                in the sequence must be compatible with that produced by source.
+        Returns:
+            An iterator that returns the result of successively calling each
+            function in func_list on the output of the previous function.
+        '''
+        next_source = source
+        for func in self.processing_methods:
+            next_source = func_to_iter(next_source, func, context)
+        return iter(next_source)
+
+    def process(self, item, context)->RuleResult:
+        result = item
+        for func in self.processing_methods:
+            result = func(result)
+        return result
+
+    def read(self, source, context):
         self.context = context
-        return cascading_iterators(buffered_source, self.section_stages)
+        section_iter = self.reader(source, context)
 
-    def read(self, buffered_source, **context):
-        self.context = context
-        section_iter = cascading_iterators(buffered_source,
-                                           self.section_stages)
-        read_list = list()
+        #read_list = list()
         while True:
             try:
-                read_list.append(next(section_iter))
+                yield next(section_iter)
             except StopIteration:
                 break
-        return read_list
-
 
 #%% Section
 class Section():  # pylint: disable=function-redefined
@@ -1716,7 +1841,7 @@ class Section():  # pylint: disable=function-redefined
                 Section instance, a list of Section instances, or None.
         '''
         if processing_def:
-            if isinstance(processing_def, SectionProcessor):
+            if isinstance(processing_def, ProcessingMethods):
                 self._processor = processing_def
                 self._section_reader = self.sequence_processor
             elif isinstance(processing_def, Section):
@@ -1740,12 +1865,12 @@ class Section():  # pylint: disable=function-redefined
                                 'instances, or None.')
         else:
             # if processor is None return a default SectionProcessor.
-            self._processor = SectionProcessor()
+            self._processor = ProcessingMethods()
             self._section_reader = self.sequence_processor
 
     def sequence_processor(self, section_iter: Iterator,
-                           reader: SectionProcessor,
-                           **context) -> Generator[Any, None, None]:
+                           reader: ProcessingMethods,
+                           context) -> Generator[Any, None, None]:
         '''Apply the SectionProcessor to each item in the section.
 
         Args:
@@ -1753,14 +1878,14 @@ class Section():  # pylint: disable=function-redefined
                 checking for boundaries.
             reader (SectionProcessor): The item processing Rules as a
                 SectionProcessor instance.
-            **context (Dict[str, Any]): Break point information and any
+            context (Dict[str, Any]): Break point information and any
                 additional information to be passed to and from the
                 SectionProcessor instance.
         Yields:
             Generator[Any, None, None]: The results of applying the
                 SectionProcessor Rules to each item in the section.
         '''
-        read_iter = iter(reader.reader(section_iter, **context))
+        read_iter = iter(reader.reader(section_iter, context))
         done = False
         while not done:
             try:
@@ -1773,7 +1898,7 @@ class Section():  # pylint: disable=function-redefined
                 self.context.update(reader.context)
 
     def read_subsections(self, section_iter: Iterator,
-                         subreaders: List[Section], **context)->List[Any]:
+                         subreaders: List[Section], context)->List[Any]:
         '''Read each of the subsections as if they were a single item.
 
         Args:
@@ -1781,7 +1906,7 @@ class Section():  # pylint: disable=function-redefined
                 checking for boundaries.
             sub-readers (List[Section]): The subsections that together define
                 the processing of the main section.
-            **context (Dict[str, Any]): Break point information and any
+            context (Dict[str, Any]): Break point information and any
                 additional information to be passed to and from the
                 subsections instance.
         Returns:
@@ -1799,13 +1924,13 @@ class Section():  # pylint: disable=function-redefined
                     return None
             sub_rdr.source = self.source
             subsection.append(sub_rdr.read(section_iter, do_reset=False,
-                                           **context))
+                                           context=context))
             self.context.update(sub_rdr.context)
         return subsection
 
     def subsection_processor(self, section_iter: Iterator,
                              subreaders: List[Section],
-                             **context)->Generator[Any, None, None]:
+                             context)->Generator[Any, None, None]:
         '''Yield processed subsections until the main section is complete.
 
         Step through section_iter yielding a list of the aggregate results for
@@ -1816,7 +1941,7 @@ class Section():  # pylint: disable=function-redefined
                 checking for boundaries.
             sub-readers (List[Section]): The subsections that together define
                 the processing of the main section.
-            **context (Dict[str, Any]): Break point information and any
+            context (Dict[str, Any]): Break point information and any
                 additional information to be passed to and from the
                 SectionProcessor instance.
         Yields:
@@ -1827,7 +1952,7 @@ class Section():  # pylint: disable=function-redefined
             # is being trapped before it reached the except statement here.
             try:
                 subsection = self.read_subsections(section_iter, subreaders,
-                                                    **context)
+                                                   context)
                 if subsection:
                     if len(subsection) == 1:
                         # If the subsection group contains only one section
@@ -1887,7 +2012,7 @@ class Section():  # pylint: disable=function-redefined
             logger.debug(f'Checking Trigger: {break_trigger.name}')
             # break_trigger needs to access the base BufferedItterator Source
             # not the top level one, otherwise it will not step back properly.
-            is_break = break_trigger.check(line, self.source, **self.context)
+            is_break = break_trigger.check(line, self.source, self.context)
             if is_break:
                 logger.debug('Section Break Detected')
                 self.scan_status = 'Break Triggered'
@@ -1963,7 +2088,8 @@ class Section():  # pylint: disable=function-redefined
         return skipped_lines
 
     def initialize(self, source: Source, start_search: bool = True,
-                   do_reset: bool = True, **context)->BufferedIterator:
+                   do_reset: bool = True,
+                   context: Dict[str, Any] = None)->BufferedIterator:
         '''
         Args:
             source (Source): An iterable where some of the content meets the
@@ -1979,7 +2105,7 @@ class Section():  # pylint: disable=function-redefined
                 used as a subsection, then it should inherit properties from
                 the parent section and not be reset. Defaults to True, meaning
                 reset the properties.
-            **context (Dict[str, Any]): Break point information and any
+            context (Dict[str, Any]): Break point information and any
                 additional information to be passed to and from the
                 Section instance.
         Returns:
@@ -2035,7 +2161,8 @@ class Section():  # pylint: disable=function-redefined
             yield next_item
 
     def scan(self, source: Source, start_search: bool = True,
-             do_reset: bool = True, **context)->Generator[Any, None, None]:
+             do_reset: bool = True,
+             context: Dict[str, Any] = None)->Generator[Any, None, None]:
         '''The primary outward facing section generator function.
 
         Initialize the source and then provide the generator that will step
@@ -2056,7 +2183,7 @@ class Section():  # pylint: disable=function-redefined
                 used as a subsection, then it should inherit properties from
                 the parent section and not be reset. Defaults to True, meaning
                 reset the properties.
-            **context (Dict[str, Any]): Break point information and any
+            context (Dict[str, Any]): Break point information and any
                 additional information to be passed to and from the
                 Section instance.
         Returns:
@@ -2065,12 +2192,13 @@ class Section():  # pylint: disable=function-redefined
         stopping at the defined start and end boundaries of the section.
         '''
         # Initialize the section
-        source = self.initialize(source, start_search, do_reset, **context)
+        source = self.initialize(source, start_search, do_reset, context)
         section_iter = self.gen(source)
         return section_iter
 
     def process(self, source: Source, start_search: bool = True,
-             do_reset: bool = True, **context)->Generator[Any, None, None]:
+             do_reset: bool = True,
+             context: Dict[str, Any] = None)->Generator[Any, None, None]:
         '''
         Args:
             source (Source): An iterable where some of the content meets the
@@ -2086,7 +2214,7 @@ class Section():  # pylint: disable=function-redefined
                 used as a subsection, then it should inherit properties from
                 the parent section and not be reset. Defaults to True, meaning
                 reset the properties.
-            **context (Dict[str, Any]): Break point information and any
+            context (Dict[str, Any]): Break point information and any
                 additional information to be passed to and from the
                 Section instance.
         Yields:
@@ -2096,17 +2224,17 @@ class Section():  # pylint: disable=function-redefined
                 SectionProcessor Rules to each item in the section.
         '''
         # Initialize the section
-        source = self.initialize(source, start_search, do_reset, **context)
+        source = self.initialize(source, start_search, do_reset, context)
         section_iter = self.gen(source)
         section_reader = self._section_reader(section_iter, self.processor,
-                                              **context)
+                                              context)
         try:
             yield from section_reader
         except StopIteration:
             pass
 
     def read(self, source: Source, start_search: bool = True,
-             do_reset: bool = True, **context)->Any:
+             do_reset: bool = True, context: Dict[str, Any] = None)->Any:
         '''
         Args:
             source (Source): An iterable where some of the content meets the
@@ -2122,7 +2250,7 @@ class Section():  # pylint: disable=function-redefined
                 used as a subsection, then it should inherit properties from
                 the parent section and not be reset. Defaults to True, meaning
                 reset the properties.
-            **context (Dict[str, Any]): Break point information and any
+            context (Dict[str, Any]): Break point information and any
                 additional information to be passed to and from the
                 Section instance.
         Returns:
@@ -2130,10 +2258,10 @@ class Section():  # pylint: disable=function-redefined
                 items from source that are within the section boundaries.
         '''
         # Initialize the section
-        source = self.initialize(source, start_search, do_reset, **context)
+        source = self.initialize(source, start_search, do_reset, context)
         section_iter = self.gen(source)
         section_reader = self._section_reader(section_iter, self.processor,
-                                              **context)
+                                              context)
         section_items = list()
         while True:
             try:

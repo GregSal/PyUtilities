@@ -218,7 +218,7 @@ class TestSectionSequencer(unittest.TestCase):
             aggregate=tp.to_dict)
         # scan_section
         source = BufferedIterator(self.test_source)
-        test_output = section.read(source, **self.context)
+        test_output = section.read(source, context=self.context)
 
         self.assertDictEqual(test_output, self.test_result['DVH Info'])
 
@@ -238,7 +238,7 @@ class TestSectionSequencer(unittest.TestCase):
             aggregate=read_dvh_file.to_plan_info_dict)
         # scan_section
         source = BufferedIterator(self.test_source)
-        test_output = section.read(source, **self.context)
+        test_output = section.read(source, context=self.context)
         self.maxDiff=None
         self.assertDictEqual(test_output, self.test_result['Plan Info'])
 
@@ -251,14 +251,14 @@ class TestSectionSequencer(unittest.TestCase):
             )
 
         source = BufferedIterator(self.test_source)
-        test_output = section.read(source, **self.context)
+        test_output = section.read(source, context=self.context)
         self.assertDictEqual(test_output.to_dict(),  # pylint: disable=no-member
                              self.test_result['Structures'].to_dict())
 
     def test_dvh_data_section(self):
         section = read_dvh_file.dvh_data_section
         source = BufferedIterator(self.test_source)
-        test_output = section.read(source, **self.context)
+        test_output = section.read(source, context=self.context)
         self.assertDictEqual(test_output.to_dict(),  # pylint: disable=no-member
                              self.test_result['DVH Data'].to_dict())
 

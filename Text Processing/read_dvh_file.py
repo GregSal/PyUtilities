@@ -175,34 +175,37 @@ def to_structure_data_tuple(structure_data_list):
 #%% Reader definitions
 default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
                                       skipinitialspace=True)
-dvh_info_reader = tp.SectionProcessor(
-    preprocessing_methods=[clean_ascii_text],
-    parsing_rules=[make_date_parse_rule()],
-    default_parser=default_parser,
-    post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.merge_continued_rows])
-plan_info_reader = tp.SectionProcessor(
-    preprocessing_methods=[clean_ascii_text],
-    parsing_rules=[make_prescribed_dose_rule(),
-                   make_approved_status_rule()],
-    default_parser=default_parser,
-    post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.convert_numbers]
-    )
-structure_info_reader = tp.SectionProcessor(
-    preprocessing_methods=[clean_ascii_text],
-    parsing_rules=[],
-    default_parser=default_parser,
-    post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.convert_numbers,
-                             fix_structure_names]
-    )
-dvh_data_reader = tp.SectionProcessor(
-    preprocessing_methods=[clean_ascii_text],
-    default_parser=tp.define_fixed_width_parser(widths=10),
-    post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                             tp.convert_numbers]
-    )
+dvh_info_reader = tp.ProcessingMethods([
+    clean_ascii_text,
+    tp.RuleSet([make_date_parse_rule(), default_parser]),
+    tp.trim_items,
+    tp.drop_blanks,
+    tp.merge_continued_rows
+    ])
+plan_info_reader = tp.ProcessingMethods([
+    clean_ascii_text,
+    tp.RuleSet([make_prescribed_dose_rule(),
+             make_approved_status_rule(),
+             default_parser]),
+    tp.trim_items,
+    tp.drop_blanks,
+    tp.convert_numbers
+    ])
+structure_info_reader = tp.ProcessingMethods([
+    clean_ascii_text,
+    default_parser,
+    tp.trim_items,
+    tp.drop_blanks,
+    tp.convert_numbers,
+    fix_structure_names
+    ])
+dvh_data_reader = tp.ProcessingMethods([
+    clean_ascii_text,
+    tp.define_fixed_width_parser(widths=10),
+    tp.trim_items,
+    tp.drop_blanks,
+    tp.convert_numbers
+    ])
 
 #%% SectionBreak definitions
 plan_info_start = tp.SectionBreak(
@@ -298,9 +301,9 @@ def main():
 
     source = tp.file_reader(test_file)
 
-    dvh_info = dvh_info_section.read(source, **context)
-    plan_info = plan_info_group.read(source, **context)
-    structures_df, dvh_df = dvh_group_section.read(source, **context)
+    dvh_info = dvh_info_section.read(source, context)
+    plan_info = plan_info_group.read(source, context)
+    structures_df, dvh_df = dvh_group_section.read(source, context)
 
     # Output DVH Data
     dvh_info_df = pd.Series(dvh_info)

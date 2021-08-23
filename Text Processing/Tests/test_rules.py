@@ -2,7 +2,7 @@ import unittest
 from pathlib import Path
 from typing import List
 import re
-from Text_Processing import Rule, Trigger
+from Text_Processing import Rule, Trigger, RuleSet
 import Text_Processing as tp
 
 #%% Test Text
@@ -68,7 +68,7 @@ class TestPrescribedDoseParse(unittest.TestCase):
 
     def test_prescribed_dose_parse(self):
         line = 'Prescribed dose [cGy]: 5000.0'
-        parsed_lines = self.rule.apply(line, **self.context)
+        parsed_lines = self.rule.apply(line, self.context)
         results = [
             ['Prescribed dose', '5000.0'],
             ['Prescribed dose Unit', 'cGy']
@@ -77,7 +77,7 @@ class TestPrescribedDoseParse(unittest.TestCase):
 
     def test_no_prescribed_dose_parse(self):
         line = 'Prescribed dose [cGy]: not defined'
-        parsed_lines = self.rule.apply(line, **self.context)
+        parsed_lines = self.rule.apply(line, self.context)
         results = [
             ['Prescribed dose', ''],
             ['Prescribed dose Unit', '']
@@ -110,12 +110,12 @@ class TestDateParse(unittest.TestCase):
     def test_date_parse(self):
         line = 'Date                 : Thursday, August 13, 2020 15:21:06'
         expected_results = [['Date', ' Thursday, August 13, 2020 15:21:06']]
-        parsed_lines = self.rule.apply(line, **self.context)
+        parsed_lines = self.rule.apply(line, self.context)
         self.assertListEqual(parsed_lines, expected_results)
 
 
 #%% Line Parsing
-def approved_status_parse(line, event, **context)->List[List[str]]:  # pylint: disable=unused-argument
+def approved_status_parse(line, event, context)->List[List[str]]:  # pylint: disable=unused-argument
     '''If Treatment Approved, Split "Plan Status" into 3 lines:
         Plan Status
         Approved on
@@ -155,7 +155,7 @@ class TestApprovalParse(unittest.TestCase):
             ['Approved on', ' Thursday, January 02, 2020 12:55:56 '],
             ['Approved by', 'gsal']
             ]
-        parsed_lines = self.rule.apply(line, **self.context)
+        parsed_lines = self.rule.apply(line, self.context)
         self.assertListEqual(parsed_lines, expected_results)
 
 
@@ -164,9 +164,9 @@ class TestApprovalParse(unittest.TestCase):
 # Test data
 class TestRuleExceptions(unittest.TestCase):
 
-    @unittest.skip('Currently rule_method(item, **context) is allowed')
+    @unittest.skip('Currently rule_method(item, context) is allowed')
     def test_no_event_arg(self):
-        test_func = lambda item, **context: str(item) + repr(context)
+        test_func = lambda item, context: str(item) + repr(context)
         with self.assertRaises(ValueError):
             invalid_rule = tp.Rule('T', pass_method=test_func)
 
@@ -177,7 +177,7 @@ class TestRuleExceptions(unittest.TestCase):
             invalid_rule = tp.Rule('T', pass_method=test_func)
 
     def test_many_arg(self):
-        test_func = lambda item1, item2, event, **context: 'a'
+        test_func = lambda item1, item2, event, context: 'a'
         with self.assertRaises(ValueError):
             invalid_rule = tp.Rule('T', pass_method=test_func)
 
@@ -189,37 +189,105 @@ class TestRuleActions(unittest.TestCase):
     def test_original_action(self):
         test_text = 'Test Text'
         test_rule = tp.Rule('Text', pass_method='Original')
-        result = test_rule.apply(test_text)
-        self.assertEquals(result, test_text)
+        result = test_rule.apply(test_text, {})
+        self.assertEqual(result, test_text)
 
     def test_event_action(self):
         test_text = 'Test Text'
         sentinel = 'Text'
         test_rule = tp.Rule(sentinel, pass_method='Event')
-        result = test_rule.apply(test_text)
-        self.assertEquals(result.test_value, sentinel)
+        result = test_rule.apply(test_text, {})
+        self.assertEqual(result.test_value, sentinel)
 
     def test_none_action(self):
         test_text = 'Test Text'
         test_rule = tp.Rule('Text', pass_method='None')
-        result = test_rule.apply(test_text)
+        result = test_rule.apply(test_text, {})
         self.assertIsNone(result)
 
     def test_blank_action(self):
         test_text = 'Test Text'
         test_rule = tp.Rule('Text', pass_method='Blank')
-        result = test_rule.apply(test_text)
-        self.assertEquals(result, '')
+        result = test_rule.apply(test_text, {})
+        self.assertEqual(result, '')
 
 class TestRuleFail(unittest.TestCase):
     def test_fail_method(self):
         test_text = 'Test Line'
         test_rule = tp.Rule('Text', pass_method='Blank',
                             fail_method='Original')
-        result = test_rule.apply(test_text)
-        self.assertEquals(result, test_text)
-        result2 = test_rule.apply('Test Text')
-        self.assertEquals(result2, '')
+        result = test_rule.apply(test_text, {})
+        self.assertEqual(result, test_text)
+        result2 = test_rule.apply('Test Text', {})
+        self.assertEqual(result2, '')
+
+
+def make_float(item, **context):
+    item_c = item.replace('Line','')
+    try:
+        num = float(item_c.strip())
+    except:
+        return None
+    output =  f'Line {num:5.2f}'
+    context['num'] = num
+    return output
+
+
+class TestRuleSet(unittest.TestCase):
+    def setUp(self):
+        rule1 = Rule(['Data', 'Text'], pass_method='Name')
+        rule2 = Rule(['Line', 'Text'], 'START', pass_method='Original',
+                     fail_method='Blank')
+        rule3 = Rule(make_float, pass_method='Value')
+        default = lambda Val: 'This is the Default'
+
+        self.test_set = RuleSet([rule1, rule2, rule3], default)
+
+        self.test_pairs = [
+            ('Line 1 Text', 'Text'),
+            ('Line 2 Info', 'Line 2 Info'),
+            ('123.5', 'Line 123.50'),
+            ('Random Info', 'This is the Default'),
+            ('Line 12', 'Line 12')
+            ]
+
+    def test_first_rule_wins(self):
+        context = {}
+        line, expected = self.test_pairs[0]
+        result = self.test_set.apply(line, context)
+        self.assertEqual(result, expected)
+
+    def test_second_rule_only(self):
+        context = {}
+        line, expected = self.test_pairs[1]
+        result = self.test_set.apply(line, context)
+        self.assertEqual(result, expected)
+
+    def test_function_rule(self):
+        context = {}
+        line, expected = self.test_pairs[2]
+        result = self.test_set.apply(line, context)
+        self.assertEqual(result, expected)
+
+    @unittest.skip('Not working')
+    def test_context_update(self):
+        context = {'Initial Item': "nothing"}
+        line, expected = self.test_pairs[2]
+        result = self.test_set.apply(line, context)
+        self.assertEqual(context['num'], float(line))
+
+    def test_fail_to_default(self):
+        context = {}
+        line, expected = self.test_pairs[3]
+        result = self.test_set.apply(line, context)
+        self.assertEqual(result, expected)
+
+    def test_second_rule_wins(self):
+        context = {}
+        line, expected = self.test_pairs[4]
+        result = self.test_set.apply(line, context)
+        self.assertEqual(result, expected)
+
 
 class TestSingleLineParse(unittest.TestCase):
     def setUp(self):
@@ -233,7 +301,7 @@ class TestSingleLineParse(unittest.TestCase):
 
         self.default_parser = tp.define_csv_parser('comma')
         #use_trigger = Trigger('Use', name='Use')
-        self.rule = Rule('Use', location='IN', pass_method=parse_use)
+        self.rule = Rule('Use', location='IN')
 
 
 

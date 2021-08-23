@@ -13,13 +13,12 @@ default_parser = tp.define_csv_parser(
     skipinitialspace=True
     )
 
-test_section_reader = tp.SectionProcessor(
-    default_parser=default_parser,
-    post_processing_methods=[tp.trim_items,
-                             tp.drop_blanks,
-                             tp.merge_continued_rows
-                             ]
-    )
+test_section_reader = tp.ProcessingMethods([
+    default_parser,
+    tp.trim_items,
+    tp.drop_blanks,
+    tp.merge_continued_rows
+    ])
 
 
 #%% SectionBreak definitions

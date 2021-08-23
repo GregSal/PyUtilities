@@ -192,39 +192,35 @@ class TestProcessing(unittest.TestCase):
             ]
 
     def test_trim_line_processor(self):
-        processed_lines = tp.cascading_iterators(
-            iter(self.test_text),
-            [tp.trim_items])
+        processor = tp.ProcessingMethods([tp.trim_items])
+        processed_lines = processor.process(self.test_text, {})
         test_trimmed_output = [processed_line
                                for processed_line in processed_lines]
         self.assertListEqual(test_trimmed_output, self.trimmeded_output)
 
     def test_dropped_blank_processor(self):
-        processed_lines = tp.cascading_iterators(
-            iter(self.trimmeded_output),
-            [tp.drop_blanks])
+        processor = tp.ProcessingMethods([tp.drop_blanks])
+        processed_lines = processor.read(iter(self.trimmeded_output), {})
         test_dropped_blank_output = [processed_line
                                      for processed_line in processed_lines]
         self.assertListEqual(test_dropped_blank_output,
                              self.dropped_blank_output)
 
     def test_merged_line_processor(self):
-        processed_lines = tp.cascading_iterators(
-            iter(self.dropped_blank_output),
-            [tp.merge_continued_rows])
+        processor = tp.ProcessingMethods([tp.merge_continued_rows])
+        processed_lines = processor.read(iter(self.dropped_blank_output), {})
         test_merged_line_output = [processed_line
                                    for processed_line in processed_lines]
         self.assertListEqual(test_merged_line_output,
                              self.merged_line_output)
 
     def test_line_processor(self):
-        post_processing_methods=[
+        processor = tp.ProcessingMethods([
             tp.trim_items,
             tp.drop_blanks,
             tp.merge_continued_rows
-            ]
-        processed_lines = tp.cascading_iterators(iter(self.test_text),
-                                                 post_processing_methods)
+            ])
+        processed_lines = processor.read(iter(self.test_text), {})
         test_output = [processed_line for processed_line in processed_lines]
         self.assertListEqual(test_output, self.merged_line_output)
 
@@ -366,77 +362,80 @@ class TestSections(unittest.TestCase):
                                                    skipinitialspace=True)
 
     def test_dvh_info_reader(self):
-        dvh_info_reader = tp.SectionProcessor(
-            preprocessing_methods=[clean_ascii_text],
-            parsing_rules=[read_dvh_file.make_date_parse_rule()],
-            default_parser=self.default_parser,
-            post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                                     tp.merge_continued_rows]
-            )
+        dvh_info_reader = tp.ProcessingMethods([
+            clean_ascii_text,
+            tp.RuleSet([read_dvh_file.make_date_parse_rule(),
+                        self.default_parser]),
+            tp.trim_items,
+            tp.drop_blanks,
+            tp.merge_continued_rows
+            ])
         # scan_section
         source = BufferedIterator(self.test_source['DVH Info'])
-        reader = dvh_info_reader.read(source, **self.context)
+        reader = dvh_info_reader.read(source, self.context)
         test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['DVH Info'])
 
     def test_plan_info1_read(self):
-        plan_info_reader = tp.SectionProcessor(
-            preprocessing_methods=[clean_ascii_text],
-            parsing_rules=[read_dvh_file.make_prescribed_dose_rule(),
-                           read_dvh_file.make_approved_status_rule()],
-            default_parser=self.default_parser,
-            post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                                     tp.convert_numbers]
-            )
+        plan_info_reader = tp.ProcessingMethods([
+            clean_ascii_text,
+            tp.RuleSet([read_dvh_file.make_prescribed_dose_rule(),
+                     read_dvh_file.make_approved_status_rule(),
+                     self.default_parser]),
+            tp.trim_items,
+            tp.drop_blanks,
+            tp.convert_numbers
+            ])
         # scan_section
         source = BufferedIterator(self.test_source['Plan Info 1'])
-        reader = plan_info_reader.read(source, **self.context)
+        reader = plan_info_reader.read(source, self.context)
         test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['Plan Info 1'])
 
 
     def test_plan_info2_read(self):
-        plan_info_reader = tp.SectionProcessor(
-            preprocessing_methods=[clean_ascii_text],
-            parsing_rules=[read_dvh_file.make_prescribed_dose_rule(),
-                           read_dvh_file.make_approved_status_rule()],
-            default_parser=self.default_parser,
-            post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                                     tp.convert_numbers]
-            )
+        plan_info_reader = tp.ProcessingMethods([
+            clean_ascii_text,
+            tp.RuleSet([read_dvh_file.make_prescribed_dose_rule(),
+                     read_dvh_file.make_approved_status_rule(),
+                     self.default_parser]),
+            tp.trim_items,
+            tp.drop_blanks,
+            tp.convert_numbers
+            ])
         # scan_section
         source = BufferedIterator(self.test_source['Plan Info 2'])
-        reader = plan_info_reader.read(source, **self.context)
+        reader = plan_info_reader.read(source, self.context)
         test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['Plan Info 2'])
 
 
     def test_structure_reader(self):
-        structure_reader = tp.SectionProcessor(
-            preprocessing_methods=[clean_ascii_text],
-            parsing_rules=[],
-            default_parser=self.default_parser,
-            post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                                     tp.convert_numbers]
-            )
+        structure_reader = tp.ProcessingMethods([
+            clean_ascii_text,
+            self.default_parser,
+            tp.trim_items,
+            tp.drop_blanks,
+            tp.convert_numbers
+            ])
         # scan_section
         source = BufferedIterator(self.test_source['Structure'])
-        reader = structure_reader.read(source, **self.context)
+        reader = structure_reader.read(source, self.context)
         test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['Structure'])
 
 
     def test_dvh_reader(self):
-        dvh_data_reader = tp.SectionProcessor(
-            preprocessing_methods=[clean_ascii_text],
-            parsing_rules=[],
-            default_parser=tp.define_fixed_width_parser(widths=10),
-            post_processing_methods=[tp.trim_items, tp.drop_blanks,
-                                     tp.convert_numbers]
-            )
+        dvh_data_reader = tp.ProcessingMethods([
+            clean_ascii_text,
+            tp.define_fixed_width_parser(widths=10),
+            tp.trim_items,
+            tp.drop_blanks,
+            tp.convert_numbers
+            ])
         # scan_section
         source = BufferedIterator(self.test_source['DVH'])
-        reader = dvh_data_reader.read(source, **self.context)
+        reader = dvh_data_reader.read(source, self.context)
         test_output = tp.to_dataframe(reader)
         self.assertDictEqual(test_output.to_dict(),
                              self.test_result['DVH'].to_dict())

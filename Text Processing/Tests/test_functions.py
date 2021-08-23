@@ -4,6 +4,7 @@ import pandas as pd
 import Text_Processing as tp
 import read_dvh_file
 
+@unittest.skip('This is now a class method')
 class Test_cascading_iterators(unittest.TestCase):
     def test_simple_cascading_iterators(self):
         def ml(x): return x*10
@@ -15,7 +16,8 @@ class Test_cascading_iterators(unittest.TestCase):
                     yield i
 
         source = range(5)
-        test_iter = tp.cascading_iterators(source, [skip_odd, ml, dv])
+        method_set = tp.ProcessingMethods([skip_odd, ml, dv])
+        test_iter = method_set.read(source, {})
         test_output = [i for i in test_iter]
         self.assertListEqual(test_output, [0.0, 4.0, 8.0])
 
@@ -110,7 +112,7 @@ class TestParseRules(unittest.TestCase):
         dose_rule = read_dvh_file.make_prescribed_dose_rule()
         test_output = list()
         for line in test_text:
-            result = dose_rule.apply(line)
+            result = dose_rule.apply(line, {})
             if result:
                 test_output.extend(result)
         self.assertListEqual(test_output, expected_output)
@@ -127,7 +129,7 @@ class TestParseRules(unittest.TestCase):
         date_rule = read_dvh_file.make_date_parse_rule()
         test_output = list()
         for line in test_text:
-            result = date_rule.apply(line)
+            result = date_rule.apply(line, {})
             if result:
                 test_output.extend(result)
         self.assertListEqual(test_output, expected_output)
@@ -149,7 +151,7 @@ class TestParseRules(unittest.TestCase):
         approved_status_rule = read_dvh_file.make_approved_status_rule()
         test_output = list()
         for line in test_text:
-            result = approved_status_rule.apply(line)
+            result = approved_status_rule.apply(line, {})
             if result:
                 test_output.extend(result)
         self.assertListEqual(test_output, expected_output)
@@ -207,17 +209,17 @@ class TestLineParser(unittest.TestCase):
             ['% for dose (%)', '100.0']
             ]
 
+        default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
+                                              skipinitialspace=True)
         parsing_rules = [
             read_dvh_file.make_prescribed_dose_rule(),
             read_dvh_file.make_date_parse_rule(),
-            read_dvh_file.make_approved_status_rule()
+            read_dvh_file.make_approved_status_rule(),
+            default_parser
             ]
-        default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
-                                              skipinitialspace=True)
 
-        test_parser = tp.LineParser(parsing_rules, default_parser)
-        test_output = [parsed_line
-                       for parsed_line in test_parser.parse(test_text)]
+        test_parser = tp.RuleSet(parsing_rules)
+        test_output = [test_parser.apply(line) for line in test_text]
         self.assertListEqual(test_output, expected_output)
 
 

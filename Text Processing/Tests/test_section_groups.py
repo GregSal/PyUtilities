@@ -191,14 +191,14 @@ class TestSectionSequencer(unittest.TestCase):
         dvh_info_section = read_dvh_file.dvh_info_section
         # scan_section
         source = BufferedIterator(self.test_source)
-        test_output = dvh_info_section.read(source, **self.context)
+        test_output = dvh_info_section.read(source, context=self.context)
         self.assertDictEqual(test_output, self.test_result['DVH Info'])
 
     def test_plan_info_group(self):
         plan_info_group = read_dvh_file.plan_info_group
         # scan_section
         source = BufferedIterator(self.test_source)
-        plan_info = plan_info_group.read(source, **self.context)
+        plan_info = plan_info_group.read(source, context=self.context)
         self.maxDiff=None
         self.assertDictEqual(plan_info, self.test_result['Plan Info'])
 
@@ -206,7 +206,7 @@ class TestSectionSequencer(unittest.TestCase):
         dvh_group_section = read_dvh_file.dvh_group_section
         # scan_section
         source = BufferedIterator(self.test_source)
-        structures_df, dvh_df = dvh_group_section.read(source, **self.context)  # pylint: disable=unused-variable
+        structures_df, dvh_df = dvh_group_section.read(source, context=self.context)
         dvh_df.fillna(0, inplace=True)
 
         expected_dvh = self.test_result['DVH']
@@ -218,7 +218,7 @@ class TestSectionSequencer(unittest.TestCase):
         dvh_group_section = read_dvh_file.dvh_group_section
         # scan_section
         source = BufferedIterator(self.test_source)
-        structures_df, dvh_df = dvh_group_section.read(source, **self.context)  # pylint: disable=unused-variable
+        structures_df, dvh_df = dvh_group_section.read(source, context=self.context)
         self.maxDiff=None
         self.assertDictEqual(structures_df.to_dict(),
                              self.test_result['Structures'].to_dict())
