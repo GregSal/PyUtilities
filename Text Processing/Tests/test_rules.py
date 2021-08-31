@@ -222,7 +222,7 @@ class TestRuleFail(unittest.TestCase):
         self.assertEqual(result2, '')
 
 
-def make_float(item, **context):
+def make_float(item, context):
     item_c = item.replace('Line','')
     try:
         num = float(item_c.strip())
@@ -239,10 +239,10 @@ class TestRuleSet(unittest.TestCase):
         rule2 = Rule(['Line', 'Text'], 'START', pass_method='Original',
                      fail_method='Blank')
         rule3 = Rule(make_float, pass_method='Value')
-        default = lambda Val: 'This is the Default'
 
-        self.test_set = RuleSet([rule1, rule2, rule3], default)
 
+        self.test_set = RuleSet([rule1, rule2, rule3],
+                                default = lambda Val: 'This is the Default')
         self.test_pairs = [
             ('Line 1 Text', 'Text'),
             ('Line 2 Info', 'Line 2 Info'),
@@ -269,7 +269,6 @@ class TestRuleSet(unittest.TestCase):
         result = self.test_set.apply(line, context)
         self.assertEqual(result, expected)
 
-    @unittest.skip('Not working')
     def test_context_update(self):
         context = {'Initial Item': "nothing"}
         line, expected = self.test_pairs[2]

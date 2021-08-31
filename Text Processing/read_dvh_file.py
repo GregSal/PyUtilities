@@ -27,7 +27,7 @@ def make_date_parse_rule() -> tp.Rule:
     def date_parse(line: str) -> tp.ParseResults:
         '''If Date,don't split beyond first :.'''
         parsed_line = line.split(':', maxsplit=1)
-        return [parsed_line]
+        return parsed_line
 
     date_rule = tp.Rule('Date', location='START', name='date_rule',
                         pass_method=date_parse, fail_method='None')
@@ -177,16 +177,15 @@ default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
                                       skipinitialspace=True)
 dvh_info_reader = tp.ProcessingMethods([
     clean_ascii_text,
-    tp.RuleSet([make_date_parse_rule(), default_parser]),
+    tp.RuleSet([make_date_parse_rule()], default=default_parser),
     tp.trim_items,
     tp.drop_blanks,
     tp.merge_continued_rows
     ])
 plan_info_reader = tp.ProcessingMethods([
     clean_ascii_text,
-    tp.RuleSet([make_prescribed_dose_rule(),
-             make_approved_status_rule(),
-             default_parser]),
+    tp.RuleSet([make_prescribed_dose_rule(), make_approved_status_rule()],
+               default=default_parser),
     tp.trim_items,
     tp.drop_blanks,
     tp.convert_numbers

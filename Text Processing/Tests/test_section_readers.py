@@ -1,5 +1,6 @@
 import unittest
 from pathlib import Path
+import csv
 from file_utilities import clean_ascii_text
 import Text_Processing as tp
 from buffered_iterator import BufferedIterator
@@ -194,8 +195,16 @@ class TestProcessing(unittest.TestCase):
     def test_trim_line_processor(self):
         processor = tp.ProcessingMethods([tp.trim_items])
         processed_lines = processor.process(self.test_text, {})
+        test_trimmed_output = [processor.process(line, {})
+                               for line in self.test_text]
+        self.assertListEqual(test_trimmed_output, self.trimmeded_output)
+
+
+    def test_trim_line_reader(self):
+        processor = tp.ProcessingMethods([tp.trim_items])
+        processed_lines_iter = processor.reader(self.test_text, {})
         test_trimmed_output = [processed_line
-                               for processed_line in processed_lines]
+                               for processed_line in processed_lines_iter]
         self.assertListEqual(test_trimmed_output, self.trimmeded_output)
 
     def test_dropped_blank_processor(self):
@@ -223,6 +232,80 @@ class TestProcessing(unittest.TestCase):
         processed_lines = processor.read(iter(self.test_text), {})
         test_output = [processed_line for processed_line in processed_lines]
         self.assertListEqual(test_output, self.merged_line_output)
+
+
+class TestParsers(unittest.TestCase):
+    def setUp(self):
+        self.source = [
+            'Patient Name         : ____, ____',
+            'Patient ID           : 1234567',
+            'Comment              : DVHs for multiple plans and plan sums',
+            'Date                 : Friday, January 17, 2020 09:45:07',
+            'Exported by          : gsal',
+            'Type                 : Cumulative Dose Volume Histogram'
+            ]
+        self.line = 'Patient Name         : ____, ____'
+        self.test_result = {
+            'First Line': ['Patient Name         ', '____, ____'],
+            'Default Parse': [
+                ['Patient Name         ', '____, ____'],
+                ['Patient ID           ', '1234567'],
+                ['Comment              ',
+                 'DVHs for multiple plans and plan sums'],
+                ['Date                 ',
+                 'Friday, January 17, 2020 09',
+                 '45', '07'],
+                ['Exported by          ', 'gsal'],
+                ['Type                 ', 'Cumulative Dose Volume Histogram']
+                ],
+            'dvh_info Parse': [
+                ['Patient Name         ', '____, ____'],
+                ['Patient ID           ', '1234567'],
+                ['Comment              ',
+                 'DVHs for multiple plans and plan sums'],
+                ['Date                 ',
+                 ' Friday, January 17, 2020 09:45:07'],
+                ['Exported by          ', 'gsal'],
+                ['Type                 ', 'Cumulative Dose Volume Histogram']
+                ]
+            }
+        parameters = dict(
+            delimiter=':',
+            doublequote=True,
+            quoting=csv.QUOTE_MINIMAL,
+            quotechar='"',
+            escapechar=None,
+            lineterminator='\r\n',
+            skipinitialspace=True,
+            strict=False
+            )
+        csv.register_dialect('dvh_info', parameters)
+        self.default_parser = tp.sig_match(tp.define_csv_parser(
+            'dvh_info',
+            delimiter=':',
+            skipinitialspace=True))
+        self.dvh_info_reader = tp.ProcessingMethods([tp.RuleSet(
+            [read_dvh_file.make_date_parse_rule()],
+            default=tp.define_csv_parser('dvh_info', delimiter=':',
+                                         skipinitialspace=True))])
+
+    def test_csv_line_parse(self):
+        test_output = self.default_parser(self.line, {})
+        self.assertListEqual(test_output, self.test_result['First Line'])
+
+    def test_dvh_info_line_parse(self):
+        test_output = self.dvh_info_reader.process(self.line, {})
+        self.assertListEqual(test_output, self.test_result['First Line'])
+
+    def test_csv_parse(self):
+        reader = self.default_parser(self.source, {})
+        test_output = [text_line for text_line in reader]
+        self.assertListEqual(test_output, self.test_result['Default Parse'])
+
+    def test_dvh_info_parse(self):
+        reader = self.dvh_info_reader.read(self.source, {})
+        test_output = [text_line for text_line in reader]
+        self.assertListEqual(test_output, self.test_result['dvh_info Parse'])
 
 
 class TestSections(unittest.TestCase):
@@ -277,7 +360,7 @@ class TestSections(unittest.TestCase):
                 'Conformity Index: N/A',
                 'Gradient Measure [cm]: N/A',
                 ''
-                ],
+            ],
             'DVH': [
                 'Dose [cGy] Ratio of Total Structure Volume [%]',
                 '         0                       100',
@@ -352,7 +435,6 @@ class TestSections(unittest.TestCase):
                                                         1.50797e-005,
                                                         1.4257e-006]})
             }
-
         self.context = {
             'File Name': 'trigger_test_text.txt',
             'File Path': Path.cwd() / 'trigger_test_text.txt',
@@ -364,8 +446,8 @@ class TestSections(unittest.TestCase):
     def test_dvh_info_reader(self):
         dvh_info_reader = tp.ProcessingMethods([
             clean_ascii_text,
-            tp.RuleSet([read_dvh_file.make_date_parse_rule(),
-                        self.default_parser]),
+            tp.RuleSet([read_dvh_file.make_date_parse_rule()],
+                       default=self.default_parser),
             tp.trim_items,
             tp.drop_blanks,
             tp.merge_continued_rows
@@ -380,8 +462,8 @@ class TestSections(unittest.TestCase):
         plan_info_reader = tp.ProcessingMethods([
             clean_ascii_text,
             tp.RuleSet([read_dvh_file.make_prescribed_dose_rule(),
-                     read_dvh_file.make_approved_status_rule(),
-                     self.default_parser]),
+                     read_dvh_file.make_approved_status_rule()],
+                       default=self.default_parser),
             tp.trim_items,
             tp.drop_blanks,
             tp.convert_numbers
@@ -397,8 +479,8 @@ class TestSections(unittest.TestCase):
         plan_info_reader = tp.ProcessingMethods([
             clean_ascii_text,
             tp.RuleSet([read_dvh_file.make_prescribed_dose_rule(),
-                     read_dvh_file.make_approved_status_rule(),
-                     self.default_parser]),
+                     read_dvh_file.make_approved_status_rule()],
+                       default=self.default_parser),
             tp.trim_items,
             tp.drop_blanks,
             tp.convert_numbers

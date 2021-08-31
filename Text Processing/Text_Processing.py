@@ -146,7 +146,7 @@ def str2float(text: str) -> AlphaNumeric:
     return_value = text
     try:
         return_value = float(text)
-    except ValueError:
+    except (TypeError, ValueError):
         pass
     return return_value
 
@@ -186,6 +186,7 @@ def drop_units(text: str) -> float:
 
 #%% String Parsers
 # CSV parser
+# FIXME type annotation for line is not correct
 def csv_parser(line: str, dialect_name='excel') -> ParseResults:
     '''Convert a single text line into one or more rows of parsed text.
 
@@ -204,14 +205,21 @@ def csv_parser(line: str, dialect_name='excel') -> ParseResults:
         A list of lists of strings obtained by parsing line.
         For example:
             csv_parser('Part 1,"Part 2a, Part 2b"') ->
-                [['Part 1', 'Part 2a, Part 2b']]
+                ['Part 1', 'Part 2a, Part 2b']
     '''
-    csv_iter = csv.reader([line], dialect_name)
-    parsed_lines = [row for row in csv_iter]
+    if true_iterable(line):
+        csv_iter = csv.reader(line, dialect_name)
+        parsed_lines = [row for row in csv_iter]
+    else:
+        # This assumes that a single input line will never result in multiple
+        # output lines.
+        csv_iter = csv.reader([line], dialect_name)
+        parsed_lines = [row for row in csv_iter][0]
     return parsed_lines
 
 
-def define_csv_parser(name='csv', **parameters) -> Callable[[str,],List[str]]:
+def define_csv_parser(name='default_csv',
+                      **parameters) -> Callable[[str,],List[str]]:
     '''Create a function that applies the defined csv parsing rules.
 
     Create a unique csv parsing Dialect referred to by name. Use the partial
@@ -237,7 +245,7 @@ def define_csv_parser(name='csv', **parameters) -> Callable[[str,],List[str]]:
         A csv parser method.  For example:
             default_parser = define_csv_parser(name='Default csv')
             default_parser('Part 1,"Part 2a, Part 2b"') ->
-                [['Part 1', 'Part 2a, Part 2b']]
+                ['Part 1', 'Part 2a, Part 2b']
     '''
     default_parameters = dict(
         delimiter=',',
@@ -252,6 +260,7 @@ def define_csv_parser(name='csv', **parameters) -> Callable[[str,],List[str]]:
     default_parameters.update(parameters)
     csv.register_dialect(name, **default_parameters)
     parse_csv = partial(csv_parser, dialect_name=name)
+    parse_csv.__name__ = f'csv({name})'
     return parse_csv
 
 # Fixed Width Parser
@@ -303,17 +312,12 @@ class FixedWidthParser():
         if remainder:
             yield remainder
 
-    def parser(self, line: str, *args, **kwargs) -> ParseResults:  # pylint: disable=unused-argument
+    def parser(self, line: str) -> ParseResults:
         '''Convert a single text line into a single text line into parsed
         text items of fixed widths.
 
         Args:
             line: A text string for parsing.
-            *args: Place holder for positional arguments to maintain compatibility
-                for all parsing methods.
-            **kwargs: Place holder for keyword arguments to maintain compatibility
-                for all parsing methods.
-
         Returns:
             A list of lists of strings obtained by parsing line.
             For example:
@@ -349,7 +353,9 @@ def define_fixed_width_parser(widths: List[int] = None, number: int = 1,
                 [['Part 1', 'Part 2a, Part 2b']]
     '''
     parser_constructor = FixedWidthParser(widths, number, locations)
-    return parser_constructor.parser
+    parse_fw = partial(FixedWidthParser.parser, parser_constructor)
+    parse_fw.__name__ = f'FixedWidthParser({widths}, {number}, {locations})'
+    return parse_fw
 
 
 #%% Parsed Line Iterators
@@ -497,20 +503,22 @@ def file_reader(file_path: Path)->BufferedIterator:
 def sig_match(given_method, sig_type='Process'):
     '''Convert the supplied function with a standard signature.
 
-    The conversion is based on number of arguments and the presence of a var
-    keyword argument (**kwargs):
-    rule method:                               Args    varkw
-      func(item)                                1       None
-      func(item, **context)                     1       context
-      func(item, event)                         2       None
-      func(item, event, **context)              2       context
-      func(item, event, context)                3       None    # Expected
-      func(item, event, [other(s),] **context)  3+      context # Not Yet Implemented
-    process method:                            Args    varkw
-      func(item)                                1       None
-      func(item, **context)                     1       context
-      func(item, context)                       2       None    # Expected
-      func(item, [other(s),] **context)         2+      context # Not Yet Implemented
+    The conversion is based on number of arguments without defaults and the
+    presence of a var keyword argument (**kwargs):
+    rule method:                                Args    varkw
+      func(item)                                 1       None
+      func(item, **context)                      1       context
+      func(item, event)                          2       None
+      func(item, event [, other(s)=defaults(s)]) 1       None
+      func(item, event, **context)               2       context
+      func(item, event, context)                 3       None    # Expected
+      func(item, event, [other(s),] **context)   3+      context # Not Yet Implemented
+    process method:                             Args    varkw
+      func(item)                                 1       None
+      func(item  [, other(s)=defaults(s)])       1       None
+      func(item, **context)                      1       context
+      func(item, context)                        2       None    # Expected
+      func(item  [, other(s)] **context)         2+      context # Not Yet Implemented
 
     Note: rule_method(item, context) is not allowed;
         use rule_method(item, **context)
@@ -532,6 +540,7 @@ def sig_match(given_method, sig_type='Process'):
     '''
     rule_sig = {
         (1, False): lambda func, item, event, context: func(item),
+        (1, True): lambda func, item, event, context: func(item, **context),
         (2, False): lambda func, item, event, context: func(item, event),
         (2, True):
             lambda func, item, event, context: func(item, event, **context),
@@ -544,7 +553,12 @@ def sig_match(given_method, sig_type='Process'):
         (1, True): lambda func, item, context: func(item, **context)
         }
     arg_spec = inspect.getfullargspec(given_method)
-    arg_count = len(arg_spec.args)
+    if not arg_spec.args:
+        arg_count = 0
+    elif not arg_spec.defaults:
+        arg_count = len(arg_spec.args)
+    else:
+        arg_count = len(arg_spec.args) - len(arg_spec.defaults)
     has_varkw = arg_spec.varkw is not None
     if sig_type == 'Process':
         sig_function = process_sig.get((arg_count, has_varkw))
@@ -553,6 +567,14 @@ def sig_match(given_method, sig_type='Process'):
     if not sig_function:
         raise ValueError('Invalid function type.')
     use_function = partial(sig_function, given_method)
+    func_name = getattr(given_method, '__name__')
+    if not func_name:
+        if isinstance(given_method, partial):
+            func_name = getattr(given_method.func, '__name__',
+                                'PartialFunction')
+        else:
+            func_name = 'PartialFunction'
+    use_function.__name__ = func_name
     return use_function
 
 
@@ -575,10 +597,17 @@ def func_to_iter(source: Iterator, func: Callable, context) -> Iterator:
         An iterator that returns the result of calling func on each item in
         source. For example:
     '''
-    # TODO add context and check function signature
-    use_func = sig_match(func)
+    if isinstance(func, Rule):
+        use_func = func
+    elif isinstance(func, RuleSet):
+        use_func = func
+    else:
+        use_func = sig_match(func)
     if isgeneratorfunction(func):
         return use_func(source, context)
+    if isinstance(func, partial):
+        if isgeneratorfunction(func.func):
+            return use_func(source, context)
     return (use_func(item, context) for item in source)
 
 #%% Iteration Tools
@@ -793,6 +822,7 @@ class Trigger():
         self._test_func = self.set_test_func(location)
         self._event = TriggerEvent()
 
+
     def set_sentinel_type(self)->str:
         '''Identify the type of sentinel supplied.
 
@@ -828,6 +858,8 @@ class Trigger():
         elif isinstance(self.sentinel, re.Pattern):
             test_type = 'RE'
         elif callable(self.sentinel):
+            # Convert function to correct Argument signature
+            self.sentinel = sig_match(self.sentinel, sig_type='Process')
             test_type = 'Function'
         elif true_iterable(self.sentinel):
             # Set the indicator that sentinel contains a list of conditions.
@@ -837,6 +869,9 @@ class Trigger():
             elif all(isinstance(snt, re.Pattern) for snt in self.sentinel):
                 test_type = 'RE'
             elif all(callable(snt) for snt in self.sentinel):
+                # Convert functions to correct Argument signature
+                self.sentinel = [sig_match(snt, sig_type='Process')
+                                 for snt in self.sentinel]
                 test_type = 'Function'
         if not test_type:
             raise NotImplementedError('Only Boolean, String, Regular '
@@ -1123,13 +1158,10 @@ class Rule(Trigger):
     Both pass_method and fail_method should have one of the following
     argument signatures:
         rule_method(item: SourceItem)
+        rule_method(item: SourceItem, **context)
         rule_method(item: SourceItem, event: TriggerEvent)
+        rule_method(item: SourceItem, event: TriggerEvent, **context)
         rule_method(item: SourceItem, event: TriggerEvent, context)
-
-            Name              Kind                       Type
-            item              Positional or Keyword      SourceItem
-            event             Positional or Keyword      TriggerEvent
-            context           Var Keyword                Any
 
     Both pass_method and fail_method should return the same data type. No
     checking is done to validate this.
@@ -1194,9 +1226,11 @@ class Rule(Trigger):
 
         Both pass_method and fail_method should have one of the following
         argument signatures:
-            rule_method(item: SourceItem)
-            rule_method(item: SourceItem, event: TriggerEvent)
-            rule_method(item: SourceItem, event: TriggerEvent, context)
+                rule_method(item: SourceItem)
+                rule_method(item: SourceItem, **context)
+                rule_method(item: SourceItem, event: TriggerEvent)
+                rule_method(item: SourceItem, event: TriggerEvent, **context)
+                rule_method(item: SourceItem, event: TriggerEvent, context)
         Instead of a callable, pass_method and fail_method can be the name of a
         standard actions:
                 'Original': return the item being.
@@ -1209,7 +1243,7 @@ class Rule(Trigger):
         checking is done to validate this.
         '''
         super().__init__(sentinel, location, name)
-        self.default_method = lambda test_object, event, context: test_object
+        self.default_method = 'Original'
         self.pass_method = self.set_method(pass_method)
         self.fail_method = self.set_method(fail_method)
 
@@ -1259,7 +1293,9 @@ class Rule(Trigger):
             valid action names, or if rule_method is a function and does not
             have one of the following argument signature types:
                 rule_method(item: SourceItem)
+                rule_method(item: SourceItem, **context)
                 rule_method(item: SourceItem, event: TriggerEvent)
+                rule_method(item: SourceItem, event: TriggerEvent, **context)
                 rule_method(item: SourceItem, event: TriggerEvent, context)
         Returns:
             RuleFunc: A function with the standard Rule Method argument
@@ -1315,6 +1351,9 @@ class Rule(Trigger):
         else:
             result = self.fail_method(test_object, self.event, context)
         return result
+
+    def __call__(self, test_object, context)->RuleResult:
+        return self.apply(test_object, context)
 
 
 class RuleSet():
@@ -1462,6 +1501,9 @@ class RuleSet():
             result = self.default_method(test_object, context)
         return result
 
+    def __call__(self, test_object, context)->RuleResult:
+        return self.apply(test_object, context)
+
 
     ############# Done To Here  ##################
 #%% Section Parser
@@ -1538,10 +1580,11 @@ class ProcessingMethods():  # pylint: disable=function-redefined
         return iter(next_source)
 
     def process(self, item, context)->RuleResult:
-        result = item
+        result = [item]
         for func in self.processing_methods:
-            result = func(result)
-        return result
+            output_iter = func_to_iter(result, func, context)
+            result = [item for item in output_iter]
+        return result[0]
 
     def read(self, source, context):
         self.context = context
@@ -1669,9 +1712,9 @@ class Section():  # pylint: disable=function-redefined
 
         # The context, scan_status and source attributes must be reset every
         # time the Section instance is applied to a new source iterable.  The
-        # reset() method is should set these attributes to the values below.
+        # reset() method set these attributes to the values below.
         # In addition, if the processor contains one or more Sections these
-        # attributes in the processor sections will must also be reset.
+        # attributes in the processor sections are also be reset.
 
         self.context = dict()
         self.scan_status = 'Not Started'
@@ -1858,7 +1901,6 @@ class Section():  # pylint: disable=function-redefined
                                          'items may only be of type Section.')
                 self._processor = processing_def
                 self._section_reader = self.subsection_processor
-
             else:
                 raise TypeError('processor must be one of SectionParser, a '
                                 'Section instance, a list of Section '
@@ -1895,7 +1937,8 @@ class Section():  # pylint: disable=function-redefined
             else:
                 yield item_read
             finally:
-                self.context.update(reader.context)
+                if context:
+                    self.context.update(context)
 
     def read_subsections(self, section_iter: Iterator,
                          subreaders: List[Section], context)->List[Any]:
@@ -1916,6 +1959,8 @@ class Section():  # pylint: disable=function-redefined
         if 'GEN_CLOSED' in inspect.getgeneratorstate(section_iter):
             # If the source has closed don't try reading subsections
             return None
+        if context is None:
+            context = {}
         subsection = list()
         for sub_rdr in subreaders:
             if not self.keep_partial:
@@ -2125,8 +2170,8 @@ class Section():  # pylint: disable=function-redefined
         else:
             self.source = source
             active_source = self.source  # Get cleaned and buffered source
-
-        self.context.update(context)
+        if context:
+            self.context.update(context)
         # If requested, advance through the source to the section start.
         if start_search:
             self.advance_to_start(active_source)
@@ -2265,7 +2310,7 @@ class Section():  # pylint: disable=function-redefined
         section_items = list()
         while True:
             try:
-                section_items.append(next(section_reader))
+                section_items.extend(next(section_reader))
             except StopIteration:
                 break
         # Apply the aggregate function

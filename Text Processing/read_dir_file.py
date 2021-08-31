@@ -300,11 +300,11 @@ heading_reader = tp.ProcessingMethods([
     ])
 folder_reader = tp.ProcessingMethods([
     tp.RuleSet([skip_dir_rule, file_listing_rule, dir_header_rule,
-             skip_file_count_rule, default_parser]),
+             skip_file_count_rule], default=default_parser),
     tp.drop_blanks
     ])
 summary_reader = tp.ProcessingMethods([
-    tp.RuleSet([file_count_rule, skip_totals_rule, default_parser]),
+    tp.RuleSet([file_count_rule, skip_totals_rule], default=default_parser),
     tp.drop_blanks
     ])
 

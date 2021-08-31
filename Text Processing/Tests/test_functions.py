@@ -4,8 +4,8 @@ import pandas as pd
 import Text_Processing as tp
 import read_dvh_file
 
-@unittest.skip('This is now a class method')
-class Test_cascading_iterators(unittest.TestCase):
+
+class TestProcessingMethods(unittest.TestCase):
     def test_simple_cascading_iterators(self):
         def ml(x): return x*10
         def dv(x): return x/5
@@ -214,12 +214,13 @@ class TestLineParser(unittest.TestCase):
         parsing_rules = [
             read_dvh_file.make_prescribed_dose_rule(),
             read_dvh_file.make_date_parse_rule(),
-            read_dvh_file.make_approved_status_rule(),
-            default_parser
+            read_dvh_file.make_approved_status_rule()
             ]
 
-        test_parser = tp.RuleSet(parsing_rules)
-        test_output = [test_parser.apply(line) for line in test_text]
+        test_parser = tp.RuleSet(parsing_rules, default=default_parser)
+        test_output = list()
+        for line in test_text:
+            test_output.extend(test_parser.apply(line, {}))
         self.assertListEqual(test_output, expected_output)
 
 
