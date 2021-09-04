@@ -17,16 +17,15 @@ from __future__ import annotations
 import re
 import csv
 import inspect
+import logging
 from pathlib import Path
 from inspect import isgeneratorfunction
 from functools import partial
+from itertools import chain
 from typing import Dict, List, Sequence, Tuple, TypeVar, Iterator
 from typing import Iterable, Any, Callable, Union, Generator, NamedTuple
 
 import pandas as pd
-
-from data_utilities import true_iterable
-import logging_tools as lg
 
 from buffered_iterator import BufferedIterator
 from buffered_iterator import BufferOverflowWarning
@@ -34,10 +33,87 @@ from buffered_iterator import BufferedIteratorEOF
 
 
 #%% Logging
-logger = lg.config_logger(prefix='Text Processing', level='DEBUG')
+logging.basicConfig(format='%(name)-20s - %(levelname)s: %(message)s')
+logger = logging.getLogger('Text Processing')
+logger.setLevel(logging.DEBUG)
 
+#%% Input and output Type Definitions
+SourceItem = TypeVar('SourceItem')
+Source = Iterable[SourceItem]
+# SourceOptions can be single SourceItem or an iterable of SourceItems.
+SourceOptions = Union[SourceItem, Source]
 
-#%% Type Definitions
+# 1 or more ProcessMethods applied to SourceItems result in ProcessedItems
+#   1 SourceItem ≠1 ProcessedItem;
+#	  • 1 SourceItem → 1 ProcessedItem
+#	  • 1 SourceItem → 2+ ProcessedItems
+#	  • 2+ SourceItems → 1 ProcessedItem;
+ProcessedItem = TypeVar('ProcessedItem')
+ProcessedSequence = Iterable[ProcessedItem]
+
+#%% Context Type
+# Context Provides a way to pass information between sections.
+# Context can be used to pass additional parameters to functions.
+ContextType = Union[Dict[str, Any], None]
+
+#%% Relevant Callable Type definitions for Process and Rule functions.
+# Sentinel and Process Functions
+# Sentinel and Process Functions can function that can act on a SourceItem
+# provided the function signature is one of the following:
+#   Callable[[SourceItem], ProcessedItem]
+#   Callable[[SourceItem, ContextType], ProcessedItem]
+#   Callable[[SourceItem, ...], ProcessedItem]
+#       Where ... represents keyword arguments
+ProcessFunc = Callable[[SourceItem, ContextType], ProcessedItem]
+ProcessCallableOptions = Union[ProcessFunc,
+                               Callable[[SourceItem], ProcessedItem],
+                               Callable[..., ProcessedItem]]
+# RuleMethods can take an additional positional argument, the TriggerEvent.
+# Supplied RuleMethods can be any Process function and can also have the
+# additional positional argument, the TriggerEvent:
+#   Callable[[SourceItem, "TriggerEvent"], ProcessedItem]
+RuleFunc = Callable[[SourceItem, "TriggerEvent", ContextType], ProcessedItem]
+RuleCallableOptions = Union[
+    ProcessCallableOptions,
+    RuleFunc,
+    Callable[[SourceItem, "TriggerEvent"], ProcessedItem],
+    ]
+SectionCallables = Union[ProcessFunc, RuleFunc]
+#%% Relevant Type definitions for Trigger Class and SubClasses.
+# Sentinels
+# Trigger sentinels define tests to be applied to a SourceItem.
+# Sentinel types that are independent of the SourceItem are bool and int.
+# sentinel=None becomes boolean True (Trigger always passes)
+TriggerSingleTypes = Union[None, bool, int]
+
+# Sentinel types that apply to string type SourceItems are str and re.Pattern.
+TriggerStringOptions = Union[str, re.Pattern]
+
+# Sentinel can also be any valid Process Functions
+# String and Callable sentinel types can also be provided as a list, where if
+# any one of the sentinels in the list pass the trigger passes.
+TriggerListOptions = Union[TriggerStringOptions, ProcessCallableOptions]
+# All possible sentinel types
+TriggerTypes = Union[TriggerSingleTypes, TriggerListOptions]
+# All possible sentinel types and valid sentinel list types
+TriggerOptions = Union[TriggerTypes, List[TriggerListOptions]]
+
+# Applying a trigger gives a TestResult, which can be a boolean, a regular
+# expression or the return from a Trigger Sentinel Function (ProcessedItem)
+EventType = Union[bool, int, str, re.match, ProcessedItem, None]
+TestResult = Union[bool, re.match, ProcessedItem]
+
+# Relevant Type definitions for SectionBreak Class
+OffsetTypes = Union[int, str]
+
+# Relevant Type definitions for Rule and RuleSet Classes
+RuleMethodOptions = Union[str, RuleCallableOptions, None]
+
+#%% Relevant Type definitions for Section Classes
+BreakOptions = Union["SectionBreak", List["SectionBreak"], str, None]
+ProcessorOptions = Union["ProcessingMethods", "Section", List["Section"]]
+
+#%% Old Type definitions
 # These type definitions will be redefined as class types.  They are defined
 # here to simplify Type annotations.
 Section = TypeVar('Section')  # pylint: disable=function-redefined
@@ -47,36 +123,12 @@ TriggerEvent = TypeVar('TriggerEvent')  # pylint: disable=function-redefined
 
 # NonStringSource represents the non-string type iterables used as a source
 NonStringSource = TypeVar('NonStringSource')
-ProcessedItem = TypeVar('ProcessedItem')
 ParsedString = List[str]
-SourceItem = Union[str, ParsedString, NonStringSource]
-Source = Iterable[SourceItem]
 
-ContextType = Union[Dict[str, Any], None]
 
-# Relevant Type definitions for Trigger Class
-TriggerSingleTypes = Union[None, bool, int]
-TriggerListOptions = Union[str, re.Pattern, Callable]
-TriggerTypes = Union[TriggerSingleTypes, TriggerListOptions]
-TriggerOptions = Union[TriggerTypes, List[TriggerListOptions]]
-CallableResult = TypeVar('CallableResult')  # Represents the return from a Trigger Callable
-EventType = Union[bool, int, str, re.match, CallableResult, None]
-TestResult = Union[bool, re.match, CallableResult]
 
-# Relevant Type definitions for SectionBreak Class
-OffsetTypes = Union[int, str]
 
-# Relevant Type definitions for Rule Class
-RuleResult = TypeVar('RuleResult')  # Represents the return from a Rule Method
-SingleItemFunc = Callable[[SourceItem], RuleResult]
-ItemEventFunc = Callable[[SourceItem, TriggerEvent], RuleResult]
-RuleFunc = Callable[[SourceItem, TriggerEvent, ContextType], RuleResult]
-RuleMethodOptions = Union[str, SingleItemFunc, ItemEventFunc, RuleFunc, None]
-
-ProcessFunc = Callable[[SourceItem, ContextType], RuleResult]
-ProcessMethodOptions = Union[str, SingleItemFunc, ProcessFunc, None]
-
-ProcessGenerator = Generator[RuleResult, None, None]
+ProcessGenerator = Generator[ProcessedItem, None, None]
 ProcessMethodTypes = Union[ProcessFunc, ProcessGenerator, "Rule", "RuleSet"]
 
 TestType = Callable[[TriggerTypes, SourceItem, ContextType], TestResult]
@@ -91,15 +143,10 @@ ParseResults = Union[List[ParsedString], None]
 StringSource = Iterable[str]
 ParsedStringSource = Union[Iterator[ParsedString], Sequence[ParsedString]]
 
-# Relevant Type definitions for Section Classes
-BreakOptions = Union[SectionBreak, List[SectionBreak], str, None]
-ProcessorOptions = Union["ProcessingMethods", Section, List[Section]]
 
 # TODO create more type definitions: Line, ...
 # TODO more explicit generic type definitions
 # TODO Move generic functions to separate module
-# TODO copy clean_ascii_text from file_utilities
-# TODO copy true_iterable from data_utilities
 # Move the major classes:  Section, SectionReader, SectionBreak, ParsingRule,
 # Trigger to a separate Module
 
@@ -107,6 +154,136 @@ ProcessorOptions = Union["ProcessingMethods", Section, List[Section]]
 #%% String Functions
 # These functions act on a string or list of strings.
 # They are often applied to a generator using partial.
+def clean_ascii_text(text: str, charater_map: Dict[str, str] = None)-> str:
+    '''Remove non ASCII characters from a string.
+    This is intended to deal with encoding incompatibilities.
+    Special character strings in the test are replace with their ASCII
+    equivalent All other non ASCII characters are removed.
+    Arguments:
+        text {str} -- The string to be cleaned.
+        charater_map {optional, Dict[str, str]} -- A mapping of UTF-8 or other
+        encoding strings to an alternate ASCII string.
+    '''
+    special_charaters = {'cm³': 'cc'}
+    if charater_map:
+        special_charaters.update(charater_map)
+    for (special_char, replacement) in special_charaters.items():
+        if special_char in text:
+            patched_text = text.replace(special_char, replacement)
+        else:
+            patched_text = text
+    bytes_text = patched_text.encode(encoding="ascii", errors="ignore")
+    clean_text = bytes_text.decode()
+    return clean_text
+
+
+def true_iterable(variable)-> bool:
+    '''Indicate if the variable is a non-string type iterable.
+    Arguments:
+        variable {Iterable[Any]} -- The variable to test.
+    Returns:
+        True if variable is a non-string iterable.
+    '''
+    return not isinstance(variable, str) and isinstance(variable, Iterable)
+
+
+def build_date_re(compile_re=True, include_time=True):
+    '''Compile a regular expression for parsing a date_string.
+    Combines patterns for Date and Time.
+    Allows for the following date and time formats
+    Short date
+        yyyy-MM-dd
+        dd/MM/yyyy
+        dd/MM/yy
+        d/M/yy
+        yy-MM-dd
+        M/dd/yy
+        dd-MMM-yy
+        dd-MMM-yy
+    Long date
+        MMMM d, yyyy
+        dddd, MMMM dd, yyyy
+        MMMM-dd-yy
+        d-MMM-yy
+    Long time
+        h:mm:ss tt
+        hh:mm:ss tt
+        HH:mm:ss
+        H:mm:ss
+    Short Time
+        h:mm tt
+        hh:mm tt
+        HH:mm tt
+        H:mm
+    '''
+    date_pattern = (
+        '(?P<date1>'       # beginning of date1 string group
+        '[a-zA-Z0-9]+'     # Month Day or year as a number or text
+        ')'                # end of date1 string group
+        '(?P<delimeter1>'  # beginning of delimeter1 string group
+        '[\s,-/]{1,2}'     # Date delimiter one of '-' '/' or ', '
+        ')'                # end of delimeter1 string group
+        '(?P<date2>'       # beginning of date2 string group
+        '[a-zA-Z0-9]+'     # Month Day or year as a number or text
+        ')'                # end of date2 string group
+        '(?P<delimeter2>'  # beginning of delimeter2 string group
+        '[\s,-/]{1,2}'     # Date delimiter one of '-' '/' or ', '
+        ')'                # end of delimeter2 string group
+        '(?P<date3>'       # beginning of date3 string group
+        '\d{2,4}'          # day or year as a number
+        ')'                # end of date3 string group
+        '(?P<date4>'       # beginning of possible date4 string group
+        '((?<=, )\d{2,4})?'# Additional year section if date1 is the day name
+        ')'                # end of date4 string group
+        )
+    time_pattern = (
+        '\s+'              # gap between date and time
+        '(?P<time>'        # beginning of time string group
+        '\d{1,2}'          # Hour as 1 or 2 digits
+        ':'                # Time delimiter
+        '\d{1,2}'          # Minutes as 1 or 2 digits
+        ':?'               # Time delimiter
+        '\d{0,2}'          # Seconds (optional) as 0,  1 or 2 digits
+        ')'                # end of time string group
+        )
+    am_pm_pattern = (
+        '\s?'              # possible space separating time from AM/PM indicator
+        '(?P<am_pm>'       # beginning of possible AM/PM (group)
+        '[aApP][mM]'       # am or pm in upper or lower case
+        ')?'               # end of am/pm string group
+        '\s?'              # possible space after the date and time ends
+        )
+    if include_time:
+        full_pattern = ''.join([date_pattern, time_pattern, am_pm_pattern])
+    else:
+        full_pattern = date_pattern
+    if compile_re:
+        return re.compile(full_pattern)
+    return full_pattern
+
+
+def make_date_time_string(date_match: re.match,
+                          include_time: bool = True)->str:
+    '''Extract date and time strings.
+    Combine time and am/pm strings.
+    '''
+    if date_match:
+        date_match_groups = date_match.groups(default='')
+        if include_time:
+            date_parameters = [
+                date_part for date_part in chain(
+                    date_match_groups[0:6],
+                    [' '],
+                    date_match_groups[6:8]
+                    )
+                ]
+        else:
+            date_parameters = date_match_groups[0:6]
+        date_string = ''.join(date_parameters)
+    else:
+        date_string = ''
+    return date_string
+
 
 def join_strings(text1: Strings, text2: OptStr = None, join_char=' ') -> str:
     '''Join text2 to the end of text1 using join_char.
@@ -211,8 +388,9 @@ def csv_parser(line: str, dialect_name='excel') -> ParseResults:
         csv_iter = csv.reader(line, dialect_name)
         parsed_lines = [row for row in csv_iter]
     else:
-        # This assumes that a single input line will never result in multiple
-        # output lines.
+        # FIXME csv_parser need to become a generator function.
+        # Not: current code assumes that a single input line will never result
+        # in multiple output lines.  -- Is this True ?
         csv_iter = csv.reader([line], dialect_name)
         parsed_lines = [row for row in csv_iter][0]
     return parsed_lines
@@ -500,7 +678,67 @@ def file_reader(file_path: Path)->BufferedIterator:
 
 
 #%% ##### These all belong in their own module
-def sig_match(given_method, sig_type='Process'):
+def standard_action(action_name: str, method_type='Process')->SectionCallables:
+    '''Convert a Method name to a Standard Function.
+
+    Take the name of a standard actions and return the matching function.
+    Valid Action names depends on the method type:
+        Process Type:
+            'Original': return the original item supplied.
+            'Blank': return ''  (an empty string).
+            'None': return None.
+        Rule Type:
+            'Original': return the original item supplied.
+            'Blank': return ''  (an empty string).
+            'None': return None.
+            'Value': return the self.event.test_value object.
+            'Name': return the self.event.test_name object.
+
+    Arguments:
+        action_name (str): The name of a standard action.
+        method_type (str): The type of action function expected.
+            One of ['Process', 'Rule']. Defaults to 'Process'
+
+    Raises: ValueError If the action_name or method_type supplied are not one of
+        the valid action names or method types.
+    Returns:
+            (ProcessFunc, RuleFunc): One of the standard action functions.
+    '''
+    rule_actions = {
+            'Original': lambda test_object, event, context: test_object,
+            'Event':    lambda test_object, event, context: event,
+            'Name':     lambda test_object, event, context: event.test_name,
+            'Value':    lambda test_object, event, context: event.test_value,
+            'Blank':    lambda test_object, event, context: '',
+            'None':     lambda test_object, event, context: None
+            }
+    process_actions = {
+            'Original': lambda test_object, context: test_object,
+            'Blank':  lambda test_object, context: '',
+            'None':  lambda test_object, context: None
+            }
+
+    if method_type == 'Process':
+        use_function = process_actions.get(action_name)
+    elif method_type == 'Rule':
+        use_function = rule_actions.get(action_name)
+    else:
+        msg = ' '.join(['method_type can be: ["Process" or "Rule"]',
+                        f'Got {method_type}'])
+        raise ValueError(msg)
+    if not use_function:
+        if method_type == 'Process':
+            valid_actions = list(process_actions.keys())
+        else:
+            valid_actions = ', '.join(rule_actions.keys())
+        msg = ' '.join(['Standard Action names are:', valid_actions,
+                        f'Got {action_name}'])
+        raise ValueError(msg)
+    return use_function
+
+
+def sig_match(given_method: RuleCallableOptions,
+              sig_type='Process')->SectionCallables:
     '''Convert the supplied function with a standard signature.
 
     The conversion is based on number of arguments without defaults and the
@@ -533,7 +771,7 @@ def sig_match(given_method, sig_type='Process'):
     Raises: ValueError If given_method does not have one of the expected
         argument signature types.
     Returns:
-        [RuleFunc|ProcessFunc]: A function with the standard Rule or Process
+        (ProcessFunc, RuleFunc): A function with the standard Rule or Process
             Method argument signature:
          rule_method(test_object: SourceItem, event: TriggerEvent, context)
          process_method(test_object: SourceItem, context)
@@ -578,6 +816,51 @@ def sig_match(given_method, sig_type='Process'):
     return use_function
 
 
+def set_method(given_method: RuleCallableOptions,
+               method_type='Process')->SectionCallables:
+    '''Convert the supplied function or action name to a Function with
+    the standard signature.
+
+    See the standard_action function for valid action names. See the sig_match
+    function for valid function argument signatures.
+    Add a special attribute to the returned function indicating if it is a
+    generator function.
+
+    Argument:
+        rule_method (RuleMethodOptions): A function, or the name of a
+            standard action.
+        method_type (str): The type of action function expected.
+            One of ['Process', 'Rule']. Defaults to 'Process'
+    Raises: ValueError If rule_method is a string and is not one of the
+        valid action names, or if rule_method is a function and does not
+        have one of the valid argument signature types.
+
+    Arguments:
+        rule_method (ProcessMethodOptions): A function, or the name of a
+            standard action.
+        method_type (str): The type of action function expected.
+            One of ['Process', 'Rule']. Defaults to 'Process'
+    Returns:
+        (ProcessFunc, RuleFunc): A function with the standard Rule or Process
+            Method argument signature:
+         rule_method(test_object: SourceItem, event: TriggerEvent, context)
+         process_method(test_object: SourceItem, context)
+    '''
+    if isinstance(given_method, str):
+        use_function = standard_action(given_method, method_type)
+        use_function.is_gen = False
+    else:
+        use_function = sig_match(given_method, sig_type=method_type)
+        # Add a special attribute to use_function because sig_match hides
+        # whether rule_method is a generator function.  This attribute is
+        # checked when the function is called.
+        if isgeneratorfunction(given_method):
+            use_function.is_gen = True
+        else:
+            use_function.is_gen = False
+    return use_function
+
+
 def func_to_iter(source: Iterator, func: Callable, context) -> Iterator:
     '''Create a iterator that applies func to each item in source.
 
@@ -617,7 +900,7 @@ class TriggerEvent(): # pylint: disable=function-redefined
     Attributes:
         trigger_name (str): The name of the trigger the test is associated
             with.
-        test_result (bool): True if one of the applied tests passed; otherwise
+        test_passed (bool): True if one of the applied tests passed; otherwise
             False.
         test_name (str): Label describing the passed text. Defaults to ''.
             The test name type depends on sentinel_type:
@@ -649,7 +932,7 @@ class TriggerEvent(): # pylint: disable=function-redefined
         '''Initialize a TriggerEvent with default values.
         '''
         self.trigger_name: str = ''
-        self.test_result: bool = False
+        self.test_passed: bool = False
         self.test_name: str = ''
         self.test_value: EventType = None
         self.reset()
@@ -658,13 +941,13 @@ class TriggerEvent(): # pylint: disable=function-redefined
         '''Set the event to its default values.
 
         Default values are:
-            test_result = False
+            test_passed = False
             trigger_name = ''
             test_name = ''
             event = None
         '''
         self.trigger_name = ''
-        self.test_result = False
+        self.test_passed = False
         self.test_name = ''
         self.test_value = None
 
@@ -700,7 +983,7 @@ class TriggerEvent(): # pylint: disable=function-redefined
         '''
         self.reset()
         if test_result:
-            self.test_result = True
+            self.test_passed = True
             self.trigger_name = trigger_name
             if sentinel_type ==  'None':
                 self.test_value = test_result
@@ -970,23 +1253,23 @@ class Trigger():
         Returns:
             (bool): True if the supplied item passed a test, False otherwise.
         '''
-        result = False
+        test_passed = False
         self._event.reset()
         if self._is_multi_test:
             for sentinel_item in self.sentinel:
                 test_result = self._test_func(sentinel_item, item, context)
                 if test_result:
-                    result = True
+                    test_passed = True
                     self._event.record_event(test_result, sentinel_item,
                                              self.name, self._sentinel_type)
                     break
         else:
             test_result = self._test_func(self.sentinel, item, context)
             if test_result:
-                result = True
+                test_passed = True
                 self._event.record_event(test_result, self.sentinel,
                                          self.name, self._sentinel_type)
-        return result
+        return test_passed
 
 
 class SectionBreak(Trigger):  # pylint: disable=function-redefined
@@ -1244,59 +1527,20 @@ class Rule(Trigger):
         '''
         super().__init__(sentinel, location, name)
         self.default_method = 'Original'
-        self.pass_method = self.set_method(pass_method)
-        self.fail_method = self.set_method(fail_method)
+        self.pass_method = self.set_rule_method(pass_method)
+        self.fail_method = self.set_rule_method(fail_method)
+        self.use_gen = False
 
-    @staticmethod
-    def standard_action(action_name: str)->RuleFunc:
-        '''Convert a Method name to a Standard Function.
+    def set_rule_method(self, rule_method: RuleMethodOptions)->RuleFunc:
+        '''Generate a function with the standard RuleMethod signature.
 
-        Take the name of a standard actions and return the matching function.
-
-        Argument:
-            action_name (str): The name of the standard action.
-                Valid Action names are:
-                    'Original': return the item being.
-                    'Event': return the self.event object.
-                    'Value': return the self.event.test_value object.
-                    'Name': return the self.event.test_name object.
-                    'None': return None
-                    'Blank': return ''  (an empty string)
-        Raises: ValueError If the string supplied is not one of the valid
-            action names.
-        Returns:
-            RuleFunc: One of the standard action functions.
-        '''
-        action_dict = {
-            'Original': lambda test_object, event, context: test_object,
-            'Event':    lambda test_object, event, context: event,
-            'Name':     lambda test_object, event, context: event.test_name,
-            'Value':    lambda test_object, event, context: event.test_value,
-            'Blank':    lambda test_object, event, context: '',
-            'None':     lambda test_object, event, context: None
-            }
-        use_function = action_dict.get(action_name)
-        if not use_function:
-            raise ValueError('Standard Action names are: '
-                             '["Original", "Event", "None", "Blank"]'
-                             f'Got {action_name}')
-        return use_function
-
-    def set_method(self, rule_method: RuleMethodOptions)->RuleFunc:
-        '''Convert the supplied function or action name to a Function with
-        the standard signature.
-
+        If rule_method is None, return the default method.
         Argument:
             rule_method (RuleMethodOptions): A function, or the name of a
                 standard action.
         Raises: ValueError If rule_method is a string and is not one of the
             valid action names, or if rule_method is a function and does not
-            have one of the following argument signature types:
-                rule_method(item: SourceItem)
-                rule_method(item: SourceItem, **context)
-                rule_method(item: SourceItem, event: TriggerEvent)
-                rule_method(item: SourceItem, event: TriggerEvent, **context)
-                rule_method(item: SourceItem, event: TriggerEvent, context)
+            have a valid argument signature type.
         Returns:
             RuleFunc: A function with the standard Rule Method argument
             signature:
@@ -1304,10 +1548,9 @@ class Rule(Trigger):
         '''
         if not rule_method:
             use_function = self.default_method
-        elif isinstance(rule_method, str):
-            use_function = self.standard_action(rule_method)
+            use_function.is_gen = False
         else:
-            use_function = sig_match(rule_method, sig_type='Rule')
+            use_function = set_method(rule_method, method_type='Rule')
         return use_function
 
     @property
@@ -1330,11 +1573,12 @@ class Rule(Trigger):
             rule_method (RuleMethodOptions): A function, or the name of a
                 standard action.
         '''
-        self._default_method = self.set_method(rule_method)
+        default_function = set_method(rule_method, method_type='Rule')
+        self._default_method = default_function
 
-    def apply(self, test_object, context)->RuleResult:
+    def apply(self, test_object, context)->ProcessedItem:
         '''Apply the Rule to the supplied test item and return the output of
-        the relevant method based on the test result.
+        the relevant method based on the test result.  This Method is not valid for Generator Functions.
 
         Arguments:
             test_object (SourceItem): The object to be tested.
@@ -1348,12 +1592,32 @@ class Rule(Trigger):
         is_match = self.evaluate(test_object, context)
         if is_match:
             result = self.pass_method(test_object, self.event, context)
+            self.use_gen = self.pass_method.is_gen
         else:
             result = self.fail_method(test_object, self.event, context)
+            self.use_gen = self.fail_method.is_gen
         return result
 
-    def __call__(self, test_object, context)->RuleResult:
-        return self.apply(test_object, context)
+    def __call__(self, test_object: SourceItem,
+                 context: ContextType = None)->ProcessedItem:
+        '''Rule and Trigger methods only accept a single SourceItem
+        call returns a generator function that iterates over the output of a
+        single SourceItem.
+        '''
+        if not context:
+            context = dict()
+        result = self.apply(test_object, context)
+        if result is None:
+            yield None
+        if self.use_gen:
+            try:
+                for p_item in result:
+                    yield p_item
+            except StopIteration:
+                return None
+        else:
+            yield result
+        return None
 
 
 class RuleSet():
@@ -1391,7 +1655,7 @@ class RuleSet():
 
 
     def __init__(self, rule_list: List[Rule],
-                 default: ProcessMethodOptions = 'None', name='RuleSet'):
+                 default: ProcessCallableOptions = 'None', name='RuleSet'):
         '''Apply a sequence of Rules, stopping with the first Rule to pass.
 
         A RuleSet is a combination of Rules that expect similar input and
@@ -1425,62 +1689,20 @@ class RuleSet():
         '''
         self.name = name
         if default is None:
-            self.default_method = self.set_method('None')
+            self.default_method = set_method('None', 'Process')
         else:
-            self.default_method = self.set_method(default)
+            self.default_method =  set_method(default, 'Process')
+            if isgeneratorfunction(default):
+                self.default_method.is_gen = True
+            else:
+                self.default_method.is_gen = False
         if all(isinstance(rule, Rule) for rule in rule_list):
             self.rule_seq = rule_list
         else:
             raise ValueError('All items in rule_list must be of type Rule.')
+        self.use_gen = False
 
-    @staticmethod
-    def standard_action(action_name: str)->ProcessFunc:
-        '''Convert a method name to a Standard Function.
-
-        Take the name of a standard actions and return the matching function.
-
-        Argument:
-            action_name (str): The name of the standard action.
-                Valid Action names are:
-                    'Original': return the item being.
-                    'None': return None
-                    'Blank': return ''  (an empty string)
-        Raises: ValueError If the string supplied is not one of the valid
-            action names.
-        Returns:
-            ProcessFunc: One of the standard action functions.
-        '''
-        action_dict = {
-            'Original': lambda test_object, context: test_object,
-            'Blank':  lambda test_object, context: '',
-            'None':  lambda test_object, context: None
-            }
-        use_function = action_dict.get(action_name)
-        if not use_function:
-            raise ValueError('Standard Action names are: '
-                             '["Original", "None", "Blank"]'
-                             f'Got {action_name}')
-        return use_function
-
-    def set_method(self, process_method: ProcessMethodOptions)->ProcessFunc:
-        '''Convert the supplied function or action name to a Function with
-        the standard signature.
-
-        Argument:
-            rule_method (ProcessMethodOptions): A function, or the name of a
-                standard action.
-        Returns:
-            ProcessFunc: A function with the standard processing method
-            argument signature:
-         rule_method(test_object: SourceItem, context)
-        '''
-        if isinstance(process_method, str):
-            use_function = self.standard_action(process_method)
-        else:
-            use_function = sig_match(process_method, sig_type='Process')
-        return use_function
-
-    def apply(self, test_object: SourceItem, context)->RuleResult:
+    def apply(self, test_object: SourceItem, context)->ProcessedItem:
         '''Apply the RuleSet to the supplied test item and return the output of
         the first Rule to pass.
 
@@ -1495,14 +1717,32 @@ class RuleSet():
         '''
         for rule in self.rule_seq:
             result = rule.apply(test_object, context)
-            if rule.event.test_result:
+            if rule.event.test_passed:
+                self.use_gen = rule.use_gen
                 break
         else:
             result = self.default_method(test_object, context)
         return result
 
-    def __call__(self, test_object, context)->RuleResult:
-        return self.apply(test_object, context)
+    def __call__(self, test_object, context)->ProcessedItem:
+        '''Rule and Trigger methods only accept a single SourceItem
+        call returns a generator function that iterates over the output of a
+        single SourceItem.
+        '''
+        if not context:
+            context = dict()
+        result = self.apply(test_object, context)
+        if result is None:
+            yield None
+        if self.use_gen:
+            try:
+                for p_item in result:
+                    yield p_item
+            except StopIteration:
+                return None
+        else:
+            yield result
+        return None
 
 
     ############# Done To Here  ##################
@@ -1548,13 +1788,14 @@ class ProcessingMethods():  # pylint: disable=function-redefined
     def __init__(self, processing_methods: List[ProcessMethodTypes] = None,
                  section_name = 'SectionProcessor'):
         self.section_name = section_name
-        if processing_methods:
-            if isinstance(processing_methods, Iterable):
-                self.processing_methods = processing_methods
-            else:
-                self.processing_methods = list(processing_methods)
-        else:
+        if not processing_methods:
             self.processing_methods = lambda item, context: item
+
+        elif isinstance(processing_methods, Iterable):
+                self.processing_methods = processing_methods
+        else:
+            self.processing_methods = list(processing_methods)
+
 
     def reader(self, source: Iterator, context)->Iterator:
         '''Creates a sequence of nested iterator, taking as input the output from
@@ -1579,12 +1820,12 @@ class ProcessingMethods():  # pylint: disable=function-redefined
             next_source = func_to_iter(next_source, func, context)
         return iter(next_source)
 
-    def process(self, item, context)->RuleResult:
+    def process(self, item, context)->ProcessedItem:
         result = [item]
         for func in self.processing_methods:
             output_iter = func_to_iter(result, func, context)
             result = [item for item in output_iter]
-        return result[0]
+        return result[0]  # FIXME Need to account for multiple line output
 
     def read(self, source, context):
         self.context = context
@@ -1769,7 +2010,7 @@ class Section():  # pylint: disable=function-redefined
 
 
     @start_section.setter
-    def start_section(self, section_break: BreakOptions):
+    def start_section(self, section_break: BreakOptions)->List[SectionBreak]:
         '''List[SectionBreak]: Defined by one of:
                 List[SectionBreak], the start_section type.
                 SectionBreak, which is converted to a single element list.
@@ -1799,7 +2040,7 @@ class Section():  # pylint: disable=function-redefined
         return self._end_section
 
     @end_section.setter
-    def end_section(self, section_break: BreakOptions):
+    def end_section(self, section_break: BreakOptions)->List[SectionBreak]:
         '''List[SectionBreak]: Defined by one of:
                 List[SectionBreak], the end_section type.
                 SectionBreak, which is converted to a single element list.
@@ -1870,7 +2111,7 @@ class Section():  # pylint: disable=function-redefined
         return self._processor
 
     @processor.setter
-    def processor(self, processing_def: ProcessorOptions = None):
+    def processor(self, processing_def: ProcessorOptions = None)->Tuple[SectionProcessor, List[Section]]:
         '''Validates the Section Processor and sets the relevant
             section_reader method.
         Args:

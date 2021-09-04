@@ -5,12 +5,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-import logging_tools as lg
 from buffered_iterator import BufferedIterator
 import read_dvh_file
 
-#%% Logging
-logger = lg.config_logger(prefix='Temp3', level='INFO')
 
 class TestSectionSequencer(unittest.TestCase):
     def setUp(self):

@@ -36,14 +36,14 @@ import re
 import pandas as pd
 import xlwings as xw
 
-import logging_tools as lg
+import logging
 import Text_Processing as tp
-from date_processer import  build_date_re, make_date_time_string
 
 
 #%% Logging
-logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
-
+logging.basicConfig(format='%(name)-20s - %(levelname)s: %(message)s')
+logger = logging.getLogger('read_dvh.file')
+logger.setLevel(logging.INFO)
 
 #%% Regex Parsing patterns
 # File Count and summary:
@@ -64,7 +64,7 @@ folder_summary_pt = re.compile(
     ')'                # end of size string group
     ' bytes'           # "bytes" text
     )
-date_pattern = build_date_re(compile_re=False)
+date_pattern = tp.build_date_re(compile_re=False)
 file_listing_pt = re.compile(
     f'{date_pattern}'  # Insert date pattern
     '[ ]+'             # Arbitrary number of spaces
@@ -138,7 +138,7 @@ def file_parse(line: str, event, *args, **kwargs) -> tp.ParseResults:
     file_line_parts = event.groupdict(default='')
     parsed_line = tuple([
         file_line_parts['filename'],
-        make_date_time_string(event),
+        tp.make_date_time_string(event),
         int(file_line_parts['size'])
         ])
     return [parsed_line]

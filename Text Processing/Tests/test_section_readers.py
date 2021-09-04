@@ -1,7 +1,6 @@
 import unittest
 from pathlib import Path
 import csv
-from file_utilities import clean_ascii_text
 import Text_Processing as tp
 from buffered_iterator import BufferedIterator
 import read_dvh_file
@@ -445,7 +444,7 @@ class TestSections(unittest.TestCase):
 
     def test_dvh_info_reader(self):
         dvh_info_reader = tp.ProcessingMethods([
-            clean_ascii_text,
+            tp.clean_ascii_text,
             tp.RuleSet([read_dvh_file.make_date_parse_rule()],
                        default=self.default_parser),
             tp.trim_items,
@@ -460,7 +459,7 @@ class TestSections(unittest.TestCase):
 
     def test_plan_info1_read(self):
         plan_info_reader = tp.ProcessingMethods([
-            clean_ascii_text,
+            tp.clean_ascii_text,
             tp.RuleSet([read_dvh_file.make_prescribed_dose_rule(),
                      read_dvh_file.make_approved_status_rule()],
                        default=self.default_parser),
@@ -477,7 +476,7 @@ class TestSections(unittest.TestCase):
 
     def test_plan_info2_read(self):
         plan_info_reader = tp.ProcessingMethods([
-            clean_ascii_text,
+            tp.clean_ascii_text,
             tp.RuleSet([read_dvh_file.make_prescribed_dose_rule(),
                      read_dvh_file.make_approved_status_rule()],
                        default=self.default_parser),
@@ -494,7 +493,7 @@ class TestSections(unittest.TestCase):
 
     def test_structure_reader(self):
         structure_reader = tp.ProcessingMethods([
-            clean_ascii_text,
+            tp.clean_ascii_text,
             self.default_parser,
             tp.trim_items,
             tp.drop_blanks,
@@ -509,7 +508,7 @@ class TestSections(unittest.TestCase):
 
     def test_dvh_reader(self):
         dvh_data_reader = tp.ProcessingMethods([
-            clean_ascii_text,
+            tp.clean_ascii_text,
             tp.define_fixed_width_parser(widths=10),
             tp.trim_items,
             tp.drop_blanks,

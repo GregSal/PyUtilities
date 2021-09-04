@@ -7,19 +7,19 @@
 
 #%% Imports
 from pathlib import Path
-
+import logging
 from typing import Callable
 import re
+
 import pandas as pd
 
-import logging_tools as lg
-from file_utilities import clean_ascii_text
 import Text_Processing as tp
 
 
 #%% Logging
-logger = lg.config_logger(prefix='read_dvh.file', level='INFO')
-
+logging.basicConfig(format='%(name)-20s - %(levelname)s: %(message)s')
+logger = logging.getLogger('read_dvh.file')
+logger.setLevel(logging.INFO)
 
 #%% Line Parsing Functions
 # Date Rule
@@ -60,7 +60,8 @@ def make_approved_status_rule() -> tp.Rule:
             ['Approved on', line[idx2+1:idx3]],
             ['Approved by', line[idx4:]]
             ]
-        return parsed_lines
+        for line in parsed_lines:
+            yield line
 
     approved_status_rule = tp.Rule('Treatment Approved', location='IN',
                                    pass_method=approved_status_parse,
@@ -94,7 +95,8 @@ def make_prescribed_dose_rule() -> tp.Rule:
             ['Prescribed dose', match_results['dose']],
             ['Prescribed dose unit', match_results['unit']]
             ]
-        return parsed_lines
+        for line in parsed_lines:
+            yield line
 
     prescribed_dose_pattern = (
         r'^Prescribed dose\s*'  # Begins with Prescribed dose
@@ -176,14 +178,14 @@ def to_structure_data_tuple(structure_data_list):
 default_parser = tp.define_csv_parser('dvh_info', delimiter=':',
                                       skipinitialspace=True)
 dvh_info_reader = tp.ProcessingMethods([
-    clean_ascii_text,
+    tp.clean_ascii_text,
     tp.RuleSet([make_date_parse_rule()], default=default_parser),
     tp.trim_items,
     tp.drop_blanks,
     tp.merge_continued_rows
     ])
 plan_info_reader = tp.ProcessingMethods([
-    clean_ascii_text,
+    tp.clean_ascii_text,
     tp.RuleSet([make_prescribed_dose_rule(), make_approved_status_rule()],
                default=default_parser),
     tp.trim_items,
@@ -191,7 +193,7 @@ plan_info_reader = tp.ProcessingMethods([
     tp.convert_numbers
     ])
 structure_info_reader = tp.ProcessingMethods([
-    clean_ascii_text,
+    tp.clean_ascii_text,
     default_parser,
     tp.trim_items,
     tp.drop_blanks,
@@ -199,7 +201,7 @@ structure_info_reader = tp.ProcessingMethods([
     fix_structure_names
     ])
 dvh_data_reader = tp.ProcessingMethods([
-    clean_ascii_text,
+    tp.clean_ascii_text,
     tp.define_fixed_width_parser(widths=10),
     tp.trim_items,
     tp.drop_blanks,

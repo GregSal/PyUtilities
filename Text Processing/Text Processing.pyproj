@@ -26,12 +26,6 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="data_utilities.py" />
-    <Compile Include="date_processer.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="file_utilities.py" />
-    <Compile Include="logging_tools.py" />
     <Compile Include="read_dir_file.py">
       <SubType>Code</SubType>
     </Compile>
@@ -58,7 +52,11 @@
     <Compile Include="Text_Processing.py" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="env_analysis.xlsx" />
+    <Content Include="References\env_analysis.xlsx" />
+    <Content Include="References\read_dvh_test_results.xlsx" />
+    <Content Include="References\scan  method comparison.docx" />
+    <Content Include="References\Section Options.xlsx" />
+    <Content Include="References\Section read.xlsx" />
     <Content Include="requirements.txt" />
     <Content Include="Text Files\Bolus Plancheck Cleaned.txt" />
     <Content Include="Text Files\Dir_listing_text.txt" />
@@ -92,6 +90,7 @@
     <Content Include="Text Files\trigger_test_text.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="References\" />
     <Folder Include="Tests\" />
     <Folder Include="Text Files\" />
     <Folder Include="Text Files\Test Dir Structure\" />

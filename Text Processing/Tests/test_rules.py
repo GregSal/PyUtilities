@@ -38,21 +38,13 @@ def parse_prescribed_dose(line, event, **context)->List[List[str]]:# pylint: dis
             [string_item.format(**match_results) for string_item in line_tmpl]
             for line_tmpl in parse_template
             ]
-    return parsed_lines
+    for line in parsed_lines:
+        yield line
 
 
 class TestPrescribedDoseParse(unittest.TestCase):
     def setUp(self):
-        base_path = Path.cwd()
-        test_file = base_path / 'trigger_test_text.txt'
-        #self.test_lines = self.file_lines()
-        self.context = {
-            'File Name': test_file.name,
-            'File Path': test_file.parent,
-            'Line Count': 0
-            }
-
-        prescribed_dose_pattern = (
+        re_pattern = re.compile(
             r'^Prescribed dose\s*'            # Begins with Prescribed dose
             r'[[]'                            # Unit start delimiter
             r'(?P<unit>[A-Za-z]+)'            # unit group: text surrounded by []
@@ -62,13 +54,11 @@ class TestPrescribedDoseParse(unittest.TestCase):
             r'[\s\r\n]*'                      # drop trailing whitespace
             r'$'                              # end of string
             )
-        re_pattern = re.compile(prescribed_dose_pattern)
-        self.rule = Rule(re_pattern, pass_method=parse_prescribed_dose,
-                         name = 'prescribed_dose_rule')
+        self.rule = Rule(re_pattern, pass_method=parse_prescribed_dose)
 
     def test_prescribed_dose_parse(self):
         line = 'Prescribed dose [cGy]: 5000.0'
-        parsed_lines = self.rule.apply(line, self.context)
+        parsed_lines = [p_line for p_line in self.rule(line, {})]
         results = [
             ['Prescribed dose', '5000.0'],
             ['Prescribed dose Unit', 'cGy']
@@ -77,7 +67,7 @@ class TestPrescribedDoseParse(unittest.TestCase):
 
     def test_no_prescribed_dose_parse(self):
         line = 'Prescribed dose [cGy]: not defined'
-        parsed_lines = self.rule.apply(line, self.context)
+        parsed_lines = [p_line for p_line in self.rule(line, {})]
         results = [
             ['Prescribed dose', ''],
             ['Prescribed dose Unit', '']
@@ -86,12 +76,10 @@ class TestPrescribedDoseParse(unittest.TestCase):
 
 
 #%%  Date parse tests
-def date_parse(line, event, **context)->List[List[str]]:  # pylint: disable=unused-argument
+def date_parse(line, event)->List[List[str]]:
     '''If Date,don't split beyond first :'''
-    parsed_lines = [
-        [event.test_value, line.split(':',maxsplit=1)[1]]
-        ]
-    return parsed_lines
+    parsed_line = [event.test_value, line.split(':',maxsplit=1)[1]]
+    return parsed_line
 
 
 class TestDateParse(unittest.TestCase):
@@ -109,13 +97,13 @@ class TestDateParse(unittest.TestCase):
 
     def test_date_parse(self):
         line = 'Date                 : Thursday, August 13, 2020 15:21:06'
-        expected_results = [['Date', ' Thursday, August 13, 2020 15:21:06']]
+        expected_results = ['Date', ' Thursday, August 13, 2020 15:21:06']
         parsed_lines = self.rule.apply(line, self.context)
         self.assertListEqual(parsed_lines, expected_results)
 
 
 #%% Line Parsing
-def approved_status_parse(line, event, context)->List[List[str]]:  # pylint: disable=unused-argument
+def approved_status_parse(line, event)->List[List[str]]:
     '''If Treatment Approved, Split "Plan Status" into 3 lines:
         Plan Status
         Approved on
@@ -130,8 +118,8 @@ def approved_status_parse(line, event, context)->List[List[str]]:  # pylint: dis
         ['Approved on', line[idx2:idx3]],
         ['Approved by', line[idx4:]]
         ]
-    return parsed_lines
-
+    for line in parsed_lines:
+        yield line
 
 #%%  Approval Status parse tests
 class TestApprovalParse(unittest.TestCase):
@@ -155,7 +143,7 @@ class TestApprovalParse(unittest.TestCase):
             ['Approved on', ' Thursday, January 02, 2020 12:55:56 '],
             ['Approved by', 'gsal']
             ]
-        parsed_lines = self.rule.apply(line, self.context)
+        parsed_lines = [p_line for p_line in self.rule(line, {})]
         self.assertListEqual(parsed_lines, expected_results)
 
 
@@ -254,37 +242,38 @@ class TestRuleSet(unittest.TestCase):
     def test_first_rule_wins(self):
         context = {}
         line, expected = self.test_pairs[0]
-        result = self.test_set.apply(line, context)
+        result = [text for text in self.test_set(line, context)][0]
         self.assertEqual(result, expected)
 
     def test_second_rule_only(self):
         context = {}
         line, expected = self.test_pairs[1]
-        result = self.test_set.apply(line, context)
+        result = [text for text in self.test_set(line, context)][0]
         self.assertEqual(result, expected)
 
     def test_function_rule(self):
         context = {}
         line, expected = self.test_pairs[2]
-        result = self.test_set.apply(line, context)
+        rule_gen = self.test_set(line, context)
+        result = [text for text in rule_gen][0]
         self.assertEqual(result, expected)
 
     def test_context_update(self):
         context = {'Initial Item': "nothing"}
         line, expected = self.test_pairs[2]
-        result = self.test_set.apply(line, context)
+        result = [text for text in self.test_set(line, context)][0]
         self.assertEqual(context['num'], float(line))
 
     def test_fail_to_default(self):
         context = {}
         line, expected = self.test_pairs[3]
-        result = self.test_set.apply(line, context)
+        result = [text for text in self.test_set(line, context)][0]
         self.assertEqual(result, expected)
 
     def test_second_rule_wins(self):
         context = {}
         line, expected = self.test_pairs[4]
-        result = self.test_set.apply(line, context)
+        result = [text for text in self.test_set(line, context)][0]
         self.assertEqual(result, expected)
 
 
@@ -301,8 +290,6 @@ class TestSingleLineParse(unittest.TestCase):
         self.default_parser = tp.define_csv_parser('comma')
         #use_trigger = Trigger('Use', name='Use')
         self.rule = Rule('Use', location='IN')
-
-
 
 
 if __name__ == '__main__':
