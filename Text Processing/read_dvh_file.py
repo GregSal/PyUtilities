@@ -19,7 +19,7 @@ import Text_Processing as tp
 #%% Logging
 logging.basicConfig(format='%(name)-20s - %(levelname)s: %(message)s')
 logger = logging.getLogger('read_dvh.file')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 #%% Line Parsing Functions
 # Date Rule

@@ -98,7 +98,8 @@ class TestDateParse(unittest.TestCase):
     def test_date_parse(self):
         line = 'Date                 : Thursday, August 13, 2020 15:21:06'
         expected_results = ['Date', ' Thursday, August 13, 2020 15:21:06']
-        parsed_lines = self.rule.apply(line, self.context)
+        result = iter(self.rule(line, self.context))
+        parsed_lines = next(result)
         self.assertListEqual(parsed_lines, expected_results)
 
 
@@ -177,26 +178,30 @@ class TestRuleActions(unittest.TestCase):
     def test_original_action(self):
         test_text = 'Test Text'
         test_rule = tp.Rule('Text', pass_method='Original')
-        result = test_rule.apply(test_text, {})
+        output = iter(test_rule(test_text))
+        result = next(output)
         self.assertEqual(result, test_text)
 
     def test_event_action(self):
         test_text = 'Test Text'
         sentinel = 'Text'
         test_rule = tp.Rule(sentinel, pass_method='Event')
-        result = test_rule.apply(test_text, {})
+        output = iter(test_rule(test_text))
+        result = next(output)
         self.assertEqual(result.test_value, sentinel)
 
     def test_none_action(self):
         test_text = 'Test Text'
         test_rule = tp.Rule('Text', pass_method='None')
-        result = test_rule.apply(test_text, {})
+        output = iter(test_rule(test_text))
+        result = next(output)
         self.assertIsNone(result)
 
     def test_blank_action(self):
         test_text = 'Test Text'
         test_rule = tp.Rule('Text', pass_method='Blank')
-        result = test_rule.apply(test_text, {})
+        # Note this works because the Rule methods are not generator functions.
+        result = test_rule.apply(test_text)
         self.assertEqual(result, '')
 
 class TestRuleFail(unittest.TestCase):
@@ -204,6 +209,7 @@ class TestRuleFail(unittest.TestCase):
         test_text = 'Test Line'
         test_rule = tp.Rule('Text', pass_method='Blank',
                             fail_method='Original')
+        # Note this works because the Rule methods are not generator functions.
         result = test_rule.apply(test_text, {})
         self.assertEqual(result, test_text)
         result2 = test_rule.apply('Test Text', {})

@@ -1,10 +1,11 @@
+#%% Imports
 import unittest
 from itertools import chain
 import pandas as pd
-import Text_Processing as tp
 import read_dvh_file
+import Text_Processing as tp
 
-
+#%% Start of Tests
 class TestProcessingMethods(unittest.TestCase):
     def test_simple_cascading_iterators(self):
         def ml(x): return x*10
@@ -17,8 +18,7 @@ class TestProcessingMethods(unittest.TestCase):
 
         source = range(5)
         method_set = tp.ProcessingMethods([skip_odd, ml, dv])
-        test_iter = method_set.read(source, {})
-        test_output = [i for i in test_iter]
+        test_output = method_set.read(source, {})
         self.assertListEqual(test_output, [0.0, 4.0, 8.0])
 
 
@@ -27,7 +27,7 @@ class TestParsers(unittest.TestCase):
         test_text = 'Part 1,"Part 2a, Part 2b"'
         expected_output = [['Part 1', 'Part 2a, Part 2b']]
         test_parser = tp.define_csv_parser(name='Default csv')
-        test_output = test_parser(test_text)
+        test_output = [row for row in test_parser(test_text)]
         self.assertListEqual(test_output, expected_output)
 
     def test_default_csv_parser(self):
@@ -112,9 +112,10 @@ class TestParseRules(unittest.TestCase):
         dose_rule = read_dvh_file.make_prescribed_dose_rule()
         test_output = list()
         for line in test_text:
-            result = dose_rule.apply(line, {})
-            if result:
-                test_output.extend(result)
+            result = dose_rule(line)
+            line_output = [p_line for p_line in result]
+            if dose_rule.event.test_passed:
+                test_output.extend(line_output)
         self.assertListEqual(test_output, expected_output)
 
     def test_date_parse_rule(self):
@@ -125,13 +126,12 @@ class TestParseRules(unittest.TestCase):
         expected_output = [
             ['Date', ' Friday, January 17, 2020 09:45:07']
             ]
-
         date_rule = read_dvh_file.make_date_parse_rule()
         test_output = list()
         for line in test_text:
-            result = date_rule.apply(line, {})
-            if result:
-                test_output.extend(result)
+            result = date_rule.apply(line)
+            if date_rule.event.test_passed:
+                test_output.append(result)
         self.assertListEqual(test_output, expected_output)
 
     def test_approved_status_rule(self):
@@ -151,9 +151,10 @@ class TestParseRules(unittest.TestCase):
         approved_status_rule = read_dvh_file.make_approved_status_rule()
         test_output = list()
         for line in test_text:
-            result = approved_status_rule.apply(line, {})
-            if result:
-                test_output.extend(result)
+            result = approved_status_rule.apply(line)
+            if approved_status_rule.event.test_passed:
+                line_output = [p_line for p_line in result]
+                test_output.extend(line_output)
         self.assertListEqual(test_output, expected_output)
 
 
@@ -220,12 +221,12 @@ class TestLineParser(unittest.TestCase):
         test_parser = tp.RuleSet(parsing_rules, default=default_parser)
         test_output = list()
         for line in test_text:
-            test_output.extend(test_parser.apply(line, {}))
+            test_output.extend(test_parser(line, {}))
         self.assertListEqual(test_output, expected_output)
 
 
 class TestFixedWidthParser(unittest.TestCase):
-    def test_uniforn_width_parser(self):
+    def test_uniform_width_parser(self):
         parser = tp.define_fixed_width_parser(widths=6,number=3)
         line = 'Part 1Part 2Part 2'
         test_output = parser(line)[0]

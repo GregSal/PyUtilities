@@ -55,7 +55,7 @@ class TestProcessing(unittest.TestCase):
             ['Conformity Index', ' N/A'],
             ['Gradient Measure [cm]', ' N/A']
             ]
-        self.trimmeded_output = [
+        self.trimmed_output = [
             ['Patient Name','____, ____'],
             ['Patient ID','1234567'],
             ['Comment',
@@ -193,32 +193,29 @@ class TestProcessing(unittest.TestCase):
 
     def test_trim_line_processor(self):
         processor = tp.ProcessingMethods([tp.trim_items])
-        processed_lines = processor.process(self.test_text, {})
-        test_trimmed_output = [processor.process(line, {})
-                               for line in self.test_text]
-        self.assertListEqual(test_trimmed_output, self.trimmeded_output)
-
+        test_trimmed_output = list()
+        for line in self.test_text:
+            processed_lines = processor.process(line, {})
+            if processed_lines:
+                if tp.true_iterable(processed_lines):
+                    test_trimmed_output.extend(processed_lines)
+        self.assertListEqual(test_trimmed_output, self.trimmed_output)
 
     def test_trim_line_reader(self):
         processor = tp.ProcessingMethods([tp.trim_items])
-        processed_lines_iter = processor.reader(self.test_text, {})
-        test_trimmed_output = [processed_line
-                               for processed_line in processed_lines_iter]
-        self.assertListEqual(test_trimmed_output, self.trimmeded_output)
+        test_trimmed_output = processor.reader(self.test_text)
+        self.assertListEqual(test_trimmed_output, self.trimmed_output)
 
     def test_dropped_blank_processor(self):
         processor = tp.ProcessingMethods([tp.drop_blanks])
-        processed_lines = processor.read(iter(self.trimmeded_output), {})
-        test_dropped_blank_output = [processed_line
-                                     for processed_line in processed_lines]
+        test_dropped_blank_output = processor.read(iter(self.trimmed_output))
         self.assertListEqual(test_dropped_blank_output,
                              self.dropped_blank_output)
 
     def test_merged_line_processor(self):
         processor = tp.ProcessingMethods([tp.merge_continued_rows])
-        processed_lines = processor.read(iter(self.dropped_blank_output), {})
-        test_merged_line_output = [processed_line
-                                   for processed_line in processed_lines]
+        source = iter(self.dropped_blank_output)
+        test_merged_line_output = processor.read(source)
         self.assertListEqual(test_merged_line_output,
                              self.merged_line_output)
 
@@ -228,8 +225,7 @@ class TestProcessing(unittest.TestCase):
             tp.drop_blanks,
             tp.merge_continued_rows
             ])
-        processed_lines = processor.read(iter(self.test_text), {})
-        test_output = [processed_line for processed_line in processed_lines]
+        test_output = processor.read(iter(self.test_text))
         self.assertListEqual(test_output, self.merged_line_output)
 
 
@@ -289,11 +285,11 @@ class TestParsers(unittest.TestCase):
                                          skipinitialspace=True))])
 
     def test_csv_line_parse(self):
-        test_output = self.default_parser(self.line, {})
+        test_output = [txt for txt in self.default_parser(self.line, {})][0]
         self.assertListEqual(test_output, self.test_result['First Line'])
 
     def test_dvh_info_line_parse(self):
-        test_output = self.dvh_info_reader.process(self.line, {})
+        test_output = self.dvh_info_reader.process(self.line)
         self.assertListEqual(test_output, self.test_result['First Line'])
 
     def test_csv_parse(self):
@@ -302,8 +298,7 @@ class TestParsers(unittest.TestCase):
         self.assertListEqual(test_output, self.test_result['Default Parse'])
 
     def test_dvh_info_parse(self):
-        reader = self.dvh_info_reader.read(self.source, {})
-        test_output = [text_line for text_line in reader]
+        test_output = self.dvh_info_reader.read(self.source)
         self.assertListEqual(test_output, self.test_result['dvh_info Parse'])
 
 
@@ -453,7 +448,7 @@ class TestSections(unittest.TestCase):
             ])
         # scan_section
         source = BufferedIterator(self.test_source['DVH Info'])
-        reader = dvh_info_reader.read(source, self.context)
+        reader = dvh_info_reader.reader(source, self.context)
         test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['DVH Info'])
 
@@ -469,7 +464,7 @@ class TestSections(unittest.TestCase):
             ])
         # scan_section
         source = BufferedIterator(self.test_source['Plan Info 1'])
-        reader = plan_info_reader.read(source, self.context)
+        reader = plan_info_reader.reader(source, self.context)
         test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['Plan Info 1'])
 
@@ -486,7 +481,7 @@ class TestSections(unittest.TestCase):
             ])
         # scan_section
         source = BufferedIterator(self.test_source['Plan Info 2'])
-        reader = plan_info_reader.read(source, self.context)
+        reader = plan_info_reader.reader(source, self.context)
         test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['Plan Info 2'])
 
@@ -501,7 +496,7 @@ class TestSections(unittest.TestCase):
             ])
         # scan_section
         source = BufferedIterator(self.test_source['Structure'])
-        reader = structure_reader.read(source, self.context)
+        reader = structure_reader.reader(source, self.context)
         test_output = tp.to_dict(reader)
         self.assertDictEqual(test_output, self.test_result['Structure'])
 
@@ -516,7 +511,7 @@ class TestSections(unittest.TestCase):
             ])
         # scan_section
         source = BufferedIterator(self.test_source['DVH'])
-        reader = dvh_data_reader.read(source, self.context)
+        reader = dvh_data_reader.reader(source, self.context)
         test_output = tp.to_dataframe(reader)
         self.assertDictEqual(test_output.to_dict(),
                              self.test_result['DVH'].to_dict())

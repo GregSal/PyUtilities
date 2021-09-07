@@ -23,7 +23,7 @@ from inspect import isgeneratorfunction
 from functools import partial
 from itertools import chain
 from typing import Dict, List, Sequence, Tuple, TypeVar, Iterator
-from typing import Iterable, Any, Callable, Union, Generator, NamedTuple
+from typing import Iterable, Any, Callable, Union, Generator
 
 import pandas as pd
 
@@ -33,9 +33,12 @@ from buffered_iterator import BufferedIteratorEOF
 
 
 #%% Logging
-logging.basicConfig(format='%(name)-20s - %(levelname)s: %(message)s')
+import logging
+#logging.basicConfig(format='%(name)-20s - %(levelname)s: %(message)s')
+logging.basicConfig(level=logging.DEBUG)
+
 logger = logging.getLogger('Text Processing')
-logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.DEBUG)
 
 #%% Input and output Type Definitions
 SourceItem = TypeVar('SourceItem')
@@ -49,7 +52,9 @@ SourceOptions = Union[SourceItem, Source]
 #	  • 1 SourceItem → 2+ ProcessedItems
 #	  • 2+ SourceItems → 1 ProcessedItem;
 ProcessedItem = TypeVar('ProcessedItem')
-ProcessedSequence = Iterable[ProcessedItem]
+ProcessedSequence = Iterable[ProcessedItem]  # A Processor cannot return this.
+ProcessedItemGen = Generator[ProcessedItem, None, None]
+ProcessedItems = Union[ProcessedItem, ProcessedItemGen]
 
 #%% Context Type
 # Context Provides a way to pass information between sections.
@@ -57,6 +62,7 @@ ProcessedSequence = Iterable[ProcessedItem]
 ContextType = Union[Dict[str, Any], None]
 
 #%% Relevant Callable Type definitions for Process and Rule functions.
+
 # Sentinel and Process Functions
 # Sentinel and Process Functions can function that can act on a SourceItem
 # provided the function signature is one of the following:
@@ -64,21 +70,26 @@ ContextType = Union[Dict[str, Any], None]
 #   Callable[[SourceItem, ContextType], ProcessedItem]
 #   Callable[[SourceItem, ...], ProcessedItem]
 #       Where ... represents keyword arguments
-ProcessFunc = Callable[[SourceItem, ContextType], ProcessedItem]
+ProcessFunc = Callable[[SourceItem, ContextType], ProcessedItems]
 ProcessCallableOptions = Union[ProcessFunc,
-                               Callable[[SourceItem], ProcessedItem],
-                               Callable[..., ProcessedItem]]
+                               Callable[[SourceItem], ProcessedItems],
+                               Callable[..., ProcessedItems]]
+
+# Rule functions
 # RuleMethods can take an additional positional argument, the TriggerEvent.
 # Supplied RuleMethods can be any Process function and can also have the
 # additional positional argument, the TriggerEvent:
 #   Callable[[SourceItem, "TriggerEvent"], ProcessedItem]
-RuleFunc = Callable[[SourceItem, "TriggerEvent", ContextType], ProcessedItem]
+RuleFunc = Callable[[SourceItem, "TriggerEvent", ContextType], ProcessedItems]
 RuleCallableOptions = Union[
     ProcessCallableOptions,
     RuleFunc,
-    Callable[[SourceItem, "TriggerEvent"], ProcessedItem],
+    Callable[[SourceItem, "TriggerEvent"], ProcessedItems],
     ]
+
+# Sentinel, Process and Rule Functions combined
 SectionCallables = Union[ProcessFunc, RuleFunc]
+
 #%% Relevant Type definitions for Trigger Class and SubClasses.
 # Sentinels
 # Trigger sentinels define tests to be applied to a SourceItem.
@@ -93,6 +104,7 @@ TriggerStringOptions = Union[str, re.Pattern]
 # String and Callable sentinel types can also be provided as a list, where if
 # any one of the sentinels in the list pass the trigger passes.
 TriggerListOptions = Union[TriggerStringOptions, ProcessCallableOptions]
+
 # All possible sentinel types
 TriggerTypes = Union[TriggerSingleTypes, TriggerListOptions]
 # All possible sentinel types and valid sentinel list types
@@ -102,11 +114,14 @@ TriggerOptions = Union[TriggerTypes, List[TriggerListOptions]]
 # expression or the return from a Trigger Sentinel Function (ProcessedItem)
 EventType = Union[bool, int, str, re.match, ProcessedItem, None]
 TestResult = Union[bool, re.match, ProcessedItem]
+TestType = Callable[[TriggerTypes, SourceItem, ContextType], TestResult]
 
 # Relevant Type definitions for SectionBreak Class
 OffsetTypes = Union[int, str]
 
 # Relevant Type definitions for Rule and RuleSet Classes
+ProcessMethodOptions = Union[str, ProcessCallableOptions, None]
+
 RuleMethodOptions = Union[str, RuleCallableOptions, None]
 
 #%% Relevant Type definitions for Section Classes
@@ -116,10 +131,6 @@ ProcessorOptions = Union["ProcessingMethods", "Section", List["Section"]]
 #%% Old Type definitions
 # These type definitions will be redefined as class types.  They are defined
 # here to simplify Type annotations.
-Section = TypeVar('Section')  # pylint: disable=function-redefined
-SectionBreak = TypeVar('SectionBreak')  # pylint: disable=function-redefined
-SectionProcessor = TypeVar('SectionProcessor')  # pylint: disable=function-redefined
-TriggerEvent = TypeVar('TriggerEvent')  # pylint: disable=function-redefined
 
 # NonStringSource represents the non-string type iterables used as a source
 NonStringSource = TypeVar('NonStringSource')
@@ -131,7 +142,6 @@ ParsedString = List[str]
 ProcessGenerator = Generator[ProcessedItem, None, None]
 ProcessMethodTypes = Union[ProcessFunc, ProcessGenerator, "Rule", "RuleSet"]
 
-TestType = Callable[[TriggerTypes, SourceItem, ContextType], TestResult]
 Strings = Union[str, ParsedString]
 OptStrings = Union[Strings, None]
 OptStr = Union[str, None]
@@ -363,8 +373,7 @@ def drop_units(text: str) -> float:
 
 #%% String Parsers
 # CSV parser
-# FIXME type annotation for line is not correct
-def csv_parser(line: str, dialect_name='excel') -> ParseResults:
+def csv_parser(line: SourceOptions, dialect_name='excel') -> ProcessedItemGen:
     '''Convert a single text line into one or more rows of parsed text.
 
     Uses the pre-defined csv Dialect for the line parsing rules.
@@ -386,14 +395,10 @@ def csv_parser(line: str, dialect_name='excel') -> ParseResults:
     '''
     if true_iterable(line):
         csv_iter = csv.reader(line, dialect_name)
-        parsed_lines = [row for row in csv_iter]
     else:
-        # FIXME csv_parser need to become a generator function.
-        # Not: current code assumes that a single input line will never result
-        # in multiple output lines.  -- Is this True ?
         csv_iter = csv.reader([line], dialect_name)
-        parsed_lines = [row for row in csv_iter][0]
-    return parsed_lines
+    for line in csv_iter:
+        yield line
 
 
 def define_csv_parser(name='default_csv',
@@ -479,13 +484,13 @@ class FixedWidthParser():
 
     def parse_iter(self, line):
         remainder = line
-        for w in self.item_widths:
-            if w is None:
+        for width in self.item_widths:
+            if width is None:
                 continue
-            if len(remainder) < w:
+            if len(remainder) < width:
                 continue
-            item = remainder[:w]
-            remainder = remainder[w:]
+            item = remainder[:width]
+            remainder = remainder[width:]
             yield item
         if remainder:
             yield remainder
@@ -638,7 +643,6 @@ def to_dataframe(processed_lines: ParsedStringSource,
     all_lines = [line for line in processed_lines if len(line) > 0]
     if header:
         header_index = int(header)  # int(True) = 1
-        # TODO add ability to handle Multi Line headers
         header_lines = all_lines[:header_index][0]
         data = all_lines[header_index:]
         dataframe = pd.DataFrame(data, columns=header_lines)
@@ -816,7 +820,7 @@ def sig_match(given_method: RuleCallableOptions,
     return use_function
 
 
-def set_method(given_method: RuleCallableOptions,
+def set_method(given_method: RuleMethodOptions,
                method_type='Process')->SectionCallables:
     '''Convert the supplied function or action name to a Function with
     the standard signature.
@@ -826,7 +830,7 @@ def set_method(given_method: RuleCallableOptions,
     Add a special attribute to the returned function indicating if it is a
     generator function.
 
-    Argument:
+    Arguments:
         rule_method (RuleMethodOptions): A function, or the name of a
             standard action.
         method_type (str): The type of action function expected.
@@ -834,12 +838,6 @@ def set_method(given_method: RuleCallableOptions,
     Raises: ValueError If rule_method is a string and is not one of the
         valid action names, or if rule_method is a function and does not
         have one of the valid argument signature types.
-
-    Arguments:
-        rule_method (ProcessMethodOptions): A function, or the name of a
-            standard action.
-        method_type (str): The type of action function expected.
-            One of ['Process', 'Rule']. Defaults to 'Process'
     Returns:
         (ProcessFunc, RuleFunc): A function with the standard Rule or Process
             Method argument signature:
@@ -856,12 +854,16 @@ def set_method(given_method: RuleCallableOptions,
         # checked when the function is called.
         if isgeneratorfunction(given_method):
             use_function.is_gen = True
+        elif isinstance(given_method, partial):
+            if isgeneratorfunction(given_method.func):
+                use_function.is_gen = True
         else:
             use_function.is_gen = False
     return use_function
 
 
-def func_to_iter(source: Iterator, func: Callable, context) -> Iterator:
+def func_to_iter(source: Source, func: ProcessCallableOptions,
+                 context: ContextType)->ProcessedItemGen:
     '''Create a iterator that applies func to each item in source.
 
     If func is a generator function, return the iterator created by calling
@@ -869,28 +871,27 @@ def func_to_iter(source: Iterator, func: Callable, context) -> Iterator:
     iterator that returns the result of calling func on each item in source.
     No type checking is performed.
 
-    Args:
-        source: An iterator that returns the appropriate data types for func.
-        func: A function or generator that takes one argument with type
-            compatible to that produced by source.   If func is a generator
-            function its argument must be an iterator with type
-            compatible to that produced by source.
-
+    Arguments:
+        source (Source): An iterator that returns the appropriate data types
+            for func.
+        func (ProcessCallableOptions): A function Rule or RuleSet that
+            can be applied to a Source.
     Returns:
-        An iterator that returns the result of calling func on each item in
-        source. For example:
+        ProcessedItemGen: An iterator that returns the result of calling func
+            on each item in source.
     '''
-    if isinstance(func, Rule):
-        use_func = func
-    elif isinstance(func, RuleSet):
-        use_func = func
-    else:
-        use_func = sig_match(func)
+    def func_gen(source, context):
+        for item in source:
+            yield from func(item, context)
+
+    if isinstance(func, (Rule, RuleSet)):
+        return func_gen(source, context)
+    use_func = sig_match(func)
     if isgeneratorfunction(func):
-        return use_func(source, context)
+        return use_func(iter(source), context)
     if isinstance(func, partial):
         if isgeneratorfunction(func.func):
-            return use_func(source, context)
+            return use_func(iter(source), context)
     return (use_func(item, context) for item in source)
 
 #%% Iteration Tools
@@ -927,7 +928,6 @@ class TriggerEvent(): # pylint: disable=function-redefined
                   Callable            CallableResult
                   List[Callable]      CallableResult
     '''
-
     def __init__(self):
         '''Initialize a TriggerEvent with default values.
         '''
@@ -1105,12 +1105,10 @@ class Trigger():
         self._test_func = self.set_test_func(location)
         self._event = TriggerEvent()
 
-
     def set_sentinel_type(self)->str:
         '''Identify the type of sentinel supplied.
 
         The sentinel type returned can be one of:
-
             type(sentinel)  sentinel_type string
               None                'None'
               bool                'Boolean'
@@ -1121,7 +1119,6 @@ class Trigger():
               List[re.Pattern]    'RE'
               Callable            'Function'
               List[Callable]      'Function'
-
         If the sentinel is a list of strings, re patterns or functions, set
         the self._is_multi_test = True.
 
@@ -1234,7 +1231,7 @@ class Trigger():
         '''
         return self._event
 
-    def evaluate(self, item: SourceItem, context)->bool:
+    def evaluate(self, item: SourceItem, context: ContextType = None)->bool:
         '''Call the appropriate test(s) on the supplied item.
 
         The designated test(s) are applied to the item.  No testing is done to
@@ -1247,8 +1244,11 @@ class Trigger():
         When one of these tests pass, the particular sentinel element that
         passed the test is used to update event and event_name.
 
-        Args:
-
+        Arguments:
+            item (SourceItem): The item to apply the trigger test to.
+            context (Dict[str, Any], optional): Additional information to be
+                passed to the trigger object.  Defaults to an empty dictionary.
+        Returns (bool): True if the trigger test passes, False otherwise.
 
         Returns:
             (bool): True if the supplied item passed a test, False otherwise.
@@ -1355,9 +1355,9 @@ class SectionBreak(Trigger):  # pylint: disable=function-redefined
             offset_value = int(break_offset)
         except ValueError as err:
             if isinstance(break_offset, str):
-                if 'before' == break_offset.lower():
+                if break_offset.lower() == 'before':
                     offset_value = -1
-                elif 'after' == break_offset.lower():
+                elif break_offset.lower() == 'after':
                     offset_value = 0
             else:
                 msg = ('Offset must be an integer or one of'
@@ -1366,7 +1366,8 @@ class SectionBreak(Trigger):  # pylint: disable=function-redefined
         self._offset = offset_value
 
 
-    def check(self, item: SourceItem, source: BufferedIterator, context):
+    def check(self, item: SourceItem, source: BufferedIterator,
+              context: ContextType = None)->bool:
         '''Check for a Break condition.
 
         If an Active count down situation exists, continue the count down.
@@ -1381,7 +1382,9 @@ class SectionBreak(Trigger):  # pylint: disable=function-redefined
                 obtained.  Access to this object is required for negative
                 offsets.
             context (Dict[str, Any], optional): Additional information to be
-                passed to the trigger object.
+                passed to the trigger object.  Defaults to an empty dictionary.
+        Returns (bool): True if the trigger test indicates a break point.
+            False otherwise
         '''
         logger.debug('in section_break.check')
         # Check for a Break condition
@@ -1405,7 +1408,7 @@ class SectionBreak(Trigger):  # pylint: disable=function-redefined
             is_break = False
         return is_break
 
-    def set_line_location(self, source: BufferedIterator):
+    def set_line_location(self, source: BufferedIterator)->bool:
         '''Set the appropriate line location for a break based on the offset
         value.
 
@@ -1477,7 +1480,6 @@ class Rule(Trigger):
         default_method (Callable, str, optional): The method to use as the
             pass or fail method if not specified defaults to 'Original'.
     '''
-
     #The default method below returns the supplied item.
     _default_method = None
 
@@ -1576,9 +1578,11 @@ class Rule(Trigger):
         default_function = set_method(rule_method, method_type='Rule')
         self._default_method = default_function
 
-    def apply(self, test_object, context)->ProcessedItem:
+    def apply(self, test_object: SourceItem,
+              context: ContextType = None)->ProcessedItems:
         '''Apply the Rule to the supplied test item and return the output of
-        the relevant method based on the test result.  This Method is not valid for Generator Functions.
+        the relevant method based on the test result.  This Method is not valid
+        for Generator Functions.
 
         Arguments:
             test_object (SourceItem): The object to be tested.
@@ -1586,9 +1590,11 @@ class Rule(Trigger):
                 be passed as keyword arguments to a sentinel function.  Ignored
                 for other sentinel types.
         Returns:
-            RuleResult: The result of applying the relevant rule_method to the
-                supplied test_object.
+            ProcessedItems: The result of applying the relevant rule_method to
+                the supplied test_object.
         '''
+        if not context:
+            context = dict()
         is_match = self.evaluate(test_object, context)
         if is_match:
             result = self.pass_method(test_object, self.event, context)
@@ -1598,17 +1604,38 @@ class Rule(Trigger):
             self.use_gen = self.fail_method.is_gen
         return result
 
-    def __call__(self, test_object: SourceItem,
-                 context: ContextType = None)->ProcessedItem:
+
+    def apply_iter(self, test_object: SourceItem,
+                 context: ContextType = None)->ProcessedItemGen:
         '''Rule and Trigger methods only accept a single SourceItem
-        call returns a generator function that iterates over the output of a
+        returns a generator function that iterates over the output of a
         single SourceItem.
         '''
         if not context:
             context = dict()
         result = self.apply(test_object, context)
-        if result is None:
-            yield None
+        if self.use_gen:
+            try:
+                for p_item in result:
+                    yield p_item
+            except StopIteration:
+                return None
+        else:
+            yield result
+        return None
+
+    def __call__(self, test_object: SourceItem,
+                 context: ContextType = None)->ProcessedItemGen:
+        '''Rule and Trigger methods only accept a single SourceItem
+        call returns a generator function that iterates over the output of a
+        single SourceItem.
+        '''
+        logger.debug(f'Calling Rule {self.name}.')
+        if not context:
+            context = dict()
+        result = self.apply(test_object, context)
+        logger.debug(f'Passed?  {self.event.test_passed}')
+        logger.debug(f'Result  {self.event.test_value}')
         if self.use_gen:
             try:
                 for p_item in result:
@@ -1655,7 +1682,7 @@ class RuleSet():
 
 
     def __init__(self, rule_list: List[Rule],
-                 default: ProcessCallableOptions = 'None', name='RuleSet'):
+                 default: ProcessMethodOptions = 'None', name='RuleSet'):
         '''Apply a sequence of Rules, stopping with the first Rule to pass.
 
         A RuleSet is a combination of Rules that expect similar input and
@@ -1692,17 +1719,14 @@ class RuleSet():
             self.default_method = set_method('None', 'Process')
         else:
             self.default_method =  set_method(default, 'Process')
-            if isgeneratorfunction(default):
-                self.default_method.is_gen = True
-            else:
-                self.default_method.is_gen = False
         if all(isinstance(rule, Rule) for rule in rule_list):
             self.rule_seq = rule_list
         else:
             raise ValueError('All items in rule_list must be of type Rule.')
         self.use_gen = False
 
-    def apply(self, test_object: SourceItem, context)->ProcessedItem:
+    def apply(self, test_object: SourceItem,
+              context: ContextType = None)->ProcessedItems:
         '''Apply the RuleSet to the supplied test item and return the output of
         the first Rule to pass.
 
@@ -1712,9 +1736,11 @@ class RuleSet():
                 be passed as keyword arguments to a sentinel function.  Ignored
                 for other sentinel types.
         Returns:
-            RuleResult: The result of applying the relevant rule_method to the
-                supplied test_object.
+            ProcessedItems: The result of applying the relevant rule_method to
+                the supplied test_object.
         '''
+        if not context:
+            context = dict()
         for rule in self.rule_seq:
             result = rule.apply(test_object, context)
             if rule.event.test_passed:
@@ -1722,12 +1748,31 @@ class RuleSet():
                 break
         else:
             result = self.default_method(test_object, context)
+            self.use_gen = self.default_method.is_gen
         return result
 
-    def __call__(self, test_object, context)->ProcessedItem:
-        '''Rule and Trigger methods only accept a single SourceItem
-        call returns a generator function that iterates over the output of a
+    def __call__(self, test_object: SourceItem,
+                 context: ContextType = None)->ProcessedItemGen:
+        '''Apply the RuleSet to the supplied test item and return a generator
+        of the output from the first Rule to pass.
+
+        Rule and Trigger methods only accept a single SourceItem call returns a
+        generator function that iterates over the output of RuleSet applied to a
         single SourceItem.
+        If the RuleSet is one where 1 SourceItem → 1 ProcessedItem, the
+        generator will only yield one ProcessedItem. If the RuleSet is one
+        where 1 SourceItem → 2+ ProcessedItems, the  generator will yield
+        multiple ProcessedItems.  It is not possible to have a RuleSet where
+        2+ SourceItems → 1 ProcessedItem because a RuleSet can only teat a
+        single SourceItem each time.
+        Arguments:
+            test_object (SourceItem): The object to be tested.
+            context (Dict[str, Any], Optional): Any additional information to
+                be passed as keyword arguments to a sentinel function.  Ignored
+                for other sentinel types.
+        Returns:
+            ProcessedItemGen: A generator supplying result of applying the
+                RuleSet to the supplied test_object.
         '''
         if not context:
             context = dict()
@@ -1748,7 +1793,7 @@ class RuleSet():
     ############# Done To Here  ##################
 #%% Section Parser
 
-class ProcessingMethods():  # pylint: disable=function-redefined
+class ProcessingMethods():
     '''Applies a sequence of functions to a supplied sequence of items.
 
     Processing Methods combines a sequence of functions, generator functions,
@@ -1790,20 +1835,18 @@ class ProcessingMethods():  # pylint: disable=function-redefined
         self.section_name = section_name
         if not processing_methods:
             self.processing_methods = lambda item, context: item
-
         elif isinstance(processing_methods, Iterable):
-                self.processing_methods = processing_methods
+            self.processing_methods = processing_methods
         else:
             self.processing_methods = list(processing_methods)
 
-
-    def reader(self, source: Iterator, context)->Iterator:
+    def reader(self, source: Source, context: ContextType = None)->Iterator:
         '''Creates a sequence of nested iterator, taking as input the output from
         the previous iterator.
 
         Calls func_to_iter to create each nested iterator.
 
-        Args:
+        Arguments:
             source: An iterator that returns the appropriate data types for the
                 first function in func.
             func_list: A list of functions or generators that takes one argument.
@@ -1815,28 +1858,44 @@ class ProcessingMethods():  # pylint: disable=function-redefined
             An iterator that returns the result of successively calling each
             function in func_list on the output of the previous function.
         '''
+        if not context:
+            context = dict()
         next_source = source
         for func in self.processing_methods:
             next_source = func_to_iter(next_source, func, context)
         return iter(next_source)
 
-    def process(self, item, context)->ProcessedItem:
+    def process(self, item: SourceItem,
+                context: ContextType = None)->ProcessedItem:
+        if not context:
+            context = dict()
         result = [item]
         for func in self.processing_methods:
-            output_iter = func_to_iter(result, func, context)
-            result = [item for item in output_iter]
-        return result[0]  # FIXME Need to account for multiple line output
+            result = func_to_iter(iter(result), func, context)
+        output = [item for item in result]
+        if len(output) == 1:
+            output = output[0]
+        return output
 
-    def read(self, source, context):
-        self.context = context
+    def gen(self, source: Source, context: ContextType = None):
+        if not context:
+            context = dict()
         section_iter = self.reader(source, context)
-
-        #read_list = list()
         while True:
             try:
                 yield next(section_iter)
             except StopIteration:
                 break
+
+    def read(self, source: Source, context: ContextType = None):
+        process_gen = self.gen(source, context)
+        processed_items = list()
+        while True:
+            try:
+                processed_items.append(next(process_gen))
+            except StopIteration:
+                break
+        return processed_items
 
 #%% Section
 class Section():  # pylint: disable=function-redefined
@@ -2111,7 +2170,7 @@ class Section():  # pylint: disable=function-redefined
         return self._processor
 
     @processor.setter
-    def processor(self, processing_def: ProcessorOptions = None)->Tuple[SectionProcessor, List[Section]]:
+    def processor(self, processing_def: ProcessorOptions = None):
         '''Validates the Section Processor and sets the relevant
             section_reader method.
         Args:
@@ -2147,7 +2206,7 @@ class Section():  # pylint: disable=function-redefined
                                 'Section instance, a list of Section '
                                 'instances, or None.')
         else:
-            # if processor is None return a default SectionProcessor.
+            # if processor is None set a default SectionProcessor.
             self._processor = ProcessingMethods()
             self._section_reader = self.sequence_processor
 
@@ -2168,7 +2227,7 @@ class Section():  # pylint: disable=function-redefined
             Generator[Any, None, None]: The results of applying the
                 SectionProcessor Rules to each item in the section.
         '''
-        read_iter = iter(reader.reader(section_iter, context))
+        read_iter = reader.reader(section_iter, context)
         done = False
         while not done:
             try:
@@ -2551,9 +2610,12 @@ class Section():  # pylint: disable=function-redefined
         section_items = list()
         while True:
             try:
-                section_items.extend(next(section_reader))
+                section_items.append(next(section_reader))
             except StopIteration:
                 break
         # Apply the aggregate function
         section_aggregate = self.aggregate(section_items)
         return section_aggregate
+
+
+logger.debug('Imported Text_Processing')
