@@ -52,7 +52,8 @@ SourceOptions = Union[SourceItem, Source]
 #	  • 1 SourceItem → 2+ ProcessedItems
 #	  • 2+ SourceItems → 1 ProcessedItem;
 ProcessedItem = TypeVar('ProcessedItem')
-ProcessedSequence = Iterable[ProcessedItem]  # A Processor cannot return this.
+ProcessedList = List[ProcessedItem]
+ProcessOutput = Union[ProcessedItem, ProcessedList]
 ProcessedItemGen = Generator[ProcessedItem, None, None]
 ProcessedItems = Union[ProcessedItem, ProcessedItemGen]
 
@@ -121,6 +122,8 @@ OffsetTypes = Union[int, str]
 
 # Relevant Type definitions for Rule and RuleSet Classes
 ProcessMethodOptions = Union[str, ProcessCallableOptions, None]
+ProcessGroup = Union[ProcessMethodOptions, List[ProcessMethodOptions]]
+
 
 RuleMethodOptions = Union[str, RuleCallableOptions, None]
 
@@ -1810,37 +1813,48 @@ class RuleSet():
         return None
 
 
-    ############# Done To Here  ##################
 #%% Section Parser
-
 class ProcessingMethods():
-    '''Applies a sequence of functions to a supplied sequence of items.
+    '''Applies a series of functions to a supplied sequence of items.
 
-    Processing Methods combines a sequence of functions, generator functions,
+    Processing Methods combines a series of functions, generator functions,
     Rules, and/or Rule Sets (Processes) to produce a single generator function.
     The generator function will iterate through a supplied source of items
     returning the final processed item. The output type of each Process must
-    match the expected input type of the next Process in the sequence.  No
+    match the expected input type of the next Process in the series.  No
     validation tests are done on this.
 
-    In general a Callable is used when there is a one-to-one correspondence
-    between input item and output item.  Generator Functions are used when
-    multiple input items are required to generate an output item.  Individual
-    Rules can be used when the output is of the same type regardless of whether
-    the Trigger passes or fails.
+    A Process applied to a Source (a sequence of SourceItems) results in
+    a sequence of ProcessedItems.  The relation between SourceItems and
+    ProcessedItems is not necessarily 1:1.
+       1 SourceItem ≠1 ProcessedItem;
+    	  • 1 SourceItem → 1 ProcessedItem
+    	  • 1 SourceItem → 2+ ProcessedItems
+    	  • 2+ SourceItems → 1 ProcessedItem
+    Generator functions are used when multiple input items are
+    required to generate an output item, or when one SourceItem results in
+    multiple ProcessedItems. In general, regular functions are used when there
+    is a one-to-one correspondence between input item and output item.  RuleSets
+    are used when the function that should be applied to the SourceItem(s)
+    depends on the result of one or more tests (Triggers).  Individual Rules can
+    be used when only a single Trigger is required (by using both the Pass and
+    Fail methods of the Rule) or to modify some of the SourceItems while leaving
+    others unchanged (by setting the Fail method to 'Original').  For Rules or
+    RuleSets it is important that the output is of the same type regardless of
+    whether the Trigger(s) pass or fail.
 
-    Processing functions should accept the following arguments:
+    Processing functions should accept one the following argument sets:
         func(item)
         func(item, **context)
         func(item, context)
-        func(item, [other(s),] **context)  # Not Yet Implemented
+        func(item, [other(s),] **context)
 
     Arguments:
-        processing_methods (List[ProcessMethodTypes]): The sequence of
-            Processes (functions, generator functions, Rules, and/or RuleSets)
-            to be applied to the section source.
-        section_name (str): Reference label for the processing method.
-            Defaults to 'SectionProcessor'
+        processing_methods (ProcessGroup): The sequence of Processes (functions,
+            generator functions, Rules, and/or RuleSets) to be applied to a
+            source.
+        name (str): Reference label for the processing method.
+            Defaults to 'Processor'
 
     Methods:
         process(self, item, context)->RuleResult:
@@ -1850,43 +1864,68 @@ class ProcessingMethods():
                 and yielding the processed text. Defaults to None, which sets
                 a basic csv parser.
     '''
-    def __init__(self, processing_methods: List[ProcessMethodTypes] = None,
-                 section_name = 'SectionProcessor'):
-        self.section_name = section_name
+    def __init__(self, processing_methods: List[ProcessMethodOptions] = None,
+                 name = 'Processor'):
+        '''Applies a series of functions to a supplied sequence of items.
+
+        Processing functions should accept one the following argument sets:
+            func(item)
+            func(item, **context)
+            func(item, context)
+            func(item, [other(s),] **context)
+
+        Arguments:
+            processing_methods (ProcessGroup): The sequence of Processes
+                (functions, generator functions, Rules, and/or RuleSets) to be
+                applied to the section source.
+            name (str): Reference label for the processing method.
+                Defaults to 'Processor'
+        '''
+        self.name = name
         if not processing_methods:
             self.processing_methods = lambda item, context: item
-        elif isinstance(processing_methods, Iterable):
+        elif isinstance(processing_methods, Iterable):  # pylint: disable=isinstance-second-argument-not-valid-type
             self.processing_methods = processing_methods
         else:
             self.processing_methods = list(processing_methods)
 
-    def reader(self, source: Source, context: ContextType = None)->Iterator:
-        '''Creates a sequence of nested iterator, taking as input the output from
-        the previous iterator.
-
-        Calls func_to_iter to create each nested iterator.
+    def reader(self, source: Source,
+               context: ContextType = None)->ProcessedItemGen:
+        '''Applies the ProcessingMethods to a given sequence.
 
         Arguments:
-            source: An iterator that returns the appropriate data types for the
-                first function in func.
-            func_list: A list of functions or generators that takes one argument.
-                The functions do not necessarily all take the same data type, but
-                the input type for each function must be compatible with the output
-                type of the previous function in the sequence. The first function
-                in the sequence must be compatible with that produced by source.
-        Returns:
-            An iterator that returns the result of successively calling each
-            function in func_list on the output of the previous function.
+            source (Source): A sequence of items with a type matching that
+                expected by the first of the series of processing methods.
+            context (ContextType, optional): [description]. Defaults to None.
+        Yields:
+            ProcessedItemGen: An iterator of the results of applying the
+                process functions to the input source sequence.
         '''
         if not context:
             context = dict()
         next_source = source
         for func in self.processing_methods:
             next_source = func_to_iter(next_source, func, context)
-        return iter(next_source)
+        final_generator = iter(next_source)
+        return final_generator
 
     def process(self, item: SourceItem,
-                context: ContextType = None)->ProcessedItem:
+                context: ContextType = None)->ProcessOutput:
+        '''Applies the ProcessingMethods to an individual item.
+
+        If the process methods return a 1 SourceItem → 1 ProcessedItem result,
+        return the single ProcessedItem, otherwise return a list of the
+        resulting ProcessedItems.
+
+        Arguments:
+            item (SourceItem): An item with a type matching that expected by the
+                first of the series of processing methods.
+            context (ContextType, optional): Additional information that can be
+                accessed by the Process functions. Defaults to None.
+        Returns:
+            ProcessOutput: The results of applying the process functions to the
+            input item.
+        '''
         if not context:
             context = dict()
         result = [item]
@@ -1897,18 +1936,18 @@ class ProcessingMethods():
             output = output[0]
         return output
 
-    def gen(self, source: Source, context: ContextType = None):
-        if not context:
-            context = dict()
-        section_iter = self.reader(source, context)
-        while True:
-            try:
-                yield next(section_iter)
-            except StopIteration:
-                break
+    def read(self, source: Source, context: ContextType = None)->ProcessedList:
+        '''Applies the ProcessingMethods to a given sequence.
 
-    def read(self, source: Source, context: ContextType = None):
-        process_gen = self.gen(source, context)
+        Arguments:
+            source (Source): A sequence of items with a type matching that
+                expected by the first of the series of processing methods.
+            context (ContextType, optional): [description]. Defaults to None.
+        Returns:
+            ProcessedList: The results of applying the process functions to the
+            input source sequence.
+        '''
+        process_gen = self.reader(source, context)
         processed_items = list()
         while True:
             try:
@@ -1917,8 +1956,11 @@ class ProcessingMethods():
                 break
         return processed_items
 
+
+    ############# Done To Here  ##################
+
 #%% Section
-class Section():  # pylint: disable=function-redefined
+class Section():
     '''Defines a continuous portion of a text stream or other iterable.
 
     A section definition may include:
