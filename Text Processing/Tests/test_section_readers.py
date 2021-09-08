@@ -197,13 +197,18 @@ class TestProcessing(unittest.TestCase):
         for line in self.test_text:
             processed_lines = processor.process(line, {})
             if processed_lines:
-                if tp.true_iterable(processed_lines):
-                    test_trimmed_output.extend(processed_lines)
+                test_trimmed_output.append(processed_lines)
         self.assertListEqual(test_trimmed_output, self.trimmed_output)
 
     def test_trim_line_reader(self):
         processor = tp.ProcessingMethods([tp.trim_items])
-        test_trimmed_output = processor.reader(self.test_text)
+        processed_iter = processor.reader(self.test_text)
+        test_trimmed_output = list()
+        for line in processed_iter:
+            test_trimmed_output.append(line)
+            # if processed_lines:
+            #     if tp.true_iterable(processed_lines):
+            #         test_trimmed_output.extend(processed_lines)
         self.assertListEqual(test_trimmed_output, self.trimmed_output)
 
     def test_dropped_blank_processor(self):

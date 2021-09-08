@@ -495,7 +495,27 @@ class FixedWidthParser():
         if remainder:
             yield remainder
 
-    def parser(self, line: str) -> ParseResults:
+    def parser(self, source: SourceOptions) -> ParseResults:
+        '''Convert a single text line into a single text line into parsed
+        text items of fixed widths.
+
+        Args:
+            line: A text string for parsing.
+        Returns:
+            A list of lists of strings obtained by parsing line.
+            For example:
+                csv_parser('Part 1,"Part 2a, Part 2b"') ->
+                    [['Part 1', 'Part 2a, Part 2b']]
+        '''
+        if true_iterable(source):
+            for line in source:
+                parsed_line = [item for item in self.parse_iter(line)]
+                yield parsed_line
+        else:
+            parsed_line = [item for item in self.parse_iter(source)]
+            yield parsed_line
+
+    def parse(self, line: SourceItem) -> ParseResults:
         '''Convert a single text line into a single text line into parsed
         text items of fixed widths.
 
@@ -508,7 +528,7 @@ class FixedWidthParser():
                     [['Part 1', 'Part 2a, Part 2b']]
         '''
         parsed_line = [item for item in self.parse_iter(line)]
-        return [parsed_line]
+        return parsed_line
 
 
 def define_fixed_width_parser(widths: List[int] = None, number: int = 1,
@@ -2616,6 +2636,3 @@ class Section():  # pylint: disable=function-redefined
         # Apply the aggregate function
         section_aggregate = self.aggregate(section_items)
         return section_aggregate
-
-
-logger.debug('Imported Text_Processing')
