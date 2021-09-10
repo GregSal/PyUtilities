@@ -22,7 +22,7 @@ from pathlib import Path
 from inspect import isgeneratorfunction
 from functools import partial
 from itertools import chain
-from typing import Dict, List, Sequence, Tuple, TypeVar, Iterator
+from typing import Dict, List, Sequence, TypeVar, Iterator
 from typing import Iterable, Any, Callable, Union, Generator
 
 import pandas as pd
@@ -33,7 +33,6 @@ from buffered_iterator import BufferedIteratorEOF
 
 
 #%% Logging
-import logging
 #logging.basicConfig(format='%(name)-20s - %(levelname)s: %(message)s')
 logging.basicConfig(level=logging.DEBUG)
 
@@ -57,6 +56,8 @@ ProcessOutput = Union[ProcessedItem, ProcessedList]
 ProcessedItemGen = Generator[ProcessedItem, None, None]
 ProcessedItems = Union[ProcessedItem, ProcessedItemGen]
 
+# Aggregated section converts a ProcessedItems into a single Aggregated Item.
+AggregatedItem = TypeVar('AggregatedItem')
 #%% Context Type
 # Context Provides a way to pass information between sections.
 # Context can be used to pass additional parameters to functions.
@@ -88,9 +89,24 @@ RuleCallableOptions = Union[
     Callable[[SourceItem, "TriggerEvent"], ProcessedItems],
     ]
 
-# Sentinel, Process and Rule Functions combined
-SectionCallables = Union[ProcessFunc, RuleFunc]
+# Aggregate Functions
+# Aggregate function are like Process Functions, except they return a single
+# item, never a generator.  The function signature must be one of the following:
+#   Callable[[ProcessedItems], AggregatedItem]
+#   Callable[[ProcessedItems, ContextType], AggregatedItem]
+#   Callable[[ProcessedItems, ...], AggregatedItem]
+#       Where ... represents keyword arguments
+AggregateFunc = Callable[[ProcessedItems, ContextType], AggregatedItem]
+AggregateCallableOptions = Union[AggregateFunc,
+                               Callable[[ProcessedItems], AggregatedItem],
+                               Callable[..., ProcessedItems]]
 
+
+# SectionCallables describe all possible function types: Sentinel, Process, Rule
+# and Aggregate.
+SectionCallables = Union[ProcessFunc, RuleFunc, AggregateFunc]
+
+#
 #%% Relevant Type definitions for Trigger Class and SubClasses.
 # Sentinels
 # Trigger sentinels define tests to be applied to a SourceItem.
@@ -121,15 +137,19 @@ TestType = Callable[[TriggerTypes, SourceItem, ContextType], TestResult]
 OffsetTypes = Union[int, str]
 
 # Relevant Type definitions for Rule and RuleSet Classes
+RuleMethodOptions = Union[str, RuleCallableOptions, None]
+
+# Relevant Type definitions for Process Classes
 ProcessMethodOptions = Union[str, ProcessCallableOptions, None]
 ProcessGroup = Union[ProcessMethodOptions, List[ProcessMethodOptions]]
-
-
-RuleMethodOptions = Union[str, RuleCallableOptions, None]
+ProcessMethods = Union[ProcessFunc, "Rule", "RuleSet"]
 
 #%% Relevant Type definitions for Section Classes
 BreakOptions = Union["SectionBreak", List["SectionBreak"], str, None]
-ProcessorOptions = Union["ProcessingMethods", "Section", List["Section"]]
+ProcessorOptions = Union[ProcessGroup, "ProcessingMethods",
+                         "Section", List["Section"]]
+# A sub-iterable of Source that only iterates over the Section content of Source.
+SectionGen = Generator[SourceItem, None, None]
 
 #%% Old Type definitions
 # These type definitions will be redefined as class types.  They are defined
@@ -156,12 +176,8 @@ ParseResults = Union[List[ParsedString], None]
 StringSource = Iterable[str]
 ParsedStringSource = Union[Iterator[ParsedString], Sequence[ParsedString]]
 
-
-# TODO create more type definitions: Line, ...
-# TODO more explicit generic type definitions
-# TODO Move generic functions to separate module
-# Move the major classes:  Section, SectionReader, SectionBreak, ParsingRule,
-# Trigger to a separate Module
+# TODO Move the major classes:  Section, SectionReader, SectionBreak,
+# ParsingRule, Trigger to a separate Module
 
 
 #%% String Functions
@@ -197,8 +213,7 @@ def true_iterable(variable)-> bool:
     Returns:
         True if variable is a non-string iterable.
     '''
-    return not isinstance(variable, str) and isinstance(variable, Iterable)
-
+    return not isinstance(variable, str) and isinstance(variable, Iterable)  # pylint: disable=isinstance-second-argument-not-valid-type
 
 def build_date_re(compile_re=True, include_time=True):
     '''Compile a regular expression for parsing a date_string.
@@ -349,6 +364,18 @@ def convert_numbers(parsed_line: ParsedString) -> ParsedString:
 
 
 def drop_units(text: str) -> float:
+    '''Remove unit text and return a number.
+
+    Strip units suffix from a value string to produce a number.
+    Leading and trailing whitespace is also removed.
+
+    Args:
+        text (str): A string that begins with a number (after any initial
+            whitespace) followed by characters represneting the units of the
+            number.
+    Returns:
+        float: The numeric portion of the supplied string
+    '''
     number_value_pattern = (
         r'^'                # beginning of string
         r'\s*'              # Skip leading whitespace
@@ -451,6 +478,9 @@ def define_csv_parser(name='default_csv',
 
 # Fixed Width Parser
 class FixedWidthParser():
+    '''Converts a text line into a sequence of text items with predefined
+    spacing.
+    '''
     def __init__(self, widths: Integers = None, number: int = 1,
                  locations: List[int] = None):
         '''Define a parser that will convert a single text line into parsed
@@ -461,9 +491,9 @@ class FixedWidthParser():
 
         Args:
             line: A text string for parsing.
-            widths: Optional A list of the widths of the successive items on a row.
-                Alternatively a single integer width if all numbers items are of
-                equal width.
+            widths: Optional A list of the widths of the successive items on a
+                row. Alternatively a single integer width if all numbers items
+                are of equal width.
             number: The number of items in a row if widths is a single integer.
                 If widths is a list of integers number represents the number of
                 times that the widths sequence is repeated.
@@ -485,7 +515,14 @@ class FixedWidthParser():
         else:
             self.item_widths = [None]
 
-    def parse_iter(self, line):
+    def parse_iter(self, line)->Generator[str, None, None]:
+        '''Sequence of text items with predefined spacing.
+        Args:
+            line (str): the line to be parsed
+
+        Yields:
+            str: sequence of text portions with predefined spacing.
+        '''
         remainder = line
         for width in self.item_widths:
             if width is None:
@@ -687,15 +724,22 @@ def trim_items(parsed_line: ParsedString) -> ParsedString:
 
 
 def merge_extra_items(parsed_line: ParsedString) -> ParsedString:
-    '''If a parsed line has more than 2 items, join items 2 to n. with " ". '''
+    '''If a parsed line has more than 2 items, join items 2 to n. with " ".
+    '''
     if len(parsed_line) > 2:
         merged = join_strings(parsed_line[1:])
         parsed_line[1] = merged
     return parsed_line
 
 
-
 def file_reader(file_path: Path)->BufferedIterator:
+    '''Iterate through the lines in a text file.
+    Args:
+        file_path (Path): The file to read.
+
+    Returns:
+        BufferedIterator: Iterator yielding each line of a text file as an item.
+    '''
     def file_line_gen(file_path):
         with open(file_path, newline='') as textfile:
             for line in textfile:
@@ -744,7 +788,6 @@ def standard_action(action_name: str, method_type='Process')->SectionCallables:
             'Blank':  lambda test_object, context: '',
             'None':  lambda test_object, context: None
             }
-
     if method_type == 'Process':
         use_function = process_actions.get(action_name)
     elif method_type == 'Rule':
@@ -785,10 +828,11 @@ def sig_match(given_method: RuleCallableOptions,
       func(item, context)                        2       None    # Expected
       func(item  [, other(s)] **context)         2+      context # Not Yet Implemented
 
-    Note: rule_method(item, context) is not allowed;
-        use rule_method(item, **context)
-        or  rule_method(item, event, context)
-        instead.
+    Notes:
+        rule_method(item, context) is not allowed; use:
+                rule_method(item, **context)          or
+                rule_method(item, event, context)     instead.
+        process method also applies to Sentinel and Aggregate methods.
     Arguments:
         given_method (MethodOptions): A function to be used as a rule
             method or a process method.
@@ -884,38 +928,6 @@ def set_method(given_method: RuleMethodOptions,
             use_function.is_gen = False
     return use_function
 
-
-def func_to_iter(source: Source, func: ProcessCallableOptions,
-                 context: ContextType)->ProcessedItemGen:
-    '''Create a iterator that applies func to each item in source.
-
-    If func is a generator function, return the iterator created by calling
-    func with source.  Otherwise use a generator expression to return an
-    iterator that returns the result of calling func on each item in source.
-    No type checking is performed.
-
-    Arguments:
-        source (Source): An iterator that returns the appropriate data types
-            for func.
-        func (ProcessCallableOptions): A function Rule or RuleSet that
-            can be applied to a Source.
-    Returns:
-        ProcessedItemGen: An iterator that returns the result of calling func
-            on each item in source.
-    '''
-    def func_gen(source, context):
-        for item in source:
-            yield from func(item, context)
-
-    if isinstance(func, (Rule, RuleSet)):
-        return func_gen(source, context)
-    use_func = sig_match(func)
-    if isgeneratorfunction(func):
-        return use_func(iter(source), context)
-    if isinstance(func, partial):
-        if isgeneratorfunction(func.func):
-            return use_func(iter(source), context)
-    return (use_func(item, context) for item in source)
 
 #%% Iteration Tools
 class TriggerEvent(): # pylint: disable=function-redefined
@@ -1884,10 +1896,66 @@ class ProcessingMethods():
         self.name = name
         if not processing_methods:
             self.processing_methods = lambda item, context: item
-        elif isinstance(processing_methods, Iterable):  # pylint: disable=isinstance-second-argument-not-valid-type
-            self.processing_methods = processing_methods
         else:
-            self.processing_methods = list(processing_methods)
+            self.processing_methods = self.clean_methods(processing_methods)
+
+    @staticmethod
+    def clean_methods(processing_methods: ProcessMethodOptions)->ProcessMethods:
+        '''Convert the supplied functions or action names to a function with
+        the expected "Process Function" argument signature.
+
+        The standard "Process Function" argument signature is:
+            func(item: SourceOptions, context: ContextType)->ProcessedItems:
+        In addition to correcting the argument signature, also identify any
+        supplied function that are generator functions.
+        Arguments:
+            processing_methods (ProcessMethodOptions): A sequence of action
+                names, functions, generator functions, Rules, and RuleSets to be
+                applied to a source.
+        Returns:
+            ProcessMethods: The sequence of Processes with the correct argument
+                signature.
+        '''
+        if not true_iterable(processing_methods):
+            processing_methods = list(processing_methods)
+        cleaned_methods = list()
+        for func in processing_methods:
+            if isinstance(func, (Rule, RuleSet)):
+                cleaned_methods.append(func)
+            else:
+                cleaned_methods.append(set_method(func))
+        return cleaned_methods
+
+    @staticmethod
+    def func_to_iter(source: Source, func: ProcessMethods,
+                    context: ContextType)->ProcessedItemGen:
+        '''Create a iterator that applies func to each item in source.
+
+        If func is a generator function, return the iterator created by calling
+        func with source.  Otherwise use a generator expression to return an
+        iterator that returns the result of calling func on each item in source.
+        No type checking is performed.
+
+        Arguments:
+            source (Source): An iterator that returns the appropriate data types
+                for func.
+            func (ProcessCallableOptions): A function Rule or RuleSet that
+                can be applied to a Source.
+        Returns:
+            ProcessedItemGen: An iterator that returns the result of calling func
+                on each item in source.
+        '''
+        def func_gen(source, context):
+            for item in source:
+                yield from func(item, context)
+
+        if isinstance(func, (Rule, RuleSet)):
+            return func_gen(source, context)
+        # Test whether the function is a generator function as identified
+        # earlier by the set_method function.
+        if func.is_gen:
+            return func(iter(source), context)
+        return (func(item, context) for item in source)
 
     def reader(self, source: Source,
                context: ContextType = None)->ProcessedItemGen:
@@ -1905,7 +1973,7 @@ class ProcessingMethods():
             context = dict()
         next_source = source
         for func in self.processing_methods:
-            next_source = func_to_iter(next_source, func, context)
+            next_source = self.func_to_iter(next_source, func, context)
         final_generator = iter(next_source)
         return final_generator
 
@@ -1930,7 +1998,7 @@ class ProcessingMethods():
             context = dict()
         result = [item]
         for func in self.processing_methods:
-            result = func_to_iter(iter(result), func, context)
+            result = self.func_to_iter(iter(result), func, context)
         output = [item for item in result]
         if len(output) == 1:
             output = output[0]
@@ -2033,12 +2101,12 @@ class Section():
                  start_section: BreakOptions = None,
                  end_section: BreakOptions = None,
                  processor: ProcessorOptions = None,
-                 aggregate: Callable = None,
+                 aggregate: AggregateCallableOptions = None,
                  keep_partial: bool = False):
         '''Creates an Section instance that defines a continuous portion of a
         text stream to be processed in a specific way.
 
-        Args:
+        Arguments:
             section_name (str, optional): A label to be applied to the section.
                 Defaults to 'Section'.
             start_section (BreakOptions, optional): The SectionBreak(s) used
@@ -2049,16 +2117,17 @@ class Section():
                 to identify the location of the end of the section. Defaults
                 to None, indicating the section ends with the last text line
                 in the iterator.
-            processor (ProcessorOptions, optional): Instructions for processing
-                and the section items.  processor can be None, in which case
-                the section will use the default SectionProcessor, it can be a
-                SectionProcessor instance, a Section instance, or a list of
-                Section instances.
-            aggregate (Callable, optional): A function used to collect and
-                format, the processor output.  It should step through the
-                iterator or generator function, passed as its first argument,
-                combining the reader output into a single object.
-                Defaults to None, which returns a list of the reader output.
+            processor (ProcessMethodOptions, optional): Instructions for
+                processing and the section items.  processor can be None, in
+                which case the section will use the default SectionProcessor,
+                it can be a SectionProcessor instance, a Section instance, or a
+                list of Section instances.
+            aggregate (AggregateCallableOptions, optional): A function used to
+                collect and format, the processor output.  It should step
+                through the iterator or generator function, passed as its first
+                argument, combining the reader output into a single object.
+                Defaults to None, which returns a list of the reader output as a
+                List.
             keep_partial (bool, optional): In the case where the reader is
                 composed of one or more subsections and the main section ends
                 before the subsections end. If keep_partial is true the partial
@@ -2067,7 +2136,6 @@ class Section():
         Returns:
             New Section.
         '''
-
         # Initialize attributes
         self.section_name = section_name
         self.keep_partial = keep_partial
@@ -2097,15 +2165,19 @@ class Section():
             self.aggregate = list
 
     @property
-    def source(self):
+    def source(self)->BufferedIterator:
         '''BufferedIterator: The iterable object (with a BufferedIterator
             wrapper) that the section instance is actively iterating through.
         '''
         return self._source
 
     @source.setter
-    def source(self, source: Source)->BufferedIterator:
+    def source(self, source: Source):
         '''Wrap the source in a BufferedIterator if it is not one already.
+
+        Arguments:
+            source (Source): A sequence of items with a type matching that
+                expected by the first of the series of processing methods.
         '''
         if source:
             # Wrap the source in a BufferedIterator if it is not one already.
@@ -2119,7 +2191,7 @@ class Section():
             self._source = None
 
     @property
-    def start_section(self):
+    def start_section(self)->List["SectionBreak"]:
         '''List[SectionBreak]: SectionBreaks that define the start boundary of
             the section.
 
@@ -2131,17 +2203,20 @@ class Section():
 
 
     @start_section.setter
-    def start_section(self, section_break: BreakOptions)->List[SectionBreak]:
-        '''List[SectionBreak]: Defined by one of:
-                List[SectionBreak], the start_section type.
-                SectionBreak, which is converted to a single element list.
-                str, which is converted to a single element list containing a
-                    SectionBreak that triggers on the supplied string.
-                List[str], which is converted to a list containing
-                    SectionBreaks that trigger on each of the supplied strings.
-            Setting start_section to None will clear existing definitions and
-                replace it with a single element list containing
-                self.default_start.
+    def start_section(self, section_break: BreakOptions):
+        '''Creates the section start trigger definition set.
+
+        Arguments:
+            section_break (BreakOptions, optional): Sentinels that define the
+                section start.  If None (default), use the cls.default_start
+                method.  Can be one of:
+                    List[SectionBreak], the start_section type.
+                    SectionBreak, which is converted to a single element list.
+                    str, which is converted to a single element list containing
+                        a SectionBreak that triggers on the supplied string.
+                    List[str], which is converted to a list containing
+                        SectionBreaks that trigger on each of the supplied
+                        strings.
         '''
         brk = self.set_break(section_break)
         if brk:
@@ -2150,7 +2225,7 @@ class Section():
             self._start_section = [self.default_start]
 
     @property
-    def end_section(self):
+    def end_section(self)->List[SectionBreak]:
         '''List[SectionBreak]: SectionBreaks that define the ending boundary of
             the section.
 
@@ -2161,16 +2236,20 @@ class Section():
         return self._end_section
 
     @end_section.setter
-    def end_section(self, section_break: BreakOptions)->List[SectionBreak]:
-        '''List[SectionBreak]: Defined by one of:
-                List[SectionBreak], the end_section type.
-                SectionBreak, which is converted to a single element list.
-                str, which is converted to a single element list containing a
-                    SectionBreak that triggers on the supplied string.
-                List[str], which is converted to a list containing
-                    SectionBreaks that trigger on each of the supplied strings.
-            Setting end_section to None will clear existing definitions and
-            replace it with a single element list containing self.default_end.
+    def end_section(self, section_break: BreakOptions):
+        '''Creates the section end trigger definition set.
+
+        Arguments:
+            section_break (BreakOptions, optional): Sentinels that define the
+                section end.  If None (default), use the cls.default_end
+                method.  Can be one of:
+                    List[SectionBreak], the end_section type.
+                    SectionBreak, which is converted to a single element list.
+                    str, which is converted to a single element list containing
+                        a SectionBreak that triggers on the supplied string.
+                    List[str], which is converted to a list containing
+                        SectionBreaks that trigger on each of the supplied
+                        strings.
         '''
         brk = self.set_break(section_break)
         if brk:
@@ -2181,7 +2260,7 @@ class Section():
     def set_break(self, section_break: BreakOptions) -> List[SectionBreak]:
         '''Convert the supplied BreakOption to a list of SectionBreaks.
 
-        Args:
+        Arguments:
             section_break (BreakOptions): The supplied BreakOption can be:
                 List[SectionBreak], in which case it is returned unchanged.
                 SectionBreak, in which case it is converted to a single
@@ -2222,7 +2301,7 @@ class Section():
         return validated_section_break
 
     @property
-    def processor(self):
+    def processor(self)->ProcessingMethods:
         '''(SectionProcessor, List[Section]):  Instructions for processing the
             section items. If it is a SectionProcessor instance, each item in
             the source is processed according to the SectionProcessor Rules.
@@ -2232,10 +2311,11 @@ class Section():
         return self._processor
 
     @processor.setter
-    def processor(self, processing_def: ProcessorOptions = None):
+    def processor(self,
+                  processing_def: ProcessorOptions = None):
         '''Validates the Section Processor and sets the relevant
             section_reader method.
-        Args:
+        Arguments:
             processing_def (ProcessorOptions): The processing instructions for
                 the section. Can be a SectionParser instance, a Section
                 instance, or a list of Section instances.
@@ -2254,31 +2334,43 @@ class Section():
                 self._processor = [processing_def]
                 self._section_reader = self.subsection_processor
             elif isinstance(processing_def, list):
-                # Verify that all item is the list are type Section
-                for sub_rdr in processing_def:
-                    if isinstance(sub_rdr, Section):
+                # Check if all item is the list are type Section
+                sec_check = all(
+                    isinstance(sub_rdr, Section)
+                    for sub_rdr in processing_def
+                    )
+                if sec_check:
+                    for sub_rdr in processing_def:
                         sub_rdr.reset()
-                    else:
-                        raise ValueError('If processor is a list, the list '
-                                         'items may only be of type Section.')
-                self._processor = processing_def
-                self._section_reader = self.subsection_processor
+                    self._processor = processing_def
+                    self._section_reader = self.subsection_processor
+                else:
+                    try:
+                        self._processor = ProcessingMethods(processing_def)
+                    except ValueError as err:
+                        msg = ' '.join([
+                            'If processor is a list, the items must be a ',
+                            'valid input for ProcessingMethods or must ',
+                            'all be of type Section.'])
+                        raise ValueError(msg) from err
             else:
-                raise TypeError('processor must be one of SectionParser, a '
-                                'Section instance, a list of Section '
-                                'instances, or None.')
+                msg = ' '.join([
+                    'processor must be one of SectionParser, a ',
+                    'Section instance, a list of Section  instances, or None.'
+                    ])
+                raise TypeError(msg)
         else:
             # if processor is None set a default SectionProcessor.
             self._processor = ProcessingMethods()
             self._section_reader = self.sequence_processor
 
-    def sequence_processor(self, section_iter: Iterator,
+    def sequence_processor(self, section_iter: SectionGen,
                            reader: ProcessingMethods,
-                           context) -> Generator[Any, None, None]:
-        '''Apply the SectionProcessor to each item in the section.
+                           context) -> ProcessGenerator:
+        '''Apply the processor to each item in the section.
 
-        Args:
-            section_iter (Iterator): The section's source iterator after
+        Arguments:
+            section_iter (SectionGen): The section's source iterator after
                 checking for boundaries.
             reader (SectionProcessor): The item processing Rules as a
                 SectionProcessor instance.
@@ -2286,8 +2378,8 @@ class Section():
                 additional information to be passed to and from the
                 SectionProcessor instance.
         Yields:
-            Generator[Any, None, None]: The results of applying the
-                SectionProcessor Rules to each item in the section.
+            ProcessGenerator: The results of applying the processor to each
+                item in the section.
         '''
         read_iter = reader.reader(section_iter, context)
         done = False
@@ -2302,12 +2394,12 @@ class Section():
                 if context:
                     self.context.update(context)
 
-    def read_subsections(self, section_iter: Iterator,
-                         subreaders: List[Section], context)->List[Any]:
+    def read_subsections(self, section_iter: SectionGen,
+                         subreaders: List[Section], context)->ProcessedList:
         '''Read each of the subsections as if they were a single item.
 
-        Args:
-            section_iter (Iterator): The section's source iterator after
+        Arguments:
+            section_iter (SectionGen): The section's source iterator after
                 checking for boundaries.
             sub-readers (List[Section]): The subsections that together define
                 the processing of the main section.
@@ -2335,15 +2427,15 @@ class Section():
             self.context.update(sub_rdr.context)
         return subsection
 
-    def subsection_processor(self, section_iter: Iterator,
+    def subsection_processor(self, section_iter: SectionGen,
                              subreaders: List[Section],
-                             context)->Generator[Any, None, None]:
+                             context)->ProcessGenerator:
         '''Yield processed subsections until the main section is complete.
 
         Step through section_iter yielding a list of the aggregate results for
         all of the subsections as a single item from the generator.
 
-        Args:
+        Arguments:
             section_iter (Iterator): The section's source iterator after
                 checking for boundaries.
             sub-readers (List[Section]): The subsections that together define
@@ -2352,7 +2444,7 @@ class Section():
                 additional information to be passed to and from the
                 SectionProcessor instance.
         Yields:
-            List[Any]: A list of the aggregate results for all subsections.
+            ProcessGenerator: The results of reading each subsection.
         '''
         while 'GEN_CLOSED' not in inspect.getgeneratorstate(section_iter):
             # Testing the generator state is required because StopIteration
@@ -2371,17 +2463,12 @@ class Section():
                 break
 
     def reset(self):
-        ''' Return the section attributes back to their initial values.
-        source are reset to their
-        initial values.
+        ''' Reset the section attributes back to their initial values.
 
         The attributes: context, scan_status, and source are cleared so that
         the section instance can be re-used with a new source.  If the section
         processor contains one or more Section instances, the same attributes
         in the subsections will also be reset.
-
-        Returns:
-            None.
         '''
         self.context = dict()
         self.scan_status = 'Not Started'
@@ -2408,7 +2495,7 @@ class Section():
                         matching string.
                     If Trigger matched a regular expression, 'Event' will be
                         the resulting re.match object.
-        Args:
+        Arguments:
             line (str): The line item from the source iterable.
             break_triggers (List[SectionBreak]): The SectionBreak Rules that
             define the boundary condition.
@@ -2427,7 +2514,7 @@ class Section():
                 self.context['Break'] = break_trigger.name
         return is_break
 
-    def step_source(self, source: Source)->Any:
+    def step_source(self, source: BufferedIterator)->SourceItem:
         '''Advance the source, catching any form of generator exit.
 
         Call `next` on source, trapping any standard form of generator exit.
@@ -2444,11 +2531,11 @@ class Section():
                     'Scan Complete'
                 and context['Status'] to:
                     'End of Source'
-        Args:
+        Arguments:
             source (Source): An iterable where some of the content meets the
                 section boundary conditions.
         Returns:
-            Any: The next item from source.
+            SourceItem: The next item from source.
         '''
         break_context = dict()
         next_item = None
@@ -2473,14 +2560,14 @@ class Section():
             logger.debug(f'Break Status:\t{break_context["Status"]}')
         return next_item
 
-    def advance_to_start(self, source: Source)->List[Any]:
+    def advance_to_start(self, source: Source)->List[SourceItem]:
         '''Step through the source until the start of the section is reached.
 
-        Args:
+        Arguments:
             source (Source): An iterable where some of the content meets the
                 section boundary conditions.
         Returns:
-            list[Any]: The items preceding the beginning of the section.
+            list[SourceItem]: The items preceding the beginning of the section.
         '''
         skipped_lines = list()
         self.scan_status = 'Not Started'
@@ -2496,9 +2583,9 @@ class Section():
 
     def initialize(self, source: Source, start_search: bool = True,
                    do_reset: bool = True,
-                   context: Dict[str, Any] = None)->BufferedIterator:
+                   context: ContextType = None)->BufferedIterator:
         '''
-        Args:
+        Arguments:
             source (Source): An iterable where some of the content meets the
                 section boundary conditions.
             start_search (bool, optional): Indicates whether to advance through
@@ -2512,7 +2599,7 @@ class Section():
                 used as a subsection, then it should inherit properties from
                 the parent section and not be reset. Defaults to True, meaning
                 reset the properties.
-            context (Dict[str, Any]): Break point information and any
+            context (ContextType): Break point information and any
                 additional information to be passed to and from the
                 Section instance.
         Returns:
@@ -2543,18 +2630,18 @@ class Section():
         self.scan_status = f'At the start of section {self.section_name}'
         return active_source
 
-    def gen(self, source: Source)->Generator[Any, None, None]:
+    def gen(self, source: Source)->SectionGen:
         '''The internal section generator function.
 
         Step through all items from source that are in section; starting and
         stopping at the defined start and end boundaries of the section.
 
-        Args:
+        Arguments:
             source (Source): An iterable where some of the content meets the
                 section boundary conditions.
         Yields:
-            Generator[Any, None, None]: An iterator containing all source items
-                within the section.
+            SectionGen: An iterator containing all source items within the
+                section.
         '''
         # Read source until end boundary is found or source ends
         while True:
@@ -2569,14 +2656,14 @@ class Section():
 
     def scan(self, source: Source, start_search: bool = True,
              do_reset: bool = True,
-             context: Dict[str, Any] = None)->Generator[Any, None, None]:
+             context: ContextType = None)->SectionGen:
         '''The primary outward facing section generator function.
 
         Initialize the source and then provide the generator that will step
         through all items from source that are in section; starting and
         stopping at the defined start and end boundaries of the section.
 
-        Args:
+        Arguments:
             source (Source): An iterable where some of the content meets the
                 section boundary conditions.
             start_search (bool, optional): Indicates whether to advance through
@@ -2590,13 +2677,13 @@ class Section():
                 used as a subsection, then it should inherit properties from
                 the parent section and not be reset. Defaults to True, meaning
                 reset the properties.
-            context (Dict[str, Any]): Break point information and any
+            context (ContextType): Break point information and any
                 additional information to be passed to and from the
                 Section instance.
         Returns:
-            Generator[Any, None, None]: A generator that will step
-        through all items from source that are in section; starting and
-        stopping at the defined start and end boundaries of the section.
+            SectionGen: A generator that will step through all items from
+                source that are in section; starting and stopping at the defined
+                start and end boundaries of the section.
         '''
         # Initialize the section
         source = self.initialize(source, start_search, do_reset, context)
@@ -2605,9 +2692,9 @@ class Section():
 
     def process(self, source: Source, start_search: bool = True,
              do_reset: bool = True,
-             context: Dict[str, Any] = None)->Generator[Any, None, None]:
+             context: Dict[str, Any] = None)->ProcessedItemGen:
         '''
-        Args:
+        Arguments:
             source (Source): An iterable where some of the content meets the
                 section boundary conditions.
             start_search (bool, optional): Indicates whether to advance through
@@ -2621,14 +2708,14 @@ class Section():
                 used as a subsection, then it should inherit properties from
                 the parent section and not be reset. Defaults to True, meaning
                 reset the properties.
-            context (Dict[str, Any]): Break point information and any
+            context (ContextType): Break point information and any
                 additional information to be passed to and from the
                 Section instance.
         Yields:
-            Generator[Any, None, None]: A generator that will step
-                through all items from source that are within the section
-                boundaries; returning the results of applying the
-                SectionProcessor Rules to each item in the section.
+            ProcessedItemGen: A generator that will step through all items from
+                source that are within the section boundaries; returning the
+                results of applying the SectionProcessor Rules to each item in
+                the section.
         '''
         # Initialize the section
         source = self.initialize(source, start_search, do_reset, context)
@@ -2641,9 +2728,10 @@ class Section():
             pass
 
     def read(self, source: Source, start_search: bool = True,
-             do_reset: bool = True, context: Dict[str, Any] = None)->Any:
+             do_reset: bool = True,
+             context: ContextType = None)->AggregatedItem:
         '''
-        Args:
+        Arguments:
             source (Source): An iterable where some of the content meets the
                 section boundary conditions.
             start_search (bool, optional): Indicates whether to advance through
@@ -2657,12 +2745,13 @@ class Section():
                 used as a subsection, then it should inherit properties from
                 the parent section and not be reset. Defaults to True, meaning
                 reset the properties.
-            context (Dict[str, Any]): Break point information and any
+            context (ContextType): Break point information and any
                 additional information to be passed to and from the
                 Section instance.
         Returns:
-            Any: The result of applying the aggregate function to all processed
-                items from source that are within the section boundaries.
+            AggregatedItem: The result of applying the aggregate function to
+                all processed items from source that are within the section
+                boundaries.
         '''
         # Initialize the section
         source = self.initialize(source, start_search, do_reset, context)

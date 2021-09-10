@@ -158,9 +158,9 @@ class TestSectionGroupRead(unittest.TestCase):
                  },
                  {
                   'Section Name':'F3',
-                  'F3 Content1': 1,
-                  'F3 Content2': 2,
-                  'F3 Content3': 3
+                  'F3 Content1': 1.0,
+                  'F3 Content2': 2.0,
+                  'F3 Content3': 3.0
                  }],
                 [{'Section Name':'D4',
                   'D4 Content1': 'd',
@@ -169,9 +169,9 @@ class TestSectionGroupRead(unittest.TestCase):
                  },
                  {
                   'Section Name':'F4',
-                  'F4 Content1': 4,
-                  'F4 Content2': 5,
-                  'F4 Content3': 6
+                  'F4 Content1': 4.0,
+                  'F4 Content2': 5.0,
+                  'F4 Content3': 6.0
                  }],
                 [{'Section Name':'D5',
                   'D5 Content1': 'g',
@@ -180,9 +180,9 @@ class TestSectionGroupRead(unittest.TestCase):
                  },
                  {
                   'Section Name':'F5',
-                  'F5 Content1': 7,
-                  'F5 Content2': 8,
-                  'F5 Content3': 9
+                  'F5 Content1': 7.0,
+                  'F5 Content2': 8.0,
+                  'F5 Content3': 9.0
                  }],
                 [{'Section Name':'D6',
                   'D6 Content1': 'j',
@@ -191,9 +191,9 @@ class TestSectionGroupRead(unittest.TestCase):
                  },
                  {
                   'Section Name':'F6',
-                  'F6 Content1': 10,
-                  'F6 Content2': 11,
-                  'F6 Content3': 12
+                  'F6 Content1': 10.0,
+                  'F6 Content2': 11.0,
+                  'F6 Content3': 12.0
                  }]
                  ]
             }
@@ -269,14 +269,14 @@ class TestSectionGroupRead(unittest.TestCase):
             start_section=group_section_start,
             end_section=group_section_end,
             processor=[self.delimiter_section, self.fixed_width_section],
-            aggregate=print_list
+            aggregate=make_list
             )
         self.multi_group_section = tp.Section(
             section_name='Group Section',
             start_section=multi_group_section_start,
             end_section=group_section_end,
             processor=[self.delimiter_section, self.fixed_width_section],
-            aggregate=print_list
+            aggregate=make_list
             )
 
     def test_delimiter_sub_section_read(self):
@@ -315,13 +315,12 @@ class TestSectionGroupRead(unittest.TestCase):
         for section_count, section_output in enumerate(zip(test_output,
                                                            expected_output)):
             for count, output in enumerate(zip(section_output[0],
-                                               expected_output[1])):
+                                               section_output[1])):
                 subsection = f'{section_count}.{count}'
                 with self.subTest(subsection=subsection):
-                    section_output = output[0]
-                    expected_section_output = output[1]
-                    self.assertDictEqual(section_output,
-                                         expected_section_output)
+                    s_output = output[0]
+                    e_output = output[1]
+                    self.assertDictEqual(s_output, e_output)
 if __name__ == '__main__':
     unittest.main()
 
